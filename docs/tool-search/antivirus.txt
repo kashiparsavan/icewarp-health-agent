@@ -1,0 +1,20 @@
+    U_AVSupport = $220;                                                 // Bool             Read only variable to check if the user has antivirus enabled [R]
+    U_AVEditable = $47C;                                                // Bool             Read only variable to check if the user has antivirus Editable [R]
+    C_AS_AntivirusSuspectedAction = $6F1;                               // Int              Zero-Hour Anti-Virus Suspected virus message action (actions: Add spam score = 0, Delete = 1, Reject = 2)
+    C_AS_AntivirusConfirmedAction = $6F2;                               // Int              Zero-Hour Anti-Virus Confirmed virus message action (actions: Add spam score = 0, Delete = 1, Reject = 2)
+    // GROUP_BEGIN Antivirus
+    C_AV_Misc_ApplyAsLast = $BB;                                        // Bool             Apply antivirus as the last filter
+    C_AV_Misc_Outgoing = $1A3;                                          // Bool             Apply antivirus to outgoing messages
+    C_AV_Avast = $135;                                                  // Bool             Avast Antivirus usage
+    C_AV_Symantec = $136;                                               // Bool             Symantec Antivirus usage
+    C_AV_AVG = $137;                                                    // Bool             AVG Antivirus usage
+    C_AV_SentinelOne = $778;                                            // Bool             SentinelOne Antivirus
+    C_AV_Sophos = $794;                                                 // Bool             Sophos Antivirus
+    C_AV_Sophos_Server = $795;                                          // String           Sophos Antivirus - Scanning server IP address
+    C_AV_Sophos_Server_Port = $796;                                     // Int              Sophos Antivirus - Scanning server port
+    C_AV_IWA_Enabled = $7BD;                                            // Bool             Use IWA (IceWarp Antivirus)
+    C_Proxy_Antivirus = $387;                                           // Bool             Check files going through proxy with antivirus
+    C_Proxy_AntivirusSize = $388;                                       // Int              Size of data to hold in memory before using large file mode in bytes
+    C_Proxy_AntivirusPercentage = $389;                                 // Int              Percentage of data size to send in large file mode
+    C_Proxy_AntivirusBypass = $38A;                                     // String           Bypass extnesion types
+

@@ -1,0 +1,183 @@
+// ddar=<value>         - Default domain admin rights value                                 //
+// Domains //
+    // Domain
+    // GROUP_BEGIN Domain
+    D_Description = $6A1;                                               // String ddar=r    Domain description
+    D_Type = $01;                                                       // Enum ddar=r values=(0-Standard domain,1 - ETRN/ATRN queue,2 - Domain Alias,3 - Backup domain,4 - Distributed domain,5 - Service domain) Domain Type
+    D_DomainValue = $03;                                                // String ddar=r    Domain Type To value
+    D_Aliases = $6A8;                                                   // String           Aliases of the domain defined on the "Aliases" tab
+    D_MingerPassword = $362;                                            // String           Minger Password for this domain
+    D_AccountNumber = $09;                                              // Int ddar=r       Domain Admin account limit
+    D_DiskQuota = $671;                                                 // Int ddar=r       Domain disk quota (kB)
+    D_DisableLogin = $65E;                                              // Bool ddar=r      Disable login to this domain
+    D_UserLimitNotifyDomainAdmins = $792;                               // Int ddar=w       Notify domain admins when user send out limit is exceed
+    D_UserAccoutSizeLimitNotifyDomainAdmins = $79C;                     // Int ddar=w       Notify domain admins when user account size limit is exceed
+    D_Expires = $652;                                                   // Bool ddar=r      Enable domain expiration
+    D_ExpiresOn = $64F;                                                 // Int ddar=r       Domain Expires On (Number of days from 1899/12/30)
+    D_ExpiresOn_Date = $292;                                            // String ddar=r    Domain Expires On (Date in yyyy/mm/dd format)
+    D_DeleteExpired = $645;                                             // Bool             Delete Expired domains
+    D_NumberLimit = $62F;                                               // Int ddar=r       Limit of emails sent from domain per day
+    D_VolumeLimit = $62D;                                               // Int ddar=r       Limit of data sent from domain per day
+    D_LimitNotifyDomainAdmins = $793;                                   // Bool ddar=r      Notify domain admins when send out limit is exceed
+    D_ASSupport = $283;                                                 // Bool ddar=r      Domain has AS support [R]
+    D_QuarantineSupport = $284;                                         // Bool ddar=r      Domain has Quarantine support [R]
+    D_AVSupport = $44A;                                                 // Bool ddar=r      Domain has AV support [R]
+    D_IMSupport = $44B;                                                 // Bool ddar=r      Domain has IM support [R]
+    D_SIPSupport = $44C;                                                // Bool ddar=r      Domain has SIP support [R]
+    D_FTPSupport = $44D;                                                // Bool ddar=r      Domain has FTP support [R]
+    D_SMSSupport = $44E;                                                // Bool ddar=r      Domain has SMS support [R]
+    D_GWSupport = $44F;                                                 // Bool ddar=r      Domain has GW support [R]
+    D_WebDAVSupport = $450;                                             // Bool ddar=r      Domain has WebDAV support [R]
+    D_EASSupport = $451;                                                // Bool ddar=r      Domain has ActiveSync support [R]
+    D_ConnectorSupport = $453;                                          // Bool ddar=r      Domain has Connector support [R]
+    D_DesktopSupport = $454;                                            // Bool ddar=r      Domain has DC support [R]
+    D_ArchiveSupport = $455;                                            // Bool ddar=r      Domain has Archive support [R]
+    D_MeetingSupport = $49C;                                            // Bool ddar=r      Domain has WebMeetings support [R]
+    D_TeamChatSupport = $6B3;                                           // Bool ddar=r      Domain has TeamChat support [R]
+    D_WebDocumentsSupport = $6E7;                                       // Bool ddar=r      Domain has WebDocuments support [R]
+    D_RecordingSupport = $768;                                          // Bool ddar=r      Domain has Recording support [R]
+    D_AIAgentSupport = $873;                                            // Bool ddar=r      Domain has AI agent support [R]
+    D_BookingSupport = $874;                                            // Bool ddar=r      Domain has Booking support [R]
+    D_ConferenceFollowupSupport = $875;                                 // Bool ddar=r      Domain has Conference followup support [R]
+    D_ConferenceWebinarSupport = $876;                                  // Bool ddar=r      Domain has Conference webinar support [R]
+    D_ExtProvidersSupport = $877;                                       // Bool ddar=r      Domain has External providers support [R]
+    D_IPAddress = $632;                                                 // String           IP address here to bind the domain to
+    D_BaseMailboxPath = $459;                                           // String           Full path to root of the domain storage, read only, equals to C_System_Storage_Dir_MailPath/Domain name
+    D_BaseAutoArchivePath = $806;                                       // String           Archive base path for domain members
+    D_RulesContentXML = $630;                                           // Longstring       Domain rules file content in content filter format [D]
+    D_RulesSieve = $88E;                                                // Longstring       Domain rules Sieve filter [D]
+    D_SharedRoster = $336;                                              // Bool             Instant Messaging shared roster (Populate with all domain members)
+    D_Meeting = $48E;                                                   // Bool             Domain Access mode for meeting
+    D_TeamChat = $6B4;                                                  // Bool             Domain Access mode for teamchat
+    D_WebDocuments = $6E2;                                              // Bool             Domain Access mode for webdocuments
+    D_Recording = $767;                                                 // Bool             Domain Access mode for recording
+    D_AIAgent = $86E;                                                   // Bool             Domain Access mode for AI agent
+    D_Booking = $86F;                                                   // Bool             Domain Access mode for booking
+    D_ConferenceFollowup = $870;                                        // Bool             Domain Access mode for conference followup
+    D_ConferenceWebinar = $871;                                         // Bool             Domain Access mode for conference webinar
+    D_ExtProviders = $872;                                              // Bool             Domain Access mode for external provider
+    D_MailboxSize = $4D3;                                               // Int ddar=r       Domain mailbox size [R]
+    D_DirectoryCache_RefreshNow = $4DA;                                 // Bool             Write only variable , if anything is written there, refresh of the directorycache of this domain is scheduled
+    D_Fulltext_Disabled = $737;                                         // Bool [D]         When set, data of users in domain will not be indexed in fulltext database
+    D_SMS_DomainSettings = $509;                                        // Longstring [D]   Domain level of SMS settings
+    D_FTP_DomainSettings = $50A;                                        // Longstring       Domain level of FTP settings
+    D_AS_OverrideThresholds = $531;                                     // Bool             Override global Anti-Spam thresholds with domain settings
+    D_FreeBusy_Disabled = $79A;                                         // Bool             GW GetServerVFreeBusy will always return empty results for the domain
+    D_2F_Enabled = $706;                                                // Bool ddar=w     Two Factor Authentification enable for domain
+    D_2F_SMS = $707;                                                    // Bool ddar=w     Two Factor Authentification via SMS is enabled on domain level
+    D_Server_Language = $7B0;                                           // String ddar=w   two character code of the language for domain - is used for localization of general messages, invitations, conference info etc.
+    D_DomainAdmin_Rights = $7F3;                                        // String [D] ddar=w   Provides R/W access to contents of domain domain.dat file
+    D_DKIM_Active = $709;                                               // Bool ddar=w [D]   DomainKeys technology for sending messages from the domain you are defining.
+    D_DKIM_Selector = $70A;                                             // String ddar=w [D] DKIM Selector Specifies the domain key used to sign an outgoing email. There can be only one valid selector at a time.
+    D_DKIM_PrivateKey = $70B;                                           // String ddar=w [D] Stored Privete key coresponding with domain you are defining.
+    D_DB_WC_PDO_Real = $802;                                                // String [R]        WC db PDO conection string real (uses global or domain value)
+    D_Domain_ID = $80D;                                                     // String ddar=r     CERS domain ID
+    D_ParentDomain = $816;                                                  // String ddar=r     Parent domain name
+    // SmartDiscover - Domain level variables
+    D_SmartDiscover_SMTP = $82D;                                            // String ddar=r     Domain SmartDiscover SMTP setting
+    D_SmartDiscover_SMTPType = $82E;                                        // Enum ddar=r values=(0 - Standard, 1 - SSL, 2 - 2nd basic port (no SSL), 3 - 2nd basic port (STARTTLS)) Domain SmartDiscover SMTP type
+    D_SmartDiscover_POP3 = $82F;                                            // String ddar=r     Domain SmartDiscover POP3 setting
+    D_SmartDiscover_POP3Type = $830;                                        // Enum ddar=r values=(0 - Standard, 1 - SSL, 2 - STARTTLS) Domain SmartDiscover POP3 type
+    D_SmartDiscover_IMAP = $831;                                            // String ddar=r     Domain SmartDiscover IMAP setting
+    D_SmartDiscover_IMAPType = $832;                                        // Enum ddar=r values=(0 - Standard, 1 - SSL, 2 - STARTTLS) Domain SmartDiscover IMAP type
+    D_SmartDiscover_XMPP = $833;                                            // String ddar=r     Domain SmartDiscover XMPP setting
+    D_SmartDiscover_XMPPType = $834;                                        // Enum ddar=r values=(0 - Standard, 1 - SSL, 2 - STARTTLS) Domain SmartDiscover XMPP type
+    D_SmartDiscover_SIP = $835;                                             // String ddar=r     Domain SmartDiscover SIP setting
+    D_SmartDiscover_SIPType = $836;                                         // Bool ddar=r values=(0 - Standard, 1 - SSL) Domain SmartDiscover SIP type
+    D_SmartDiscover_ActiveSync_URL = $837;                                  // String ddar=r     Domain SmartDiscover ActiveSync URL
+    D_SmartDiscover_WebDAV_URL = $838;                                      // String ddar=r     Domain SmartDiscover WebDAV URL
+    D_SmartDiscover_Webmail_URL = $839;                                     // String ddar=r     Domain SmartDiscover Webmail URL
+    D_SmartDiscover_WebAdmin_URL = $83A;                                    // String ddar=r     Domain SmartDiscover WebAdmin URL
+    D_SmartDiscover_FreeBusy_URL = $83B;                                    // String ddar=r     Domain SmartDiscover FreeBusy URL
+    D_SmartDiscover_InternetCalendar_URL = $83C;                            // String ddar=r     Domain SmartDiscover Internet Calendar URL
+    D_SmartDiscover_SMSService_URL = $83D;                                  // String ddar=r     Domain SmartDiscover SMS Service URL
+    D_SmartDiscover_Install_URL = $83E;                                     // String ddar=r     Domain SmartDiscover Install URL
+    D_SmartDiscover_TeamChat_API_URL = $83F;                                // String ddar=r     Domain SmartDiscover TeamChat API URL
+    D_SmartDiscover_Collaboration_API_URL = $840;                           // String ddar=r     Domain SmartDiscover Collaboration API URL
+    D_SmartDiscover_Conference_API_URL = $841;                              // String ddar=r     Domain SmartDiscover Conference API URL
+    U_AliasList = $487;                                                 // String [R]       Read only list of all account e-mails (i.e. uses also knowledge about domain aliases)
+    U_AuthMode   = $64A;                                                // Enum values=(0 - Standard, 1 - NT domain, 2 - Active Directory) Authentication mode
+    U_DomainAdmin = $634;                                               // Bool ddar=w      Domain admin permission
+    U_AccountDisabled = $65C;                                           // Enum values=(0 - Enabled, 1 - Disabled (Login), 2 - Disabled (Login; Receive), 3 - Disabled (Tarpitting), 4 - Domain disabled (this value can not be set; it can be only returned in certain situations) Account state
+    U_DomainAdmin_Rights = $7F2;                                        // String [D] ddar=w    Provides R/W access to contents of user domain.dat file
+    U_SpamDeleteOlder = $700;                                           // Int              Delete spam messages from spam folders when older than (Days). Use zero for use domain oprtion.
+    U_LocalDomain = $628;                                               // Bool             User can send to local domains only
+    U_GROUPSLIST =  $494;                                               // String           List of groups where user is member of, including all combinations of aliases/domain aliases, read only, computed online
+    U_NoRespondFor = $321;                                              // String           List of emails or domains where to not autorespond
+    U_XMPP_DATA  = $4EA;                                                // String           Special Readonly info for local WCS service - url encoded list - encryptedpassword,username,domain,host
+    U_MasterDomain = $731;                                              // String           Master of domain cluster of the user
+    G_GroupwareAllowGALExport = $4C5;                                   // Bool             Allow export of GAL for other servers within distributed domain
+    M_SendAllLists = $5ED;                                              // Enum values=(0 - List file, 1 - All current domain users, 2 - All system users, 3 - All domain administrators, 4 - All system administrators, 5 - Members from ODBC) Members source
+    L_SendAllLists = $5EC;                                              // Enum values=(0 - List file, 1 - All domain mailing lists) Members source
+    RA_ConvertDomains = $ED;                                            // Bool             Convert domain names
+    // Domain POP
+    RA_DomainPOP = $5A8;                                                // Bool             Domain POP
+    RA_DomainString = $5A4;                                             // String           Domain it belongs to
+    R_Activity = $5C9;                                                  // Enum values=(0 - Forward to address, 1 - Forward to domain, 2 - Forward to host, 3 - Delete, 4 - Deliver to this domain) Action
+    R_ExternalDomain = $5C4;                                            // Bool             Forward
+    C_CreateDefaultCertificates = $6DC;                                 // String           Creates default SSL certificates (Self signed and Lets Encrypt), value has to be cert's FQDN - for example "domain.com".
+    C_Accounts_Global_Distributed_Accounts_Cache_Enabled = $34A;        // Bool             enables distributed domains accounts caching
+    C_System_Services_SMTP_Rewrite_Backup_Recipients = $461;            // Bool             if set to false, sending to aliases of backup and distributed domains does not rewrite recipients domain with the domain where the alias points to
+    C_System_Services_SMTP_MaxOutgoingLimitPerDomainEnabled=$522;       // Bool             enables limiting of number of outgoing connections to the same domain per minute
+    C_System_Services_SMTP_MaxOutgoingLimitPerDomainValue= $523;        // Int              for  C_System_Services_SMTP_MaxOutgoingLimitPerDomainEnabled
+    C_System_Services_SMTP_MaxSenderLimitPerDomainEnabled= $524;        // Bool             enables limiting of number of outgoing connections from the same domain per minute
+    C_System_Services_SMTP_MaxSenderLimitPerDomainValue= $525;          // Int              Value for C_System_Services_SMTP_MaxSenderLimitPerDomainEnabled
+    // Domains
+    // GROUP_BEGIN Domains
+    C_Accounts_Global_Domains_UseDiskQuota = $3F;                       // Bool ddar=r      Use Domain disk quota
+    C_Accounts_Global_Domains_UseUserLimits = $A0;                      // Bool ddar=r      Use Domain account limits
+    C_Accounts_Global_Domains_UseDomainLimits = $1EC;                   // Bool ddar=r      Use Domain limits
+    C_Accounts_Global_Domains_UseExpiration = $F2;                      // Bool ddar=r      Use Domain expiration
+    C_Accounts_Global_Domains_OverrideGlobal = $C3;                     // Bool             Override global limits
+    C_Accounts_Global_Domains_Literals = $B3;                           // Bool             Enable Domain literals
+    C_Accounts_Global_Domains_DomainKeys = $13D;                        // Bool             Enable DomainKeys support
+    C_Accounts_Global_Domains_Hostname = $196;                          // Bool             Use domain hostnames for outgoing msgs
+    C_Accounts_Global_Domains_IPAddress = $197;                         // Bool             Use domain IP address for outgoing msgs
+    C_Accounts_Global_Domains_WelcomeMsgs = $45;                        // Bool             Use Welcome messages
+    C_Accounts_Global_Domains_WarnMailboxUsage = $D3;                   // Int              Warn when mailbox size exceeds (%)
+    C_Accounts_Global_Domains_UserQuotaWrnMsgRepeat = $4AC;             // Int              Repeat period of warning message user mailbox size quota exceeded in hours (0 means no repeat)
+    C_Accounts_Global_Domains_UserAccountDisabledReceive = $4AD;        // Bool             False for Disabled(Login) or True for Disabled(Login, Reeceive)
+    C_Accounts_Global_Domains_WarnDomainSize = $167;                    // Int              Warn when domain size exceeds (%)
+    C_Accounts_Global_Console_ShowAccounts = $145;                      // Int              Number of shown accounts in a domain
+    C_Accounts_Global_Console_DomainDescription = $3A;                  // Enum values=(0 - Domain, 1 - Description + Domain, 2 - Domain + Description) Domain list display mode
+    C_Accounts_Policies_Login_DisableDomainIPLogin = $1F8;              // Bool             Disable logging with domain IP, domain name has to be used
+    C_Accounts_Cluster_AllowSlaveLogin = $6AF;                          // Bool         If enabled, users can login into domain cluster also with their true email (from slave domain)
+    C_System_Tools_Migration_MultiDomain = $174;                        // Bool             Multidomain migration
+    C_System_Adv_Rules_For_GW_Messages = $6C9;                          // Bool             If enabled, GW generated messages (particularly reminders, agendas, invitation) runs through content filters and rules (global, domain, user)
+    C_Mail_SMTP_Other_SearchInLocalDomains = $58;                       // Bool             Search for alias in other local domains
+    C_Mail_SMTP_Other_MailboxSeparator = $16C;                          // String           Mailbox separator / extension separator (eg: alias:extension@domain)
+    C_Mail_Security_Relay_RejectLocalUnauth = $B6;                      // Bool             Reject if orig's domain is local&unauth
+    C_Mail_Security_Protection_RejectMX = $8B;                          // Bool             Reject if orig's domain has no MX rec
+    C_Mail_Security_Protection_LocalDomain = $91;                       // Bool             Relay only if orig's domain's local
+    C_Mail_Security_Protection_DomainIPShield = $A1;                    // Bool             Use Domain IP shielding
+    C_Mail_Security_UseARC = $7F1;                                      // Bool             Use ARC along with DKIM signatures on domains
+    C_AS_General_AntispamMode = $280;                                   // Enum values=(0 - System, 1 - User, 2 - Domain) Antispam mode
+    C_AS_BypassLocalDomains = $03A5;                                    // Bool             Whitelist local domain senders
+    C_AS_SpamChallengeLocalDomains = $03D9;                             // Enum values=(0 - Do not quarantine / whitelist / blacklist local users, 1 - Quarantine / whitelist / blacklist all local users, 2 - Quarantine / whitelist / blacklist local users from other domains) Quarantine mode for local domains
+    C_AS_BypassDistributedDomain = $460;                                // Bool             If enabled, Anti-Spam is skipped for non local recipients in distrubuted domain
+    C_AS_SpamGLOwnerMode = $03F5;                                       // Enum values=(0 - Email, 1 - Domain) Greylisting owner mode
+    C_AS_SpamNoSenderDomain = $0406;                                    // Bool             Enable scoring of messages where originator's domain does not exist
+    C_AS_SpamNoSenderDomainScore = $0407;                               // String           Score for messages where originator's domain does not exist
+    C_SMSService_ProcessingMode = $276;                                 // Enum values=(0 - All messages, 1 - All except selected, 3 - Group, 5 - Selected domains only, 9 - Selected accounts only) SMS processing mode
+    C_ActiveSync_ProcessingMode = $311;                                 // Enum values=(0 - All messages, 1 - All except selected, 3 - Group, 5 - Selected domains only, 9 - Selected accounts only) ActiveSync processing mode
+    C_FTPService_ProcessingMode = $274;                                 // Enum values=(0 - All messages, 1 - All except selected, 3 - Group, 5 - Selected domains only, 9 - Selected accounts only) FTP processing mode
+    C_FreeBusy_DomainOnly = $799;                                       // Bool             GW GetServerVFreeBusy will return results only for the same domain as the owner
+    C_WebDAV_ProcessingMode = $278;                                     // Enum values=(0 - All messages, 1 - All except selected, 3 - Group, 5 - Selected domains only, 9 - Selected accounts only) WebDAV processing mode (0 - all messages, 1 - all except selected, 3 - group, 5 - selected domains only, 9 - selected accounts only)
+    C_System_Services_SIP_LocalHostDomain = $442;                       // String           Localhost name, by default localhost.localhost
+    C_Domain_Cannot_Be_Deleted = $70E;                                  // Bool             if turned on domains cannot be deleted in any way - if turned off domains can be deleted as usual
+    C_Domain_Cannot_Be_Renamed = $729;                                  // Bool             if turned on domains cannot be renamed in any way - if turned off domains can be renamed as usual
+    C_DomainAdmin_Rights = $7F4;                                        // String [D]       Provides R/W access to contents of global domain.dat file
+    C_DeleteExpiredDomain_KeepMailboxData = $88D;                       // Bool             When set, automated deletion of expired domain will keep its mailbox data
+    // Domain
+    // GROUP_BEGIN Domain
+    D_AliasList = $56E;                                                 // String ddar=r    List of domain aliases
+    D_MessagesSentToday = $572;                                         // Int ddar=r       Amount of messages sent from this domain today
+    D_StorageUse = $573;                                                // Int ddar=r       Domain storage usage
+    D_OutlookPolicies = $576;                                           // String ddar=w    Domain Outlook Policies
+    A_AdminType = $52C;                                                 // Enum values=(0 - Standart user, 1 - Domain Administrator, 2 - Server Administrator) Administrator Type
+    V_OpenPermission = $54C;                                            // Int              This is virtual property, it has no value, but you can define permissions to this property. Who has permissions for V_OpenPermission on specific account/domain, can open this account/domain
+    V_CreateDomain = $56F;                                              // Bool             Domain creating right
+    V_DeleteDomain = $570;                                              // Bool             Domain deleting right
+    V_RenameDomain = $571;                                              // Bool             Domain renaming right
+    Statistics_ActiveUsers = $578;                                      // Int              Number of user accounts (accross all domains) counting towards the license
+

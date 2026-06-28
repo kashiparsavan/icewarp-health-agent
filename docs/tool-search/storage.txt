@@ -1,0 +1,30 @@
+    D_BaseMailboxPath = $459;                                           // String           Full path to root of the domain storage, read only, equals to C_System_Storage_Dir_MailPath/Domain name
+    C_System_Services_IMAP_IndexStorage = $6C7;                         // Enum values=(0 - textual storage(imapindex.dat), 1 - binary mode for all, 2 - binary mode for selected) list of selected accounts must be placed in config/imapbinary.dat
+    C_System_Services_IMAP_RedLock_Servers = $888;                      // String           Semicolon separated list of redis servers to be used for inter-LB-nodes locking, when empty, filesystem storage flock is used instead
+    C_System_Services_IMAP_DebugIndexHistory = $80B;                    // Bool             Enable IMAP storage history debug logging, when enabled and file imapindex.savehistory is present in mailbox, imapindex.bin backup will be created before each change
+    C_System_Services_IMAP_MemoryEfficientIndex = $858;                 // Bool             Enable IMAP memory efficient mode, when enabled, imap storage uses direct access to small files cache
+    C_System_Storage_Mailbox_Checkavailability = $711;                  // Bool             if turned on and provisioned.dat doesn't exist services are not turned on
+    C_System_Tools_WCStatistics_ConnectionString = $513;                // String           Connection string to override default sqlite storage
+// Storage
+    // GROUP_BEGIN Storage
+    C_System_Storage_Accounts_ProModeCache = $E4;                       // Int              Professional file system memory cache
+    C_System_Storage_Accounts_ODBCConnString = $61;                     // String           Accounts DB connection string
+    C_System_Storage_Accounts_ODBCConnString_Real = $789;               // String [R]       Accounts DB connection string (calculated value based on env variable IW_DB_STORAGE and API settings)
+    C_System_Storage_Accounts_PDO = $7FD;                               // String           Accounts PDO connection string
+    C_System_Storage_Accounts_ODBCMultithread = $B0;                    // Bool             Use Multithreaded DB
+    C_System_Storage_Accounts_ODBCMaxThreads = $1E3;                    // Int              Max number of parallel connections to DB
+    C_System_Storage_Accounts_DBCacheCount = $366;                      // Int              DB query cache size
+    C_System_Storage_Dir_MailPath = $17;                                // String           Path to mail folder
+    C_System_Storage_Dir_TempPath = $16;                                // String           Path to temp folder
+    C_System_Storage_Dir_SharedTempPath = $7F0;                         // String           Path to temp dir accessible from all services and LB nodes
+    C_System_Storage_Dir_LogPath = $18;                                 // String           Path to log folder
+    C_System_Storage_Dir_Shutdown_Timeout = $760;                       // Int              Timeout in seconds to check accessibility of provisioned.dat file in storage path. If check fails, all services are shut down. Set value to 0 to disable.
+    C_System_Storage_Mailbox_UseSorting = $12F;                         // Bool             Enables mailbox path alphabetical sorting
+    C_System_Storage_Mailbox_PrefixLen = $130;                          // Int              Number of characters from alias in path prefix
+    C_System_Storage_Mailbox_GroupedPrefix = $337;                      // Int              Number of grouped characters in path prefix
+    C_System_Storage_LB_ServerID = $D2;                                 // String           Server ID
+    C_System_Storage_LB_AutoCheckConfig = $129;                         // Bool             Periodically check if settings have been changed and auto reload
+    C_Mail_SMTP_General_TempPath = $761;                                // String           Temp path to be used by SMTP. When empty (default), C_System_Storage_Dir_TempPath/SMTP is used.
+    C_GW_AttachmentsMailboxPath = $375;                                 // Bool             If true, store attachments in user $mailboxes, otherwise use central storage
+    D_StorageUse = $573;                                                // Int ddar=r       Domain storage usage
+

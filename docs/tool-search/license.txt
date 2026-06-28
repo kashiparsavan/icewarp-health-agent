@@ -1,0 +1,24 @@
+  E_LICENSE = -$02; // Insufficient license
+// Version & License
+    C_SuiteType = $15;                                                  // Enum values=(1 - Pro, 2 - Standard, 3 - Lite) Mail server license type [R]
+    C_License_XML = $AB;                                                // Longstring       XML decrypted license [R] [D]
+    C_License = $A9;                                                    // Longstring       Server license (read/export and add new license) [D]
+    C_LicenseStatus = $440;                                             // Int              License status (lsSuccess, lsEvaluation, lsReferenceMismatch, lsRevalidation, lsExpired, lsNone, lsBuildDate, lsVersionMismatch, lsLicenseAndServerVersionsMismatch)
+    C_License_Modules_Report_Email = $495;                              // String           Generate detailed XML report about "used seats" and send it to this email
+    C_License_Expired_For_Upgrade = $583;                               // Bool             Returns true when license forbids upgrading the server
+    C_License_Minimal_Required_Version = $6F0;                          // Int              Returns minimal license release version requested by server, user must confirm the upgrade
+    C_License_Required_Version = $893;                                  // Int              Returns license release version requested by server, upgraded automatically
+    C_License_Type = $75F;                                              // String [R] ddar=r Returns server license type, values can be following - onpremise, cloud, saas
+    C_LicenseProxy_Disable = $765;                                      // Bool             When set True /license-api requests are not forwarded to master license server
+    C_License_IsMultitenant = $7F7;                                     // Bool [R] ddar=r  Returns true if is license multitenant
+    C_RefreshExtraLicenses = $71E;                                      // bool             Write only variable, if anything is written there, Commtouch licenses will be reapplied to them
+    C_License_Manage_Url = $800;                                        // String [R]       Generate URL to manage your license [D]
+    C_License_TrialExpire = $892;                                       // String [R] ddar=r Contains license expiration date if server has trial license, empty otherwise
+    C_OnlineLicense = $169;                                             // String           Retrieve online license using Order ID
+    C_ObtainTrialLicense = $489;                                        // String           Registers trial license, value have to be "Name;Email;Company;Address;ZIP;CountryCode;Phone"
+    C_System_Tools_ExcludeLicense = $CC;                                // Bool             Do not include license to backup file
+    C_Webmail_Licensed = $771;                                          // Bool [R]         WebClient licensing status
+    Statistics_ActiveUsers = $578;                                      // Int              Number of user accounts (accross all domains) counting towards the license
+    Statistics_LicensedUsers = $579;                                    // Int              Number of licensed users (for "mail server" module)
+// Last Used ID: $893 C_License_Required_Version
+

@@ -1,0 +1,14 @@
+    D_AntiSpam = $65B;                                                  // Bool             Policy - Antispam
+    U_AS = $611;                                                        // Bool             Policy - AntiSpam
+    U_ASSupport = $5B0;                                                 // Bool             Read only variable to check if the user has antispam enabled [R][D]
+    U_ASEditable = $47A;                                                // Bool             Read only variable to check if the user has antispam Editable [R]
+    U_ENABLEOUTGOINGBULKMESSAGES = $6F9;                                // Bool             This User cannot be blocked by Antispam Live for spaming
+    // GROUP_BEGIN Antispam
+    // GROUP_BEGIN Antispam
+    C_AS_General_AntispamMode = $280;                                   // Enum values=(0 - System, 1 - User, 2 - Domain) Antispam mode
+    C_AS_IgnoreFilesLarger = $0398;                                     // Int              Maximum message size to process with antispam, in kB
+    C_AS_SpamOutgoingRules = $03A6;                                     // Enum             values=(0 - Process with full Antispam, 1 - Process with Antispam Live only, 2 - Same as 0, 3 - Do not process with antispam) Outgoing messages antispam mode
+    C_AS_SpamMaxThreads = $03B0;                                        // Int              Size of thread pool for antispam processing
+    C_AS_Sophos_LASED_Log_Level = $891;                                 // Enum value=(-1 - Use sasidaemon.conf, 0 - derive from IW, 1 - Fatal, 2 - Message, 3 - Error, 4 - Important, 5 - Info) Sophos AntiSpam daemon log level to be set after daemon is started
+    C_AS_Mailinglist_Antispam_Disable = $0478;                          // Bool             Disable processing mailing list spam folders
+

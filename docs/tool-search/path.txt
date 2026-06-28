@@ -1,0 +1,48 @@
+  E_PATH = -$04; // Settings file does not exist
+    D_Folderpath = $24;                                                 // String           Folder path
+    D_BaseMailboxPath = $459;                                           // String           Full path to root of the domain storage, read only, equals to C_System_Storage_Dir_MailPath/Domain name
+    D_BaseAutoArchivePath = $806;                                       // String           Archive base path for domain members
+    U_MailBoxPath = $633;                                               // String ddar=r    Mailbox path
+    U_FullMailboxPath = $640;                                           // String           Full mailbox path [R]
+    U_AutoArchivePath = $805;                                           // String ddar=r     Custom user auto archive path
+    U_Fulltext_ReindexAccount = $73A;                                   // String [W]       Writing (mail|archive|gw)/folder_path will reindex given folder in given namespace. Appending /* will reindex also subfolders recursively. Writing anything else will schedule whole account fulltext database reindex from scratch.
+    G_MailboxPath = $809;                                               // String ddar=r    Mailbox path
+    G_FullMailboxPath = $80A;                                           // String [R]       Full mailbox path
+    G_Fulltext_ReindexAccount = $73B;                                   // String [W]       Writing (mail|archive|gw)/folder_path will reindex given folder in given namespace. Appending /* will reindex also subfolders recursively. Writing anything else will schedule whole account fulltext database reindex from scratch.
+    M_ListFile = $5FC;                                                  // String           Path to list file
+    L_ListFile = $5FD;                                                  // String           Path to list file
+    RA_LeaveMessageFile = $59D;                                         // String           Path to file to keep uids
+    N_FilterFile = $5D6;                                                // String           Filter file path
+    C_InstallPath = $10A;                                               // String           Mail server installation path [R]
+    C_ConfigPath = $AA;                                                 // String           Path to Config folder [R]
+    C_WebPath = $200;                                                   // String [R]       Path to HTML folder
+    C_SpamPath = $202;                                                  // String [R]       Path to spam folder
+    C_CalendarPath = $203;                                              // String [R][D]    Path to calendar folder
+    C_PathServiceID = $201;                                             // String [R]       Load balancing server ID
+    C_System_Services_Fulltext_Database_Path = $735;                    // String [D]       Path to fulltext database root
+    C_System_Services_SmallFilesCache_Size = $46E;                      // String           Maximal size (in bytes) of cache for small files, (imapindex.dat, flags.dat...), Set 0 to disable, make sure that UDP traffic is enabled between IceWarp nodes on LB scenarios and path.dat is properly configured
+    C_System_Tools_AutoBackup_BackupTo = $140;                          // String           Path to backup file
+    C_System_Tools_AutoArchive_Path = $9A;                              // String           Auto archive path
+    C_System_Tools_AutoArchive_TrailerPath = $309;                      // String           Archive directory trailer path
+    C_System_Tools_Migration_LogFile = $170;                            // String           Path to log file
+    C_System_Tools_Migration_PostMigrateScript = $328;                  // String           Path to executable to be called after user was created
+    C_System_Storage_Dir_MailPath = $17;                                // String           Path to mail folder
+    C_System_Storage_Dir_TempPath = $16;                                // String           Path to temp folder
+    C_System_Storage_Dir_SharedTempPath = $7F0;                         // String           Path to temp dir accessible from all services and LB nodes
+    C_System_Storage_Dir_LogPath = $18;                                 // String           Path to log folder
+    C_System_Storage_Dir_Shutdown_Timeout = $760;                       // Int              Timeout in seconds to check accessibility of provisioned.dat file in storage path. If check fails, all services are shut down. Set value to 0 to disable.
+    C_System_Storage_Mailbox_UseSorting = $12F;                         // Bool             Enables mailbox path alphabetical sorting
+    C_System_Storage_Mailbox_PrefixLen = $130;                          // Int              Number of characters from alias in path prefix
+    C_System_Storage_Mailbox_GroupedPrefix = $337;                      // Int              Number of grouped characters in path prefix
+    C_Mail_SMTP_General_TempPath = $761;                                // String           Temp path to be used by SMTP. When empty (default), C_System_Storage_Dir_TempPath/SMTP is used.
+    C_Mail_SMTP_Delivery_ReturnPath = $1F7;                             // Bool             Add return-path
+    C_Mail_SMTP_Other_UseReturnPathInNDR = $4B5;                        // Bool             Include Returnpath in NDR (if exists) instead of "From:"
+    C_AS_SpamRefusePath = $03BD;                                        // String           Archive refused messages to account
+    C_AS_SpamAssassinPath = $03DD;                                      // String           Path to spam assassin rules, if not set, default spam/rules is used
+    C_AV_Action_QuarantineAddress = $7D;                                // String           Quarantine address/path
+    C_AV_IWA_TransferMode = $7C0;                                       // Enum values=(0 - Network - Send scanned file in request, 1 - Callback - Send HTTP link to scanned file, 2 - Path - Send file path to scanned file) IWA scanned file transfer mode
+    C_Proxy_LoggingS = $382;                                            // String           Logging path
+    C_GW_AttachmentsMailboxPath = $375;                                 // Bool             If true, store attachments in user $mailboxes, otherwise use central storage
+    C_GW_WMigrateObsoleteAttPath = $7DF;                                // Bool             Enable the migration of old obsolete groupware attachment path
+    C_System_LibreOfficeBinary = $6AD;                                  // String           Linux - LibreOffice 5.0 and above path - when set, this libreoffice will be used for image conversion
+

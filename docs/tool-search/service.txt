@@ -1,0 +1,310 @@
+    D_Type = $01;                                                       // Enum ddar=r values=(0-Standard domain,1 - ETRN/ATRN queue,2 - Domain Alias,3 - Backup domain,4 - Distributed domain,5 - Service domain) Domain Type
+    D_DumpSMTPAccountCache = $4C8;                                      // String           Write only property. Seting a value causes SMTP service to write info about actual account cache into file in temp dirctory
+    D_SmartDiscover_SMSService_URL = $83D;                                  // String ddar=r     Domain SmartDiscover SMS Service URL
+    D_SmartDiscover_SMSService_URL_Real = $853;                             // String [R]     Effective SmartDiscover SMS Service URL (resolved via parent chain)
+    U_ExcludeFromDirectoryServiceSync = $53C;                           // Bool             User will not be synchronized with Directory Service
+    U_SIP_ONLINE = $45D;                                                // Bool             User is logged into local VOIP service , read only
+    U_SIP_AVAILABLE = $45E;                                             // Bool             User is logged into local VOIP service and is not calling now , read only
+    U_XMPP_SUPPORT_DATA  = $4E9;                                        // String           Special Readonly info for local WCS service - url encoded list, history_supported,filetransfer_supported
+    U_XMPP_DATA  = $4EA;                                                // String           Special Readonly info for local WCS service - url encoded list - encryptedpassword,username,domain,host
+    U_SIP_DATA  = $4F4;                                                 // String           Special Readonly info for SIP service - url encoded list - password,username,extension,host
+    U_UserChatPush = $7CE;                                              // Bool             Tells if the push service is enabled for user chat messages
+    C_PathServiceID = $201;                                             // String [R]       Load balancing server ID
+    C_CloudAPI_AutoConfigure = $807;                                    // Bool             Auto configure Cloud API using MSR service
+    C_CloudAPI_MSR_URL = $808;                                          // String           MSR service URL
+    C_Accounts_Global_Accounts_DirectoryCacheExclusiveLocking = $49D;   // Bool             If set to true, the only one quaery against the directory cache is done at a time  (changing requires restart of all services)
+    C_System_Log_Services_DirectoryCache = $492;                        // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Directory Cache logging level
+    C_System_Services_SMTP_Rewrite_Backup_Recipients = $461;            // Bool             if set to false, sending to aliases of backup and distributed domains does not rewrite recipients domain with the domain where the alias points to
+    C_System_Services_SMTP_MaxOutgoingLimitPerDomainEnabled=$522;       // Bool             enables limiting of number of outgoing connections to the same domain per minute
+    C_System_Services_SMTP_MaxOutgoingLimitPerDomainValue= $523;        // Int              for  C_System_Services_SMTP_MaxOutgoingLimitPerDomainEnabled
+    C_System_Services_SMTP_MaxSenderLimitPerDomainEnabled= $524;        // Bool             enables limiting of number of outgoing connections from the same domain per minute
+    C_System_Services_SMTP_MaxSenderLimitPerDomainValue= $525;          // Int              Value for C_System_Services_SMTP_MaxSenderLimitPerDomainEnabled
+    C_System_Services_SMTP_SendingStopped=$526;                         // Bool             Experimental - Never set this to true
+    C_System_Services_SMTP_SoftQuota=$543;                              // Bool             When enabled,  user can receive messages even if his mailbox is full, but he can not send any message instead
+    C_Accounts_Policies_Pass_DisableAccessToAllIfDisabled = $6BE;       // Bool ddar=r      Disable access to all services if password is expired (except WebClient, WebAdmin and icewarpapi)
+    C_Accounts_Policies_Auth_DisablePlain = $437;                       // Bool             Disable plain authentication in all services
+    // Services
+    C_System_Services_Firewall = $5B;                                   // Bool             Restrict access to all services
+    C_System_Services_BindIPAddress = $27;                              // String           IP addresses to bind services to
+    // SMTP service
+    C_System_Services_SMTP_Port = $1B;                                  // Int              SMTP service port
+    C_System_Services_SMTP_SSLPort = $3B;                               // Int              SMTP service SSL port
+    C_System_Services_SMTP_AltPort = $13;                               // Int              SMTP service alternative port
+    C_System_Services_SMTP_Traffic = $103;                              // Bool             Enable SMTP traffic logs
+    C_System_Services_SMTP_IPList = $5D;                                // String           List of Denied/Granted IPs
+    C_System_Services_SMTP_AccessMode = $5C;                            // Bool values=(0 - Deny, 1 - Grant) Service Policy
+    C_System_Services_SMTP_Startup = $251;                              // Int              (ssAutomatic, ssManual)
+    C_System_Services_SMTP_ThreadCache = $51;                           // Int              SMTP service Thread cache
+    C_System_Services_SMTP_MonitorData = $14F;                          // Int              Monitor increased traffic
+    C_System_Services_SMTP_MonitorConn = $150;                          // Int              Monitor number of increased connections
+    C_System_Services_SMTP_MaxInConn = $112;                            // Int              Max number of Incoming connections
+    C_System_Services_SMTP_MaxOutConn = $50;                            // Int              Max number of Outgoing connections
+    C_System_Services_SMTP_Bandwidth = $11F;                            // Int              Max transfer bandwidth (kB/s)
+    C_System_Services_SMTP_Tarpitting_MoreRestrictive= $586;            // Bool             If set to true, presence of the session IP in Intrusion prevention list will be performed more often and not only at the beginning of the session
+    // POP3 service
+    C_System_Services_POP3_Port = $19;                                  // Int              POP3 service port
+    C_System_Services_POP3_SSLPort = $1A;                               // Int              POP3 service SSL port
+    C_System_Services_POP3_Traffic = $104;                              // Bool             Enable SMTP traffic logs
+    C_System_Services_POP3_IPList = $5F;                                // String           List of Denied/Granted IPs
+    C_System_Services_POP3_Accessmode = $5E;                            // Bool values=(0 - Deny, 1 - Grant) Service Policy
+    C_System_Services_POP3_Startup = $252;                              // Int              (ssAutomatic, ssManual)
+    C_System_Services_POP3_ThreadCache = $52;                           // Int              POP3 service thread cache
+    C_System_Services_POP3_MaxInConn = $113;                            // Int              Max number of Incoming connections
+    C_System_Services_POP3_MaxOutConn = $4F;                            // Int              Max number of Outgoing connections
+    C_System_Services_POP3_Bandwidth = $120;                            // Int              Max transfer bandwidth (kb/s)
+    C_System_Services_POP3_MonitorData = $151;                          // Int              Monitor increased traffic
+    C_System_Services_POP3_MonitorConn = $152;                          // Int              Monitor number of increased connections
+    // IMAP service
+    C_System_Services_IMAP_Port = $1F;                                  // Int              IMAP service port
+    C_System_Services_IMAP_SSLPort = $1C;                               // Int              IMAP service SSL port
+    C_System_Services_IMAP_Traffic = $105;                              // Bool             Enable IMAP traffic logs
+    C_System_Services_IMAP_ThreadCache = $12B;                          // Int              IMAP service thread cache
+    C_System_Services_IMAP_MaxInConn = $114;                            // Int              Max number of Incoming connections
+    C_System_Services_IMAP_MaxOutConn = $12C;                           // Int              Max number of Outgoing connections
+    C_System_Services_IMAP_Bandwidth = $121;                            // Int              Max transfer bandwidth (kB/s)
+    C_System_Services_IMAP_MaxAppendsPerMinute = $814;                  // Int              Number of IMAP APPEND commands performed at full speed, additional commands are delayed, 0 - unlimited
+    C_System_Services_IMAP_IPList = $127;                               // String           List of Denied/Granted IPs
+    C_System_Services_IMAP_Accessmode = $128;                           // Bool             Service Policy
+    C_System_Services_IMAP_MonitorData = $153;                          // Int              Monitor increased traffic
+    C_System_Services_IMAP_MonitorConn = $154;                          // Int              Monitor number of increased connections
+    C_System_Services_IMAP_FileNameFlags = $1C7;                        // Bool             Use IMAP flags encoded in mail filename
+    C_System_Services_IMAP_AllowBinaryAppend = $7C8;                    // Bool             Allow binary zeros in IMAP APPEND
+    C_System_Services_Fulltext_Enabled = $71F;                          // Bool [D]         Enable fulltext search services and functionality
+    C_System_Services_Fulltext_Scanner_URL = $733;                      // String [D]       Set fulltext search scanner service URL, possible values - http(s)://server:port/
+    C_System_Services_Fulltext_Scanner_Status = $745;                   // String [D][R]    Read only - get status of fulltext search scanner service
+    C_System_Services_Fulltext_Scanner_Queues = $746;                   // String [D][R]    Read only - get contents of fulltext search scanner service queues
+    C_System_Services_Fulltext_Database_URL = $720;                     // String [D]       Set fulltext search database service URL, possible values - http(s)://server:port/
+    C_System_Services_Fulltext_Database_Path = $735;                    // String [D]       Path to fulltext database root
+    C_System_Services_Fulltext_Database_Status = $74F;                  // String [D][R]    Read only - get status of fulltext search database service
+    C_System_Services_Fulltext_DocConv_URL = $752;                      // String [D]       Set documents conversion service URL, possible values - http(s)://server:port/
+    C_System_Services_Fulltext_DoNotIndexDisabledAccounts = $738;       // Bool             Do not index accounts which are disabled for login
+    C_System_Services_Fulltext_ServerID = $750;                         // String           Unique server ID used when communicating with fulltext search services, autogenerated when empty
+    C_System_Services_Fulltext_Mail_Scanning_Enabled = $757;            // Bool [D]         Enable fulltext indexing of mail directory
+    C_System_Services_Fulltext_Archive_Scanning_Enabled = $758;         // Bool [D]         Enable fulltext indexing of archive directory
+    C_System_Services_Fulltext_GW_Scanning_Enabled = $759;              // Bool [D]         Enable fulltext indexing of GW attachments
+    C_System_Services_Fulltext_Force = $75E;                            // Bool             When set, do not check if account data are indexed and always query fulltext search database
+    C_System_Services_Fulltext_ManageLocalServices = $7C5;              // Bool             When set, fulltext services will be started or stopped by IceWarp when they have configured local listening addresses
+    C_System_Services_Fulltext_Logging = $727;                          // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) [D] Fulltext search services communication logging level
+    C_System_Services_IMAPSearchCache_MaxCount = $721;                  // Int              Number of cached IMAP SEARCH query result strings. 0 - unlimited.
+    C_System_Services_IMAPSearchCache_Expiration = $722;                // Int              Sec, Expiration time of results in cache. 0 - caching disabled
+    C_System_Services_IMAPSearchCache_MaxSize = $723;                   // Int              kB, Maximum size of IMAP SEARCH query cache. 0 - limit does not apply
+    C_System_Services_IMAPSearchCache_Reset = $725;                     // String           Write only. Clean IMAP search cache.
+    C_System_Services_IMAPSearch_PageSize = $726;                       // Int              How many results are processed by IMAP search at once.
+    C_System_Services_IMAPSearch_MaxResults = $730;                     // Int              Maximal number of IMAP search returned results, 0 - unlimited
+    C_System_Services_IMAP_RSSInterval = $340;                          // Int              Integrate IMAP search with indexing service
+    C_System_Services_IMAP_ForceFullsync =$426;                         // Bool             Obsolete, only for backward compatibility
+    C_System_Services_IMAP_CopyBWFunction =$45B;                        // Bool             Copy/Move from Inbox to Spam indexes e-mail to Blacklist, Copy/Move from Spam to Inbox indexes e-mail to WhiteList
+    C_System_Services_IMAP_FullSyncInterval =$48C;                      // Int              (hours) Determines how often is IMAP going to sync contents of imapindex.dat with filesystem. When the time for next sync is evalueted, random number between 0 and this value is added to this value. The full item sync should be needed only if some files were added directly on filesystem.
+    C_System_Services_IMAP_FreeMemoryOnIdle =$4A1;                      // Bool             When IDLE is performed, information about all items are freed from memory and reloaded only after changes are detected or when idle is terminated
+    C_System_Services_AdamGPT_URL = $815;                               // String           URL of AdamGPT service
+    C_System_Services_SmallFilesCache_Size = $46E;                      // String           Maximal size (in bytes) of cache for small files, (imapindex.dat, flags.dat...), Set 0 to disable, make sure that UDP traffic is enabled between IceWarp nodes on LB scenarios and path.dat is properly configured
+    C_System_Services_SmallFilesCache_MaxFileSize = $46F;               // Int              Maximal size (in bytes) of file, which will be cached in cache for small files, (imapindex.dat, flags.dat...)
+    C_System_Services_SmallFilesCache_DelayWrite= $470;                 // Bool             If set to true, cache write operations are not directly done on filesystem, but are procesed in background thread - temporarily switched off (i.e. this setting has no effect now)
+    C_System_Services_SmallFilesCache_Cleaner_Expiration = $712;        // Int              Cached files will released from cache if they are oldest some time in minutes.
+    C_System_Services_SmallFilesCache_Cleaner_Void_Percent = $713;      // Int              Cache keep some percent empty space by releasing old records
+    C_System_Services_SmallFilesCache_Debug_Logging = $714;             // Int              Set SFC logging scope mask (0 - None, 0x1 - classic verbose logs, 0x2 - exclusive access feature logs, 0x4 - not cached files logs)
+    C_System_Services_IMAP_IndexStorage = $6C7;                         // Enum values=(0 - textual storage(imapindex.dat), 1 - binary mode for all, 2 - binary mode for selected) list of selected accounts must be placed in config/imapbinary.dat
+    C_System_Services_IMAP_LockType = $88B;                             // Enum values=(0 - Directory, 1 - RedLock) Lock used for locking mailboxes among services and load balanced nodes
+    C_System_Services_IMAP_RedLock_Servers = $888;                      // String           Semicolon separated list of redis servers to be used for inter-LB-nodes locking, when empty, filesystem storage flock is used instead
+    C_System_Services_IMAP_RedLock_LockExpiration_Sec = $889;           // Int              Expiration time of lock in seconds - when the log is not refreshed in time, becomes unlocked.
+    C_System_Services_IMAP_RedLock_LockRefreshPeriod_MS = $88A;         // Int              How often the lock is refreshed in milliseconds.
+    C_System_Services_IMAP_DebugIndexHistory = $80B;                    // Bool             Enable IMAP storage history debug logging, when enabled and file imapindex.savehistory is present in mailbox, imapindex.bin backup will be created before each change
+    C_System_Services_IMAP_MemoryEfficientIndex = $858;                 // Bool             Enable IMAP memory efficient mode, when enabled, imap storage uses direct access to small files cache
+    // IM service
+    C_System_Services_IM_Port = $E1;                                    // Int              IM service port
+    C_System_Services_IM_SSLPort = $E2;                                 // Int              IM service SSL port
+    C_System_Services_IM_AltPort = $BD;                                 // Int              IM service alternative port
+    C_System_Services_IM_Traffic = $106;                                // Bool             Enable IM traffic logs
+    C_System_Services_IM_IPList = $100;                                 // String           List of Granted / Denied IPs
+    C_System_Services_IM_AccessMode = $FF;                              // Bool values=(0 - Deny, 1 - Grant) Service Policy
+    C_System_Services_IM_Startup = $253;                                // Int              (ssAutomatic, ssManual)
+    C_System_Services_IM_ThreadCache = $DE;                             // Int              Service thread cache
+    C_System_Services_IM_MaxInConn = $118;                              // Int              Max number of Incoming connections
+    C_System_Services_IM_Bandwidth = $125;                              // Int              Max transfer bandwidth (kB/s)
+    C_System_Services_IM_MonitorData = $155;                            // Int              Monitor increased traffic
+    C_System_Services_IM_MonitorConn = $156;                            // Int              Monitor number of increased connections
+    C_System_Services_UseLocalXMPPBridge = $7E6;                        // Bool             Use and manage the local XMPPBridge service
+    // Groupware service
+    C_System_Services_GW_Port = $B8;                                    // Int              GW service port
+    C_System_Services_GW_Traffic = $107;                                // Bool             Enable GW traffic logs
+    C_System_Services_GW_IPList = $102;                                 // String           List of Denied/Granted IPs
+    C_System_Services_GW_AccessMode = $101;                             // Bool values=(0 - Deny, 1 - Grant) Service Policy
+    C_System_Services_GW_Startup = $254;                                // Int              (ssAutomatic, ssManual)
+    C_System_Services_GW_ThreadCache = $12A;                            // Int              GW service Thread cache
+    C_System_Services_GW_MaxInConn = $119;                              // Int              Max number of Incoming connections
+    C_System_Services_GW_Bandwidth = $126;                              // Int              Max transfer bandwidth (kB/s)
+    C_System_Services_GW_MonitorData = $157;                            // Int              Monitor increased traffic
+    C_System_Services_GW_MonitorConn = $158;                            // Int              Monitor number of increased connections
+    // Control service
+    C_System_Services_Control_Port = $1E;                               // Int              Control service port
+    C_System_Services_Control_SSLPort = $20;                            // Int              Control service SSL port
+    C_System_Services_Control_Traffic = $108;                           // Bool             Enable Control traffic logs
+    C_System_Services_Control_IPList = $63;                             // String           List of Denied/Granted IPs
+    C_System_Services_Control_AccessMode = $62;                         // Bool values=(0 - Deny, 1 - Grant) Service Policy
+    C_System_Services_Control_Startup = $256;                           // Int              (ssAutomatic, ssManual)
+    C_System_Services_Control_ThreadCache = $53;                        // Int              Control service Thread cache
+    C_System_Services_Control_MaxInConn = $115;                         // Int              Max number of Incoming connections
+    C_System_Services_Control_Bandwidth = $122;                         // Int              Max transfer bandwidth (kB/s)
+    C_System_Services_Control_MonitorData = $159;                       // Int              Monitor increased traffic
+    C_System_Services_Control_MonitorConn = $15A;                       // Int              Monitor number of increased connections
+    // FTP service
+    C_System_Services_FTP_Port = $10C;                                  // Int              FTP service port
+    C_System_Services_FTP_SSLPort = $10D;                               // Int              FTP service SSL port
+    C_System_Services_FTP_Traffic = $11A;                               // Bool             Enable FTP traffic logs
+    C_System_Services_FTP_IPList = $11B;                                // Longstring       List of Granted / Denied IPs
+    C_System_Services_FTP_AccessMode = $11C;                            // Bool values=(0 - Deny, 1 - Grant) Service Policy
+    C_System_Services_FTP_ThreadCache = $11D;                           // Int              Service thread cache
+    C_System_Services_FTP_MaxInConn = $116;                             // Int              Max number of Incoming connections
+    C_System_Services_FTP_MaxOutConn = $11E;                            // Int              Max number of Outgoing connections
+    C_System_Services_FTP_Bandwidth = $123;                             // Int              Max transfer bandwidth (kB/s)
+    C_System_Services_FTP_MonitorData = $15B;                           // Int              Monitor increased traffic
+    C_System_Services_FTP_MonitorConn = $15C;                           // Int              Monitor number of increased connections
+    // LDAP service
+    C_System_Services_LDAP_Enable = $6D;                                // Bool             Enable LDAP service
+    C_System_Services_LDAP_Port = $12;                                  // Int              LDAP service port
+    C_System_Services_LDAP_SSLPort = $11;                               // Int              LDAP service SSL port
+    C_System_Services_LDAP_MaxInConn = $117;                            // Int              Max number of Incoming connections
+    C_System_Services_LDAP_Bandwidth = $124;                            // Int              Max transfer bandwidth (kB/s)
+    C_System_Services_Socks_Enabled = $218;                             // Bool             Enable Socks server
+    C_System_Services_Socks_Port = $219;                                // Int              Socks port
+    C_System_Services_Socks_MaxInConn = $30D;                           // Int              SOCKS - Maximum number of incoming connections
+    C_System_Services_Socks_IPList = $30E;                              // String           List of Denied/Granted IPs
+    C_System_Services_Socks_IPGrant = $30F;                             // Bool             Access type, false - deny, true - grant
+    // Minger service
+    C_System_Services_Minger_Enabled = $345;                            // Bool             Enable Minger server
+    C_System_Services_Minger_Port = $346;                               // Int              Basic Minger port (UDP)
+    C_System_Services_Minger_SSLPort = $42E;                            // Int              Minger SSL port (TCP)
+    C_System_Services_Minger_Logging = $348;                            // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Minger log level
+    C_System_Storage_Mailbox_Checkavailability = $711;                  // Bool             if turned on and provisioned.dat doesn't exist services are not turned on
+    C_SmartDiscover_SMSService_URL = $828;                              // String           SmartDiscover SMS Service URL
+    C_System_Logging_General_ExperimentalFastLogging = $46B;            // Bool             Enables experimental file logging mode - everything is sent to control service using pipe connection, from background thread
+    // Services
+    C_System_Log_Services_SMTP = $64;                                   // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) SMTP service logging level
+    C_System_Log_Services_POP3 = $69;                                   // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) POP3 service logging level
+    C_System_Log_Services_IMAP = $10F;                                  // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) IMAP service logging level
+    C_System_Log_Services_IM = $E0;                                     // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) IM service logging level
+    C_System_Log_Services_GW = $B1;                                     // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) GW service logging level
+    C_System_Log_Services_Control = $6E;                                // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Control service logging level
+    C_System_Log_Services_FTP = $10E;                                   // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) FTP service logging level
+    C_System_Log_Services_LDAP = $110;                                  // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) LDAP service logging level
+    C_System_Log_Services_AV = $97;                                     // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) AV logging level
+    C_System_Log_Services_AS = $15F;                                    // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) AS logging level
+    C_System_Log_Services_SIP = $18A;                                   // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) SIP logging level
+    C_System_Log_Services_SMS = $210;                                   // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) SMS service logging level
+    C_System_Log_Services_SyncPush = $213;                              // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Push service logging level
+    C_System_Log_Services_Socks = $310;                                 // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Socks logging level
+    C_System_Log_Services_CISCO  = $4E7;                                // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Cisco Sync logging level
+    C_System_Log_Services_TeamChat = $6C5;                              // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) TeamChat logging level
+    C_System_Log_Services_TeamChat_GWLog = $803;                        // Bool             Enable extra TeamChat logging for the GW protocol
+    C_System_Log_Services_TeamChat_JSON_Format = $80F;                  // Bool             False - None, True - Format
+    C_System_Log_Services_WebDocuments = $6E9;                           // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) WebDocuments logging level
+    C_System_Tools_Watchdog_Check_Protocols = $32C;                     // Bool             Should Watchdog connect on Service Port
+    C_System_Tools_Watchdog_Check_IPList = $443;                        // String           Semicolon separated list of IP's on which will be checked protocols, all must success, not applicable on services with specific IP binding
+    C_System_Tools_Migration_MigrateService = $175;                     // Enum values=(0 - Both, 1 - POP3, 2 - IMAP) Migration service
+    C_System_Tools_Migration_SSLMode = $335;                            // Enum values=(0 - Detect TLS/SSL, 1 - Direct TLS/SSL, 2 - Disable TLS/SSL) Migration service
+    C_System_Storage_Dir_SharedTempPath = $7F0;                         // String           Path to temp dir accessible from all services and LB nodes
+    C_System_Storage_Dir_Shutdown_Timeout = $760;                       // Int              Timeout in seconds to check accessibility of provisioned.dat file in storage path. If check fails, all services are shut down. Set value to 0 to disable.
+    C_System_Adv_Ext_SSLServerMethod = $1F5;                            // Enum values=(0 - Default (currently the same as 6; but will be increased in future according to the actual security trends), 1 - Deprecated (the same as 3), 2 - Deprecated (the same as 3), 3 - Support SSL3 and newer (SSL3;TLS1;TLS1.1;TLS1.2), 4 - Support TLS1 and newer (TLS1;TLS1.1;TLS1.2), 5 - Support TLS1.1 and newer (TLS1.1;TLS1.2), 6 - Support TLS1.2 and newer - same as 5 on Linux RHEL5 and RHEL6), 7 - Same as 6 but TLS1.3 will be disabled (required for client renegotiation for HTTP service and - require client certificate)
+    C_System_Adv_Ext_ServiceModules_Mode = $7CB;                        // Enum values=(0 - Monolith, 1 - Pipes, 2 - RabbitMQ) How service modules will communicate with each other
+    C_System_Adv_Ext_RabbitMQ_Pipes_URL = $7CC;                         // String          AMQP URL to RabbitMQ for interservice communication
+// WC Indexing Service
+    C_System_WC_IndexingService_Enabled = $762;                         // Bool            Enable the WC indexing service
+    C_System_WC_IndexingService_Pool = $763;                            // Int             WC indexing service pool
+    C_System_Adv_Process_New_Day = $462;                                // Bool             Write Only - Sends signal to all servicess to process the new day procedures
+    C_System_Adv_Exit_On_Signal = $499;                                 // Bool             Linux only - if set, SIGSEGV and others will terminate affected service instead of throwing exception
+    C_System_Adv_Plan_GAL_Resync = $6A9;                                // Bool             Write Only - Sends signal to GW servicess to process the GAL synchronization
+    C_System_Debug_DisableStartServerServices = $418;                   // Bool             Disables startserver services (CommTouch, LDAP and others)
+// Mail service
+    // All mail services
+    C_Mail_Control_Active = $357;                                       // Bool             Enable control services (Web, SOCKS, SNMP...)
+    // SMTP service
+    C_Mail_SMTP_General_DeliveryMode = $29;                             // Bool values=(0 - Use SMTP relay server, 1 - Use DNS lookup) SMTP service delivery mode
+    C_Mail_Security_Tarpit_CloseAllConnections = $6A5;                  // Bool             Immediately close all other connections from the tarpitted IP (within the same service)
+    C_AS_SpamUpdateURL = $03C1;                                         // String           Spam db update service URL
+    C_AS_Sophos_Manager_API_URL = $886;                                 // String           SAS-Manager helper service API URL
+    C_AS_Sophos_Updater_API_URL = $887;                                 // String           SAS-Updater helper service API URL
+// Web Service
+    C_WebService_AppMaxThreads = $166;                                  // Int              Number of web service application threads
+    C_WebService_CustomHttpIncludeText = $4C1;                          // Longstring       Custom text to be filled in the HttpIncludeText (HttpIncludeText will be "Server: + CustomHttpIncludeText + cCRLF + 'Date: %s' + cCRLF")
+    C_WebService_Security_Enable_HSTS = $7C4;                           // Bool             Enable HTTP Strict Transport Security protocol
+    C_WebDocuments_Enabled = $6DE;                                      // Bool             Enables OnlyOffice Online - requires external service to be available and configured via C_OnlyOffice_Online_Connection
+    C_WebDocuments_Connection = $6DF;                                   // String [D]       SSL Connection to external OnlyOffice online service, (e.g. 192.168.6.5 , or 192.168.6.5:9098 , or  https://192.168.6.5/ )
+// SMS Service
+    C_SMSService_Active = $1FE;                                         // Bool             Enable SMS service
+    C_SMSService_RequireAuth = $211;                                    // Bool             SMS requires authentication
+    C_SMSService_DeliverContent = $271;                                 // Bool             Incoming SMS - deliver according to #email# in received messages
+    C_SMSService_ReplyMessage = $272;                                   // Bool             Incoming SMS - deliver to original sender of received reply message (keep a list of sent messages
+    C_SMSService_ProcessingMode = $276;                                 // Enum values=(0 - All messages, 1 - All except selected, 3 - Group, 5 - Selected domains only, 9 - Selected accounts only) SMS processing mode
+    C_SMSService_ProcessingGroup = $277;                                // String           Policy group
+    C_SMSService_ExpireMins = $27A;                                     // Int              Give up sending a message after minutes
+    C_SMSService_URL = $289;                                            // String           SMS service URL
+    C_SMSService_SenderReplyExpiration = $295;                          // Int              Keep records of sent messages for C_SMSService_ReplyMessage in seconds
+    C_SMSService_SenderReplyConflict = $296;                            // Bool             Enable sending C_SMSService_SenderReplyConflictText when reipient conflict occurs
+    C_SMSService_SenderReplyConflictText = $297;                        // String           Conflict message sent back to sender when more than one recipient record exists
+    C_SMSService_LocalNumberLen = $365;                                 // Int              Maximum phone number length, longer will be cut
+    C_SMSService_SubjectPrefix = $43E;                                  // String           SMS subject prefix
+    C_ActiveSync_URL = $28A;                                            // String           ActiveSync service URL
+    C_System_Log_Services_ActiveSync = $4E1;                            // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) ActiveSync logging level
+    C_System_Log_Services_WCS = $4B2;                                   // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summar, 4 - Extended) WS / WCS logging level
+    C_Webmail_Active = $4E2;                                            // Int              WebClient service active
+    C_Webmail_URL = $28B;                                               // String           WebClient service URL
+// FTP Service
+    C_FTPService_Active = $1A6;                                         // Bool             Activate FTP service
+    C_FTPService_ProcessingMode = $274;                                 // Enum values=(0 - All messages, 1 - All except selected, 3 - Group, 5 - Selected domains only, 9 - Selected accounts only) FTP processing mode
+    C_FTPService_ProcessingGroup = $275;                                // String           Policy group
+    C_GW_General_Disable = $B9;                                         // Bool             Disable GW service
+    C_System_Log_Services_Meeting = $490;                               // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Meeting logging level (1 - debug, 2 - summary, 3 - debug&summary, 4 - extended)
+    C_Meeting_Active = $491;                                            // Bool             Enable Meeting services
+    C_TeamChat_Active = $6B2;                                           // Bool             Enable TeamChat service
+    C_IM_General_Disable = $D5;                                         // Bool             Disable IM service
+    C_System_Log_Services_SyncML = $4E0;                                // Enum             Obsolete
+    C_WebDAV_Active = $4DC;                                             // Boolean          WebDAV service active
+    C_System_Log_Services_WebDAV = $4DF;                                // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) WevDAV logging level (1 - debug, 2 - summary, 3 - debug&summary, 4 - extended)
+// SIP service
+    C_System_Services_SIP_Enable = $17F;                                // Bool             Enable SIP service
+    C_System_Services_SIP_Port = $180;                                  // Int              SIP server port
+    C_System_Services_SIP_DebugFile = $189;                             // String           SIP debug log filename
+    C_System_Services_SIP_NoRecordRoute = $181;                         // Bool             Disable SIP Record-Route header value
+    C_System_Services_SIP_LocalNet = $182;                              // String           SIP local net IPs
+    C_System_Services_SIP_RemoteAccessHost = $183;                      // String           SIP remote access host address
+    C_System_Services_SIP_LocalAccessHost = $184;                       // String           SIP local access host address
+    C_System_Services_SIP_OtherProxy = $185;                            // String           SIP proxy server address
+    C_System_Services_SIP_UseOtherProxy = $186;                         // Bool             Enable using of proxy for SIP
+    C_System_Services_SIP_DisableAnonymousAccess = $187;                // Bool             Disable anonymous access for SIP
+    C_System_Services_SIP_DisableRegistrar = $188;                      // Bool             Disable registration of all SIP clients
+    C_System_Services_SIP_DisableSymmetricResponseRouting = $198;       // Bool             Disable via received roting
+    C_System_Services_SIP_Calls = $192;                                 // Bool             Enable SIP calls log
+    C_System_Services_SIP_CallsFile = $193;                             // String           SIP user calls filename
+    C_System_Services_SIP_UserCalls = $1D5;                             // Bool             Enable SIP user calls to file(s)
+    C_System_Services_SIP_ENUM = $1DC;                                  // Bool             Enable Telephone/E164 Number Mapping (ENUM)
+    C_System_Services_SIP_Services = $364;                              // Bool             Deactivated property - out of use
+    C_System_Services_SIP_SDPProxy = $18C;                              // Bool             Enable SDP proxy
+    C_System_Services_SIP_SDPRemoteAccessHost = $18D;                   // String           SIP SDP remote access host
+    C_System_Services_SIP_Mode = $18E;                                  // Int              Service Policy
+    C_System_Services_SIP_RTPProxy = $18F;                              // Bool             Enable RTP NAT Traversal proxy and streaming server
+    C_System_Services_SIP_RTPStart = $190;                              // Int              Local RTP port range from
+    C_System_Services_SIP_RTPMax = $191;                                // Int              Local RTP port range to
+    C_System_Services_SIP_MaxCalls = $194;                              // Int              Max number of simultaneous SIP calls
+    C_System_Services_SIP_DNSEnabled = $195;                            // Bool             Enable extended DNS lookup (NAPTR and SRV)
+    C_System_Services_SIP_AccessGroup = $1A1;                           // String           Policy group
+    C_System_Services_SIP_SSLPort = $1B3;                               // Int              SIP SSL port
+    C_System_Services_SIP_List = $1B4;                                  // String           SIP Firewall list
+    C_System_Services_SIP_Grant = $1B5;                                 // Bool             SIP Firewall access type
+    C_System_Services_SIP_ContactExpires = $1FD;                        // Int              SIP contact expiration (seconds)
+    C_System_Services_SIP_CallerAlias =  $287;                          // String           Call dialer agent alias
+    C_System_Services_SIP_CallerName =  $288;                           // String           Call dialer agent name
+    C_System_Services_SIP_BasicAuth = $438;                             // Bool             Allow basic authentication mechanism for SIP
+    C_System_Services_SIP_LocalHostDomain = $442;                       // String           Localhost name, by default localhost.localhost
+    C_System_Services_SIP_JitterBuffer_DetectSilence = $4C2;            // Bool             Enables silence detection, algorithm can be tuned through C_System_Services_SIP_JitterBuffer_ExpertSettings
+    C_System_Services_SIP_JitterBuffer_NormalizeVolume = $4C3;          // Bool             Enables volume normalizaiton, algorithm can be tuned through C_System_Services_SIP_JitterBuffer_ExpertSettings
+    C_System_Services_SIP_JitterBuffer_ExpertSettings = $4C4;           // String           Special params for volume normalization and silence detection, URL-like string, for experts only
+    C_System_Services_SIP_WebSocketsUseProxyServer = $4F8;              // Bool             Enable Mail4Cisco media proxy mode
+    C_System_Services_SIP_MediaProxyEnabled = $4F9;                     // Bool             Enable proxy processing SRTP/SIP packets (needed for WebRTC)
+    C_System_Services_SIP_MediaProxyDebug = $4FA;                       // Bool             Enable SIP media proxy debugging (sipmp.log)
+    C_System_Services_SIP_MediaProxyTrafficDebug = $4FB;                // Bool             Log encoding and decoding of SRTP packets to SIP media proxy log
+    C_System_Services_SIP_MediaProxySDPCorrectionRequireKnownVideoCodec = $4FD;// Bool      Remove video stream from SDP if no known codec (VP8, VP9, H264)
+    C_System_Services_SIP_MediaProxySDPCorrectionAddMissingResponseStreams = $4FE;  // Bool Add missing streams for SDP response (response with missing video stream from INVITE)
+    C_System_Services_SIP_GetExternalIPFailed = $50F;                   // Bool             When False then external IP is tried to be obtained for SIP_RemoteAccessHost, it causes to try it only once to prevent cycling
+    C_System_Services_SIP_Rules = $79F;                                 // String [D]       Returns SIP rules XML
+    C_System_Services_SIP_Rule_Item_PropertyValue = $7A0;               // String    [W]    Write only variable . set a specific rule property value in the format of urlencoded: <id>,<property>,<value>
+

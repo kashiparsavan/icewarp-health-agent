@@ -1,0 +1,75 @@
+  E_SMARTATTACH_WEBDAV  = -23;    // webdav disabled
+    D_WebDAVSupport = $450;                                             // Bool ddar=r      Domain has WebDAV support [R]
+    D_MeetingSupport = $49C;                                            // Bool ddar=r      Domain has WebMeetings support [R]
+    D_WebDocumentsSupport = $6E7;                                       // Bool ddar=r      Domain has WebDocuments support [R]
+    D_ConferenceWebinarSupport = $876;                                  // Bool ddar=r      Domain has Conference webinar support [R]
+    D_WebDAV = $623;                                                    // Bool             Policy - WebDAV
+    D_WebDocuments = $6E2;                                              // Bool             Domain Access mode for webdocuments
+    D_ConferenceWebinar = $871;                                         // Bool             Domain Access mode for conference webinar
+    D_SmartDiscover_WebDAV_URL = $838;                                      // String ddar=r     Domain SmartDiscover WebDAV URL
+    D_SmartDiscover_Webmail_URL = $839;                                     // String ddar=r     Domain SmartDiscover Webmail URL
+    D_SmartDiscover_WebAdmin_URL = $83A;                                    // String ddar=r     Domain SmartDiscover WebAdmin URL
+    D_SmartDiscover_WebDAV_URL_Real = $84E;                                 // String [R]     Effective SmartDiscover WebDAV URL (resolved via parent chain)
+    D_SmartDiscover_Webmail_URL_Real = $84F;                                // String [R]     Effective SmartDiscover Webmail URL (resolved via parent chain)
+    D_SmartDiscover_WebAdmin_URL_Real = $850;                               // String [R]     Effective SmartDiscover WebAdmin URL (resolved via parent chain)
+    U_WebAdmin = $719;                                                  // Bool ddar=r      Web admin permission
+    U_WebMail = $612;                                                   // Bool             Policy - WebClient
+    U_WebDAV = $227;                                                    // Bool             Policy - WebDav
+    U_WebDAVSupport = $22B;                                             // Bool             Read only variable to check if the user has WebDAV enabled [R]
+    U_MeetingSupport = $49A;                                            // Bool             Read only variable to check if the user has WebMeetings enabled [R]
+    U_WebDocumentsSupport = $6E5;                                       // Bool             Read only variable to check if the user has WebDocuments enabled [R]
+    U_WebMailSupport = $772;                                            // Bool             Read only variable to check if the user has WebMail enabled [R]
+    U_ConferenceWebinarSupport = $862;                                  // Bool             Read only variable to check if the user has Conference webinar enabled [R][D]
+    U_WebDAVEditable = $483;                                            // Bool             Read only variable to check if the user has WebDAV Editable [R]
+    U_MeetingEditable = $49B;                                           // Bool             Read only variable to check if the user has WebMeetings editable [R]
+    U_WebDocumentsEditable = $6E4;                                      // Bool             Read only variable to check if the user has WebDocuments editable [R]
+    U_ConferenceWebinarEditable = $867;                                 // Bool             Read only variable to check if the user has Conference webinar editable [R]
+    U_WebDocuments =     $6E3;                                          // Bool             User access mode for webdocuments
+    U_ConferenceWebinar = $86C;                                         // Bool             User access mode for conference webinar
+    U_ConferenceParam_Encrypted = $76D;                                 // String [D][R]    Conference parameter encrypted, used by TeamChat and WebClient
+    C_WebPath = $200;                                                   // String [R]       Path to HTML folder
+    C_Accounts_Policies_Pass_DisableAccessToAllIfDisabled = $6BE;       // Bool ddar=r      Disable access to all services if password is expired (except WebClient, WebAdmin and icewarpapi)
+    // GROUP_BEGIN Webserver
+    C_System_RemoteConsoleProtocol_Port = $756;                         // Int             0 = RCP administration is available on webserver HTTP/HTTPS ports, otherwise defines port where is RCP available instead of usual webserver ports. This alternate port is SSL only.
+    C_SmartDiscover_WebDAV_URL = $823;                                  // String           SmartDiscover WebDAV URL
+    C_SmartDiscover_Webmail_URL = $824;                                 // String           SmartDiscover Webmail URL
+    C_SmartDiscover_WebAdmin_URL = $825;                                // String           SmartDiscover WebAdmin URL
+    C_System_Log_Services_WebDocuments = $6E9;                           // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) WebDocuments logging level
+    C_System_Tools_Monitor_WebThreadPoolThreshold = $363;               // Int              Alert if Maximal waiting time on web threadpools in last 5 minutes exceeds threshold (s)
+    C_Mail_Control_Active = $357;                                       // Bool             Enable control services (Web, SOCKS, SNMP...)
+    C_Mail_Control_DisableWeb = $518;                                   // Bool             Disable Web server
+// Web Service
+    C_WebService_AppMaxThreads = $166;                                  // Int              Number of web service application threads
+    C_WebService_CustomHttpIncludeText = $4C1;                          // Longstring       Custom text to be filled in the HttpIncludeText (HttpIncludeText will be "Server: + CustomHttpIncludeText + cCRLF + 'Date: %s' + cCRLF")
+    C_WebService_Security_Enable_HSTS = $7C4;                           // Bool             Enable HTTP Strict Transport Security protocol
+    C_WebDocuments_Enabled = $6DE;                                      // Bool             Enables OnlyOffice Online - requires external service to be available and configured via C_OnlyOffice_Online_Connection
+    C_WebDocuments_Connection = $6DF;                                   // String [D]       SSL Connection to external OnlyOffice online service, (e.g. 192.168.6.5 , or 192.168.6.5:9098 , or  https://192.168.6.5/ )
+    C_WebDocuments_Version = $71B;                                      // String [D]       OnlyOffice version (e.g. 4.3.1.4), 0 if error
+    C_WebDocuments_TestConnection = $73D;                               // Bool ddar=r [D]  Test of WebdocumentServer.
+// WebClient
+    C_Webmail_Active = $4E2;                                            // Int              WebClient service active
+    C_Webmail_URL = $28B;                                               // String           WebClient service URL
+    C_Webmail_Licensed = $771;                                          // Bool [R]         WebClient licensing status
+    C_Webmail_TempDeleteOlder = $320;                                   // Int              Days, after which webClient temporary directory is cleaned
+    C_WebAdmin_URL = $35A;                                              // String           WebAdmin URL
+    C_WebMail_Logs = $4C9;                                              // Int              WebClient log level
+    C_WebMail_SessionCookie = $4D0;                                     // String           Webclient(pda,tablet) usage of cookies. If true, stores the session id in browser cookie
+    C_Webmail_HTTPSecureCookie = $7A6;                                  // String           Webclient(pda,tablet) usage of cookies. If true, allows cookies only over secure connection
+    C_Webmail_DBConnection = $77B;                                      // String [D]       Webclient DB PDO connection
+    C_GW_WebDAVURL = $37B;                                              // String           WebDAV HTTP link prefix
+// WebDAV
+    // GROUP_BEGIN WebDAV
+    C_WebDAV_Active = $4DC;                                             // Boolean          WebDAV service active
+    C_WebDAV_ProcessingMode = $278;                                     // Enum values=(0 - All messages, 1 - All except selected, 3 - Group, 5 - Selected domains only, 9 - Selected accounts only) WebDAV processing mode (0 - all messages, 1 - all except selected, 3 - group, 5 - selected domains only, 9 - selected accounts only)
+    C_WebDAV_ProcessingGroup = $279;                                    // String           Policy group
+    C_WebDAV_URL = $28C;                                                // String           WebDAV URL
+    C_System_Log_Services_WebDAV = $4DF;                                // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) WevDAV logging level (1 - debug, 2 - summary, 3 - debug&summary, 4 - extended)
+    // GROUP_BEGIN WebDAV
+    C_WebDAV_UseGALForSearch = $4E4;                                    // Boolean          enable use of GAL for contact suggestion in WebDAV
+    C_System_Services_SIP_WebSocketsUseProxyServer = $4F8;              // Bool             Enable Mail4Cisco media proxy mode
+    C_System_Services_SIP_MediaProxyEnabled = $4F9;                     // Bool             Enable proxy processing SRTP/SIP packets (needed for WebRTC)
+    C_WebDocuments_ProcessingGroup = $6E6;                              // String           Policy group
+    A_WebClientSignature = $774;                                        // String           Get/set default account webclient signature
+    Statistics_WebConn = $57F;                                          // Int              WEB Connections
+    Statistics_WebConnPeak = $582;                                      // Int              WEB Connections peak
+

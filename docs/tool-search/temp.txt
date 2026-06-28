@@ -1,0 +1,13 @@
+    D_DumpSMTPAccountCache = $4C8;                                      // String           Write only property. Seting a value causes SMTP service to write info about actual account cache into file in temp dirctory
+    U_PASS_POLICY_Temporary_Disable =$542;                              // Bool             Temporary disable password policy for the current session
+    S_Unavailable = $323;                                               // Bool             Resource temporarily unavailable
+    C_Accounts_Policies_Login_Attempts = $F4;                           // Int              Number of failed logins
+    C_System_Services_SmallFilesCache_DelayWrite= $470;                 // Bool             If set to true, cache write operations are not directly done on filesystem, but are procesed in background thread - temporarily switched off (i.e. this setting has no effect now)
+    C_System_Storage_Dir_TempPath = $16;                                // String           Path to temp folder
+    C_System_Storage_Dir_SharedTempPath = $7F0;                         // String           Path to temp dir accessible from all services and LB nodes
+    C_Mail_SMTP_General_TempPath = $761;                                // String           Temp path to be used by SMTP. When empty (default), C_System_Storage_Dir_TempPath/SMTP is used.
+    C_Mail_Security_Protection_DNSBL_Temporary_Error = $358;            // Bool             DNSBL returns temporary error
+    C_Mail_Security_Tarpit_Count = $25;                                 // Int              Number of attempts
+    C_Mail_Security_Tarpit_Login = $299;                                // Bool             Block IPs that blocked an account by exceeding number of failed login attempts
+    C_Webmail_TempDeleteOlder = $320;                                   // Int              Days, after which webClient temporary directory is cleaned
+

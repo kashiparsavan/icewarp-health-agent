@@ -1,0 +1,51 @@
+    D_ArchiveSupport = $455;                                            // Bool ddar=r      Domain has Archive support [R]
+    D_BaseAutoArchivePath = $806;                                       // String           Archive base path for domain members
+    D_Archive = $466;                                                   // Bool             Policy - Archive
+    // AutoArchive
+    D_AutoArchiveCustom_Enable = $77D;                                        // Bool ddar=w     Enable Auto archive
+    D_AutoArchiveCustom_DoNotSpam = $77E;                                     // Bool ddar=w     Do not archive spam messages
+    D_AutoArchiveCustom_RSS = $77F;                                           // Bool ddar=w     Enable RSS archive
+    D_AutoArchiveCustom_IMAPArchive = $780;                                   // Bool ddar=w     Enable integration of archive with IMAP
+    D_AutoArchiveCustom_IMAPArchiveName = $781;                               // String ddar=w   Archive IMAP folder name
+    D_AutoArchiveCustom_Outgoing = $782;                                      // Integer ddar=w  (ammAll, ammInbox, ammAllRoot, ammInboxRoot, ammDeleted)
+    D_AutoArchiveCustom_DeleteOlder = $783;                                   // Integer ddar=w  Delete archive older than (Days)
+    D_AutoArchiveCustom_ForwardArchive = $784;                                // String ddar=w   Forward archived messages to
+    U_AutoArchivePath = $805;                                           // String ddar=r     Custom user auto archive path
+    U_Archive = $465;                                                   // Bool             Policy - Archive
+    U_ArchiveSupport = $58C;                                            // Bool             Read only variable to check if the user has Archive enabled [R]
+    U_ArchiveEditable = $484;                                           // Bool             Read only variable to check if the user has Archive Editable [R]
+    U_Fulltext_ReindexAccount = $73A;                                   // String [W]       Writing (mail|archive|gw)/folder_path will reindex given folder in given namespace. Appending /* will reindex also subfolders recursively. Writing anything else will schedule whole account fulltext database reindex from scratch.
+    U_Fulltext_Index_Archive = $749;                                    // String [D][R]    Read only - list of files indexed in archive fulltext database (JSON format)
+    G_Fulltext_ReindexAccount = $73B;                                   // String [W]       Writing (mail|archive|gw)/folder_path will reindex given folder in given namespace. Appending /* will reindex also subfolders recursively. Writing anything else will schedule whole account fulltext database reindex from scratch.
+    G_Fulltext_Index_Archive = $74D;                                    // String [D][R]    Read only - list of files indexed in archive fulltext database (filename per line)
+    C_System_Services_Fulltext_Archive_Scanning_Enabled = $758;         // Bool [D]         Enable fulltext indexing of archive directory
+    C_System_Logging_General_Archive = $1DD;                            // Bool             Enable deleted logs archiving
+    C_System_Logging_General_ArchiveTo = $1DE;                          // String           Deleted log archive target
+    C_System_Collect_Logs = $804;                                       // Int              Defines time in minutes to collect all logs on maximum loglevel. After time elapses, logs from period are extracted and stored in single archive. Setting to 0 finalizes collection immediately, value higher than remaining time can be used to prolong collection. Negative value can be used to collect existing logs.
+    // Mail archive
+    C_System_Tools_AutoArchive_Enable = $99;                            // Bool             Enable Auto archive
+    C_System_Tools_AutoArchive_Path = $9A;                              // String           Auto archive path
+    C_System_Tools_AutoArchive_DoNotSpam = $224;                        // Bool             Do not archive spam messages
+    C_System_Tools_AutoArchive_DeleteOlder = $BA;                       // Int              Delete archive older than (Days)
+    C_System_Tools_AutoArchive_Outgoing = $143;                         // Int              (ammAll, ammInbox, ammAllRoot, ammInboxRoot, ammDeleted)
+    C_System_Tools_AutoArchive_Backup_Active = $1AE;                    // Bool             Backup archive
+    C_System_Tools_AutoArchive_Backup_DeleteOlder = $1B0;               // Int              Delete old archive backups
+    C_System_Tools_AutoArchive_Backup_File = $1B1;                      // String           Archive backup file
+    C_System_Tools_AutoArchive_Backup_Password = $1D1;                  // String           Password
+    C_System_Tools_AutoArchive_TrailerPath = $309;                      // String           Archive directory trailer path
+    C_System_Tools_AutoArchive_IMAPArchiveName = $30A;                  // String           Archive IMAP folder name
+    C_System_Tools_AutoArchive_IMAPArchive = $30B;                      // Bool             Enable integration of archive with IMAP
+    C_System_Tools_AutoArchive_IMAPArchiveSent = $329;                  // String           Archive Sent IMAP folder name
+    C_System_Tools_AutoArchive_IMAPArchiveInbox = $32A;                 // String           Archive Inbox IMAP folder name
+    C_System_Tools_AutoArchive_UnknownUsers = $33F;                     // Bool             Archive mail for unknown users
+    C_System_Tools_AutoArchive_ForwardArchive = $341;                   // String           Forward archived messages to
+    C_System_Tools_AutoArchive_GroupAccess = $1B6;                      // String           Optional group speciying users with access to archive
+    C_System_Tools_AutoArchive_RSS = $474;                              // Bool             Enable RSS archive
+    C_AS_SpamRefusePath = $03BD;                                        // String           Archive refused messages to account
+    C_AV_Action_GWExtensionsInArchives = $4AF;                          // Bool             Apply extension filters for Groupware in Archives
+    C_AV_Action_FTPExtensionsInArchives = $4B0;                         // Bool             Apply extension filters for FTP in Archives
+    C_AV_Filters_BlockFilesInArchives = $4AE;                           // Bool             Block archives with file with blocked extensions
+    Device_SyncArchiveFolders = $564;                                   // Bool             Sync archive folders
+    Member_Default = $6DD;                                              // Bool             Sync archive folders
+    Member_Digest = $7A9;                                               // Bool             Sync archive folders
+

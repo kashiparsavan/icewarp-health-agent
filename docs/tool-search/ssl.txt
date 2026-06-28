@@ -1,0 +1,41 @@
+    D_SmartDiscover_SMTPType = $82E;                                        // Enum ddar=r values=(0 - Standard, 1 - SSL, 2 - 2nd basic port (no SSL), 3 - 2nd basic port (STARTTLS)) Domain SmartDiscover SMTP type
+    D_SmartDiscover_POP3Type = $830;                                        // Enum ddar=r values=(0 - Standard, 1 - SSL, 2 - STARTTLS) Domain SmartDiscover POP3 type
+    D_SmartDiscover_IMAPType = $832;                                        // Enum ddar=r values=(0 - Standard, 1 - SSL, 2 - STARTTLS) Domain SmartDiscover IMAP type
+    D_SmartDiscover_XMPPType = $834;                                        // Enum ddar=r values=(0 - Standard, 1 - SSL, 2 - STARTTLS) Domain SmartDiscover XMPP type
+    D_SmartDiscover_SIPType = $836;                                         // Bool ddar=r values=(0 - Standard, 1 - SSL) Domain SmartDiscover SIP type
+    RA_TLSSSL = $59B;                                                   // Enum values=(0 - Detect TLS/SSL, 1 - Direct TLS/SSL, 2 - Disable TLS/SSL) TLS/SSL
+    C_CreateDefaultCertificates = $6DC;                                 // String           Creates default SSL certificates (Self signed and Lets Encrypt), value has to be cert's FQDN - for example "domain.com".
+    C_System_Services_SMTP_SSLPort = $3B;                               // Int              SMTP service SSL port
+    C_System_Services_POP3_SSLPort = $1A;                               // Int              POP3 service SSL port
+    C_System_Services_IMAP_SSLPort = $1C;                               // Int              IMAP service SSL port
+    C_System_Services_IM_SSLPort = $E2;                                 // Int              IM service SSL port
+    C_System_Services_Control_SSLPort = $20;                            // Int              Control service SSL port
+    C_System_RemoteConsoleProtocol_Port = $756;                         // Int             0 = RCP administration is available on webserver HTTP/HTTPS ports, otherwise defines port where is RCP available instead of usual webserver ports. This alternate port is SSL only.
+    C_System_Services_FTP_SSLPort = $10D;                               // Int              FTP service SSL port
+    C_System_Services_LDAP_SSLPort = $11;                               // Int              LDAP service SSL port
+    C_System_Services_Minger_SSLPort = $42E;                            // Int              Minger SSL port (TCP)
+    C_System_AutoDiscover_SMTPType = $367;                              // Enum values=(0 - Standard, 1 - SSL, 2 - 2nd basic port (no SSL)), 3 - 2nd basic port (STARTTLS) SmartDiscover SMTP type
+    C_System_AutoDiscover_POP3Type = $369;                              // Enum values=(0 - Standard, 1 - SSL, 2 - STARTTLS) SmartDiscover POP3 type
+    C_System_AutoDiscover_IMAPType = $36B;                              // Enum values=(0 - Standard, 1 - SSL, 2 - STARTTLS) SmartDiscover IMAP type
+    C_System_AutoDiscover_XMPPType = $36D;                              // Enum values=(0 - Standard, 1 - SSL, 2 - STARTTLS) SmartDiscover XMPP type
+    C_System_AutoDiscover_SIPType = $36F;                               // Bool values=(0 - Standard, 1 - SSL) SmartDiscover SIP type
+    C_SmartDiscover_SMTPType = $819;                                    // Enum values=(0 - Standard, 1 - SSL, 2 - 2nd basic port (no SSL), 3 - 2nd basic port (STARTTLS)) SmartDiscover SMTP type
+    C_SmartDiscover_POP3Type = $81B;                                    // Enum values=(0 - Standard, 1 - SSL, 2 - STARTTLS) SmartDiscover POP3 type
+    C_SmartDiscover_IMAPType = $81D;                                    // Enum values=(0 - Standard, 1 - SSL, 2 - STARTTLS) SmartDiscover IMAP type
+    C_SmartDiscover_XMPPType = $81F;                                    // Enum values=(0 - Standard, 1 - SSL, 2 - STARTTLS) SmartDiscover XMPP type
+    C_SmartDiscover_SIPType = $821;                                     // Bool values=(0 - Standard, 1 - SSL) SmartDiscover SIP type
+    C_System_Tools_Migration_SSLMode = $335;                            // Enum values=(0 - Detect TLS/SSL, 1 - Direct TLS/SSL, 2 - Disable TLS/SSL) Migration service
+    C_System_Adv_Ext_DisableSSLTLS = $AF;                               // Bool             Disable SSL/TLS
+    C_System_Adv_Ext_SSLServerMethod = $1F5;                            // Enum values=(0 - Default (currently the same as 6; but will be increased in future according to the actual security trends), 1 - Deprecated (the same as 3), 2 - Deprecated (the same as 3), 3 - Support SSL3 and newer (SSL3;TLS1;TLS1.1;TLS1.2), 4 - Support TLS1 and newer (TLS1;TLS1.1;TLS1.2), 5 - Support TLS1.1 and newer (TLS1.1;TLS1.2), 6 - Support TLS1.2 and newer - same as 5 on Linux RHEL5 and RHEL6), 7 - Same as 6 but TLS1.3 will be disabled (required for client renegotiation for HTTP service and - require client certificate)
+    C_System_Adv_Ext_SSLClientMethod = $1F6;                            // Enum values=(0 - Default (currently the same as 6; but will be increased in future according to the actual security trends), 1 - Deprecated (the same as 3), 2 - Deprecated (the same as 3), 3 - Support SSL3 and newer (SSL3;TLS1;TLS1.1;TLS1.2) (Client will send out TLSv1 client hello messages including extensions and will indicate that it also understands TLSv1.1;TLSv1.2 and permits a fallback to SSLv3), 4 - Support TLS1 and newer (TLS1;TLS1.1.TLS1.2)   (Client will send out TLSv1 client hello messages including extensions and will indicate that it also understands TLSv1.1; TLSv1.2), 5 - Support TLS1.1 and newer (TLS1.1;TLS1.2) (Client will send out TLSv1.1 client hello message including extensions and will indicate that it also understands  TLSv1.2), 6 - Support TLS1.2 and newer (Client will send out TLSv1.2 client hello message) - same as 5), 7 - Same as 6 but TLS1.3 will be disabled
+    C_System_Adv_Ext_SSLCipherList   = $286;                            // String           List of supported ciphers according to (http://www.openssl.org/docs/apps/ciphers.html#)
+    C_System_Adv_Ext_SSLHonorCipherOrder = $4D5;                        // Bool             When choosing a cipher, use the server's preferences instead of the client preferences (SSL_OP_CIPHER_SERVER_PREFERENCE in https://www.openssl.org/docs/ssl/SSL_CTX_set_options.html)
+    C_System_Adv_Ext_SSLSelfKillControlOnDecryptError = $71C;           // Bool             Kill control when SSL decrypt error is reported by client side - thus SSL will be reinitialized (Linux only)
+    C_System_Adv_Ext_UseExtraSSLErrorLogging = $7A3;                    // Bool            Enables extra SSL error logging
+    C_Mail_SMTP_Delivery_UseTLSSSL = $87;                               // Bool             Use TLS/SSL
+    C_AS_BypassLocalIPs = $03A1;                                        // Bool             Whitelist trusted IPs and authenticated sessions
+    C_AS_BypassLocalDomains = $03A5;                                    // Bool             Whitelist local domain senders
+    C_AS_SpamSkipBypassLocalUntrusted = $03AF;                          // Bool             Process local untrusted users
+    C_WebDocuments_Connection = $6DF;                                   // String [D]       SSL Connection to external OnlyOffice online service, (e.g. 192.168.6.5 , or 192.168.6.5:9098 , or  https://192.168.6.5/ )
+    C_System_Services_SIP_SSLPort = $1B3;                               // Int              SIP SSL port
+

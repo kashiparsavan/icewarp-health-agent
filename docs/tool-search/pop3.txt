@@ -1,0 +1,41 @@
+    D_SmartDiscover_POP3 = $82F;                                            // String ddar=r     Domain SmartDiscover POP3 setting
+    D_SmartDiscover_POP3Type = $830;                                        // Enum ddar=r values=(0 - Standard, 1 - SSL, 2 - STARTTLS) Domain SmartDiscover POP3 type
+    D_SmartDiscover_POP3_Real = $845;                                       // String [R]     Effective SmartDiscover POP3 setting (resolved via parent chain)
+    D_SmartDiscover_POP3Type_Real = $846;                                   // Enum [R]       Effective SmartDiscover POP3 type (resolved via parent chain)
+    U_AccountType = $646;                                               // Enum values=(0 - POP3, 1 - IMAP & POP3, 2 - IMAP) Mailbox protocol type
+    U_POP3IMAP = $46;                                                   // Bool             Policy - IMAP & POP3
+    U_POP3_IgnoreOlderThan = $7BC;                                      // Integer          All messages older than value(unix timestamp) will be excluded while using mailbox via POP3 protocol
+    RA_IMAP = $59C;                                                     // Bool values=(0 - POP3, 1 - IMAP) Server type
+    // GROUP_BEGIN SMTP/POP3/IMAP
+    // GROUP_BEGIN SMTP/POP3/IMAP
+    // POP3 service
+    C_System_Services_POP3_Port = $19;                                  // Int              POP3 service port
+    C_System_Services_POP3_SSLPort = $1A;                               // Int              POP3 service SSL port
+    C_System_Services_POP3_Traffic = $104;                              // Bool             Enable SMTP traffic logs
+    C_System_Services_POP3_IPList = $5F;                                // String           List of Denied/Granted IPs
+    C_System_Services_POP3_Accessmode = $5E;                            // Bool values=(0 - Deny, 1 - Grant) Service Policy
+    C_System_Services_POP3_Startup = $252;                              // Int              (ssAutomatic, ssManual)
+    C_System_Services_POP3_ThreadCache = $52;                           // Int              POP3 service thread cache
+    C_System_Services_POP3_MaxInConn = $113;                            // Int              Max number of Incoming connections
+    C_System_Services_POP3_MaxOutConn = $4F;                            // Int              Max number of Outgoing connections
+    C_System_Services_POP3_Bandwidth = $120;                            // Int              Max transfer bandwidth (kb/s)
+    C_System_Services_POP3_MonitorData = $151;                          // Int              Monitor increased traffic
+    C_System_Services_POP3_MonitorConn = $152;                          // Int              Monitor number of increased connections
+    C_System_POP3_Locking = $31E;                                       // Bool             POP3 does not allow multiple login of one account
+    // GROUP_BEGIN SMTP/POP3/IMAP
+    C_System_AutoDiscover_POP3 = $368;                                  // String           SmartDiscover POP3 setting
+    C_System_AutoDiscover_POP3Type = $369;                              // Enum values=(0 - Standard, 1 - SSL, 2 - STARTTLS) SmartDiscover POP3 type
+    C_SmartDiscover_POP3 = $81A;                                        // String           SmartDiscover POP3 setting
+    C_SmartDiscover_POP3Type = $81B;                                    // Enum values=(0 - Standard, 1 - SSL, 2 - STARTTLS) SmartDiscover POP3 type
+    C_System_Log_Services_POP3 = $69;                                   // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) POP3 service logging level
+    C_System_Tools_WatchDog_POP3 = $2F;                                 // Bool             Enable Watchdog for POP3
+    C_System_Tools_Migration_MigrateService = $175;                     // Enum values=(0 - Both, 1 - POP3, 2 - IMAP) Migration service
+    C_Mail_POP_Active = $355;                                           // Bool             Enable POP3
+    C_Mail_Security_Tarpit_EnableIMAPPOP3 =$330;                        // Bool             Enable POP3/IMAP tarpitting
+    ST_SMTP_POP3Client = $7D2;                                          // Int              Current POP3 client connection count
+    ST_SMTP_POP3ClientPeak = $7D3;                                      // Int              Peak PO3 client connection count
+    ST_SMTP_POP3ClientIn = $7D4;                                        // Int              kB
+    ST_SMTP_POP3ClientOut = $7D5;                                       // Int              kB
+    ST_SMTP_POP3MessageIn = $7D6;                                       // Int              Number of received messages
+    ST_SMTP_POP3MessageFailed = $7D7;                                   // Int              Number of failed messages
+

@@ -1,0 +1,36 @@
+    D_Type = $01;                                                       // Enum ddar=r values=(0-Standard domain,1 - ETRN/ATRN queue,2 - Domain Alias,3 - Backup domain,4 - Distributed domain,5 - Service domain) Domain Type
+    D_Backup = $638;                                                    // Longstring       Structure backup [D]
+    U_Backup = $67A;                                                    // Longstring       Structure backup [D][A]
+    U_CustomBackup = $797;                                              // Bool             Custom variable for backup indication
+    RA_Backup = $59A;                                                   // Longstring       Structure backup
+    C_Backup = $1001;                                                   // Longstring [D]   Server settings backup string
+    C_System_Services_SMTP_Rewrite_Backup_Recipients = $461;            // Bool             if set to false, sending to aliases of backup and distributed domains does not rewrite recipients domain with the domain where the alias points to
+    C_System_Services_IMAP_DebugIndexHistory = $80B;                    // Bool             Enable IMAP storage history debug logging, when enabled and file imapindex.savehistory is present in mailbox, imapindex.bin backup will be created before each change
+    // Auto backup
+    C_System_Tools_AutoBackup_Enable = $6F;                             // Bool             Enable Auto backup
+    C_System_Tools_AutoBackup_BackupTo = $140;                          // String           Path to backup file
+    C_System_Tools_AutoBackup_Password = $1D2;                          // String           Password
+    C_System_Tools_AutoBackup_Schedule = $141;                          // Schedule         Auto backup Schedule
+    C_System_Tools_AutoBackup_DeleteAfter = $142;                       // Int              Delete backup file after (Days)
+    C_System_Tools_IncludeMailDir = $FE;                                // Bool             Include mail folder settings to backup
+    C_System_Tools_ExcludeLicense = $CC;                                // Bool             Do not include license to backup file
+    C_System_Tools_Backup_Emails = $1AA;                                // Bool             Backup emails
+    C_System_Tools_Backup_SkipLarger = $1AB;                            // Int              Skip emails larger (MB)
+    C_System_Tools_Backup_SkipOlder = $1AC;                             // Int              Skip emails older (Days)
+    C_System_Tools_Backup_Dirs = $1AD;                                  // String           Additional directories to backup
+    C_System_Tools_Backup_Logs = $1B2;                                  // Bool             Backup logs
+    C_System_Tools_Backup_GWAttach = $294;                              // Bool             Backup groupware attachments
+    C_System_Tools_Backup_DB_AccountsEnabled = $301;                    // Bool             Backup account database
+    C_System_Tools_Backup_DB_Accounts = $302;                           // String           Accounts database backup target DSN
+    C_System_Tools_Backup_DB_ASEnabled = $303;                          // Bool             Backup Anti-Spam database
+    C_System_Tools_Backup_DB_AS = $304;                                 // String           Anti-Spam database backup target DSN
+    C_System_Tools_Backup_DB_GWEnabled = $305;                          // Bool             Backup groupware database
+    C_System_Tools_Backup_DB_GW = $306;                                 // String           Groupware database backup target DSN
+    C_System_Tools_Backup_DB_DirectoryCacheEnabled = $4B3;              // Bool             Backup directory cache database
+    C_System_Tools_Backup_DB_DirectoryCache = $4B4;                     // String           Directory cache database backup target DSN
+    C_System_Tools_AutoArchive_Backup_Active = $1AE;                    // Bool             Backup archive
+    C_System_Tools_AutoArchive_Backup_DeleteOlder = $1B0;               // Int              Delete old archive backups
+    C_System_Tools_AutoArchive_Backup_File = $1B1;                      // String           Archive backup file
+    C_System_Tools_AutoArchive_Backup_Password = $1D1;                  // String           Password
+    S_Backup = $660;                                                    // Longstring       Backup of schedule structure
+

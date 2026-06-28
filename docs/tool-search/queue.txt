@@ -1,0 +1,12 @@
+    D_Type = $01;                                                       // Enum ddar=r values=(0-Standard domain,1 - ETRN/ATRN queue,2 - Domain Alias,3 - Backup domain,4 - Distributed domain,5 - Service domain) Domain Type
+    M_EditSentDate = $350;                                              // Bool             Edit date in message header in moment it goes into outgoing queue
+    C_System_Services_Fulltext_Scanner_Queues = $746;                   // String [D][R]    Read only - get contents of fulltext search scanner service queues
+    C_System_Log_MailQueue = $1E4;                                      // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Mail processing logging level
+    C_Mail_SMTP_Delivery_UseIncomingQueue = $1C9;                       // Bool             Use incoming mail queue
+    C_Mail_SMTP_Delivery_IncomingQueueSize = $1CA;                      // Int              Size of the queue (# threads)
+    C_Mail_SMTP_Delivery_IncomingQueuePersonalized = $6D2;              // Bool             If enabled, separate message will be put into the incomming queue for each recipient
+    C_Mail_SMTP_Delivery_MDAInternal = $1E6;                            // Bool             Use MDA queue for internal delivery
+    C_Mail_SMTP_Other_NoRetryQueue = $BE;                               // Bool             Do not queue messages
+    C_GW_DocPreview_Queue_Size = $7C9;                                  // Int [R]          Number of waiting documents for preview generation
+    V_SpamQueues = $589;                                                // Bool             Right to manage spam queues - quarantine, whitelist, blacklist
+

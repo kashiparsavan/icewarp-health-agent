@@ -1,0 +1,92 @@
+    D_EASSupport = $451;                                                // Bool ddar=r      Domain has ActiveSync support [R]
+    D_SyncMLSupport = $452;                                             // Bool ddar=r      Obsolete
+    D_SyncML = $62B;                                                    // Bool             Obsolete
+    D_ActiveSync = $626;                                                // Bool             Policy - ActiveSync
+    D_Client_Connector = $31B;                                          // Bool             Policy - Outlook Sync
+    D_ADSyncSSOEnabled = $6D1;                                          // Bool             Read only property. SSO enabled
+    D_SmartDiscover_ActiveSync_URL = $837;                                  // String ddar=r     Domain SmartDiscover ActiveSync URL
+    D_SmartDiscover_ActiveSync_URL_Real = $84D;                             // String [R]     Effective SmartDiscover ActiveSync URL (resolved via parent chain)
+    D_LDAP_Active = $87A;                                                   // Bool [D]       LDAP sync active
+    D_LDAP_XML = $87B;                                                      // String [D]     LDAP sync XML data
+    U_ExcludeFromDirectoryServiceSync = $53C;                           // Bool             User will not be synchronized with Directory Service
+    U_SyncML = $602;                                                    // Bool             Obsolete
+    U_ActiveSync = $226;                                                // Bool             Policy - ActiveSync
+    U_SyncMLSupport = $223;                                             // Bool             Obsolete
+    U_ActiveSyncSupport = $22A;                                         // Bool             Read only variable to check if the user has ActiveSync enabled [R]
+    U_SyncMLEditable = $47F;                                            // Bool             Obsolete
+    U_ActiveSyncEditable = $482;                                        // Bool             Read only variable to check if the user has ActiveSync Editable [R]
+    U_ProcessWCIndexing = $7AF;                                         // Bool [W]         Write only, start WC indexing for the user's sync folders
+    U_ActivationKey_OutConn = $316;                                     // Longstring [D]   Outlook Sync activation key
+    U_Client_Connector = $318;                                          // Bool             Policy - Outlook Sync
+    M_LDAPSync = $590;                                                  // Bool             LDAP sync
+    C_Accounts_Global_ActiveDirectorySyncInterval = $1D7;               // Int              Minutes interval
+    C_System_ADSyncLogType = $419;                                      // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary) AD synchronization logging level
+    C_System_ADSyncIgnoreSearchError = $433;                            // Bool             If AD synchronization search returns error, but still some data were returned, Synchronization performs no delete operation by default. Setting this to true enables delete operations for this cases.
+    C_System_ADSyncMaxDeleteThreshold = $434;                           // Int              If set to value greater than 0, AD sync performs no delete if it should delete more accounts than this value
+    C_System_ADSyncDisableVCardSync = $485;                             // Bool             If set, AD sync will not fill in user's Card with information from AD server
+    C_System_ADSyncPageSize = $6D3;                                     // Int              Size of page when getting data from server (-1 = no paging, 0 = default (500), other = page size)
+    C_Accounts_Global_LDAP_Synchronize = $D6;                           // Bool             LDAP user synchronization enable
+    C_Accounts_Global_LDAP_Host = $1CD;                                 // String           LDAP user synchronization host
+    C_Accounts_Global_LDAP_Base = $1CE;                                 // String           LDAP user synchronization base DN
+    C_Accounts_Global_LDAP_User = $1CF;                                 // String           LDAP user synchronization user DN
+    C_Accounts_Global_LDAP_Pass = $1D0;                                 // String           LDAP user synchronization password
+    C_Accounts_Global_LDAP_SyncPrimaryAliasOnly = $4DB;                 // Bool             If enabled, only primary alias is synced to the LDAP server
+    C_Accounts_Policies_Auth_DefaultExternalSyncLibrary = $6A7;         // String         If synchronization library is not set on specific place ,this library will be used instead
+    C_System_Services_IMAP_ForceFullsync =$426;                         // Bool             Obsolete, only for backward compatibility
+    C_System_Services_IMAP_FullSyncInterval =$48C;                      // Int              (hours) Determines how often is IMAP going to sync contents of imapindex.dat with filesystem. When the time for next sync is evalueted, random number between 0 and this value is added to this value. The full item sync should be needed only if some files were added directly on filesystem.
+    C_SmartDiscover_ActiveSync_URL = $822;                              // String           SmartDiscover ActiveSync URL
+    C_System_Log_Services_SyncPush = $213;                              // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Push service logging level
+    C_System_Log_Services_CISCO  = $4E7;                                // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Cisco Sync logging level
+    // Atomic clock sync
+    C_System_Tools_AtomicClockSync_Enable = $96;                        // Bool             Enable Atomic clock sync
+    C_System_Adv_Plan_GAL_Resync = $6A9;                                // Bool             Write Only - Sends signal to GW servicess to process the GAL synchronization
+// ActiveSync
+        // GROUP_BEGIN Mobile Sync
+    C_ActiveSync_Active = $4DE;                                         // Boolean          ActiveSync active
+    C_ActiveSync_URL = $28A;                                            // String           ActiveSync service URL
+    C_ActiveSync_ProcessingMode = $311;                                 // Enum values=(0 - All messages, 1 - All except selected, 3 - Group, 5 - Selected domains only, 9 - Selected accounts only) ActiveSync processing mode
+    C_ActiveSync_ProcessingGroup = $312;                                // String           Policy group
+    C_ActiveSync_DBConnection = $4A9;                                   // String           ActiveSync DB DSN
+    C_ActiveSync_DBUser = $4AA;                                         // String           ActiveSync DB user
+    C_ActiveSync_DBPass = $4AB;                                         // String           ActiveSync DB password
+    C_System_Log_Services_ActiveSync = $4E1;                            // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) ActiveSync logging level
+    C_Install_URL = $31D;                                               // String           IceWarp binaries (OSync, IWDC) download URL
+    C_PushServer_Active = $1FB;                                         // Bool             Enable ActiveSync push
+    C_PushServer_Port = $1FC;                                           // Int              ActiveSync push port
+    C_PushServer_Heartbeat = $291;                                      // Int              ActiveSync connection check interval in minutes (60..120)
+// SyncML
+    // GROUP_BEGIN Mobile Sync
+    C_SyncML_Active = $4DD;                                             // Boolean          Obsolete
+    C_SyncML_URL = $242;                                                // String           Obsolete
+    C_SyncML_ProcessingMode = $1ED;                                     // Enum             Obsolete
+    C_SyncML_ProcessingGroup = $1EF;                                    // String           Obsolete
+    C_System_Log_Services_SyncML = $4E0;                                // Enum             Obsolete
+    // GROUP_BEGIN Mobile Sync
+    C_SyncML_AuthType = $4E3;                                           // Int              Obsolete
+    A_OutlookPolicies = $53D;                                           // String           Account outlook sync policies
+    Device_LastSync = $555;                                             // String           Last time of synchronization
+    //Device properties - Synchronization
+    Device_SyncMail = $557;                                             // Bool             Synchronize mail folders
+    Device_SyncMailPast = $558;                                         // Int              Synchronize mail folders past days
+    Device_SyncMailPastMax = $568;                                      // Int     [R]      Limit of Device_SyncMailPast
+    Device_SyncCal = $559;                                              // Bool             Synchronize event folders
+    Device_SyncCalPast = $55A;                                          // Int              Synchronize event folders past days
+    Device_SyncCalPastMax = $569;                                       // Int   [R]        Limit of Device_SyncMailPast
+    Device_SyncTaskAs = $55B;                                           // Bool             Synchronize task folders
+    Device_SyncTaskAsValue = $55C;                                      // Int              Synchronize task folders as
+    Device_SyncTaskAsType = $55D;                                       // Int              Merge task folders value
+    Device_SyncNotesAs = $55E;                                          // Bool             Synchronize note folders
+    Device_SyncNotesAsValue = $55F;                                     // Int              Synchronize note folders as
+    Device_SyncNotesAsType = $560;                                      // Int              Merge note folders
+    Device_SyncGroupwareFolders = $561;                                 // Int              GroupWare folders synchronization value
+    Device_SyncMailFolders = $562;                                      // Int              Mail folders synchronization value
+    Device_SyncSharedFolders = $563;                                    // Bool             Sync shared folders
+    Device_SyncArchiveFolders = $564;                                   // Bool             Sync archive folders
+    Device_SyncPublicFolders = $565;                                    // Bool             Sync public folders
+    Member_Name = $7A7;                                                 // Bool             Sync shared folders
+    Member_Default = $6DD;                                              // Bool             Sync archive folders
+    Member_Recieve = $7A8;                                              // Bool             Sync public folders
+    Member_Digest = $7A9;                                               // Bool             Sync archive folders
+    Member_Post = $6E0;                                                 // Bool             Sync public folders
+    Member_Params = $6E1;                                               // Bool             Sync public folders
+

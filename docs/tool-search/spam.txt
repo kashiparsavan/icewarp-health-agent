@@ -1,0 +1,192 @@
+    D_SpamDeleteOlder = $701;                                           // Int ddar=w       Delete spam messages from spam folders when older than (Days). Use zero for use global Option
+    D_AntiSpam = $65B;                                                  // Bool             Policy - Antispam
+    D_AS_OverrideThresholds = $531;                                     // Bool             Override global Anti-Spam thresholds with domain settings
+    D_AS_SpamAssassinDelete = $532;                                     // Bool             Enable refusing message when score exceeds D_AS_DeleteScore
+    D_AS_SpamAssassinScore = $534;                                      // Bool             Enable marking message as spam when score exceeds D_AS_SpamAssassinScoreValue
+    D_AS_SpamAssassinScoreValue =$535;                                  // String           Spam threshold score
+    D_AS_SpamAssassinQuarantine = $537;                                 // Bool             Enable quarantining message when score exceeds D_AS_QuarantineScore
+    D_AutoArchiveCustom_DoNotSpam = $77E;                                     // Bool ddar=w     Do not archive spam messages
+    D_SmartDiscover_SpamChallenge_URL = $85D;                               // String            SmartDiscover Spam reports URL
+    D_SmartDiscover_SpamChallenge_URL_Real = $85E;                          // String [R]     SmartDiscover Spam reports URL
+    U_DoNotForwardSpam = $521;                                          // Bool             Do not forward messages marked as spam
+    U_SpamDeleteOlder = $700;                                           // Int              Delete spam messages from spam folders when older than (Days). Use zero for use domain oprtion.
+    U_SpamFolder = $614;                                                // Enum values=(0 - Default, 1 - Do not use Spam folder, 2 - Use Spam folder) Spam folder mode
+    U_QuarantineReports = $43;                                          // Enum values=(0 - Disabled, 1 - Default, 2 - New Items only, 3 - All items) Spam reports mode
+    U_SpamAdmin = $615;                                                 // Bool             Spam administrator
+    U_AS = $611;                                                        // Bool             Policy - AntiSpam
+    U_ASSupport = $5B0;                                                 // Bool             Read only variable to check if the user has antispam enabled [R][D]
+    U_SpamFolderSupport = $E3;                                          // Bool             Read only variable to check if the user has spam folder enabled [R]
+    U_ASEditable = $47A;                                                // Bool             Read only variable to check if the user has antispam Editable [R]
+    U_ENABLEOUTGOINGBULKMESSAGES = $6F9;                                // Bool             This User cannot be blocked by Antispam Live for spaming
+    G_SpamFolder = $49E;                                                // Enum values=(0 - Default, 1 - Do not use Spam folder, 2 - Use Spam folder) Spam folder mode
+    G_AS = $4B6;                                                        // Bool             Access mode for Anti-Spam
+    M_AS = $4B8;                                                        // Bool             Access mode for Anti-Spam
+    M_CR = $4B9;                                                        // Bool             Access mode for Anti-Spam
+    // GROUP_BEGIN Antispam
+    C_SpamPath = $202;                                                  // String [R]       Path to spam folder
+    C_System_Services_IMAP_CopyBWFunction =$45B;                        // Bool             Copy/Move from Inbox to Spam indexes e-mail to Blacklist, Copy/Move from Spam to Inbox indexes e-mail to WhiteList
+    C_SmartDiscover_SpamChallenge_URL = $85C;                           // String           SmartDiscover Spam reports URL
+    C_System_Tools_Backup_DB_ASEnabled = $303;                          // Bool             Backup Anti-Spam database
+    C_System_Tools_Backup_DB_AS = $304;                                 // String           Anti-Spam database backup target DSN
+    C_System_Tools_AutoArchive_DoNotSpam = $224;                        // Bool             Do not archive spam messages
+    C_Mail_Security_DMARC_SPFSoftFail = $7E8;                           // Enum             values=(0 - dnsaNone, 1 - dnsaMarkAsSpam, 2 - dnsaRefuse)
+    C_Mail_Security_DMARC_SPFHardFail = $7E9;                           // Enum             values=(0 - dnsaNone, 1 - dnsaMarkAsSpam, 2 - dnsaRefuse)
+    C_Mail_Security_DMARC_DKIMInvalid = $7EB;                           // Enum             values=(0 - dnsaNone, 1 - dnsaMarkAsSpam, 2 - dnsaRefuse)
+    C_Mail_Security_DMARC_DMARCQuarantine = $7ED;                       // Enum             values=(0 - dsaMarkAsSpam, 1 - dsaRefuse)
+    C_Mail_Security_DMARC_DMARCReject = $7EE;                           // Enum             values=(0 - dsaMarkAsSpam, 1 - dsaRefuse)
+    C_Mail_Security_Tarpit_Spam = $1C0;                                 // Bool             Tarpit spam
+    C_Mail_Security_Tarpit_SpamScore = $1C1;                            // Int              Tarpit spam score (* 100)
+    // GROUP_BEGIN Antispam
+    C_AS_General_Enable = $FD;                                          // Bool             Enable Spam Engine
+    C_AS_General_AntispamMode = $280;                                   // Enum values=(0 - System, 1 - User, 2 - Domain) Antispam mode
+    C_AS_Challenge_ConnectionString = $230;                             // String           Anti spam DB ConnectionString
+    C_AS_Challenge_ConnectionString_Real = $78B;                        // String [R]       Anti spam DB ConnectionString (calculated value based on env variable IW_DB_AS and API settings)
+    C_AS_PDO = $7FE;                                                    // String           Anti spam PDO connection string
+    C_AS_SpamFolderName = $313;                                         // String           IMAP spam folder name when AS is integrated with IMAP
+    C_AS_UseSpamFolder = $314;                                          // Bool             Enable AS integration with IMAP
+    C_AS_SkipCharsets = $038D;                                          // String           List of charsets with greater spam probability (related to C_AS_CharsetSpam)
+    C_AS_SkipCharsetsSpam = $038E;                                      // Bool             Obsolete
+    C_AS_SpamAssassinThreadRegEx = $0392;                               // Bool             Enable processing of SA rules in parallel
+    C_AS_IgnoreFilesLarger = $0398;                                     // Int              Maximum message size to process with antispam, in kB
+    C_AS_SpamMaxTextBytes = $0399;                                      // Int              Limit the text of message body to given number of bytes
+    C_AS_DeleteSpamMailOlder = $039B;                                   // Int              Delete spam messages from spam folders when older than (Days)
+    C_AS_CharsetSpam = $039D;                                           // Bool             Score messages with forbidden charsets (specified with C_AS_SkipCharsets)
+    C_AS_AddSpamSubject = $039F;                                        // Bool             Add C_AS_AddSpamSubjectString text to Subject of spam message
+    C_AS_AddSpamSubjectString = $03A0;                                  // String           Text to be added to subject of spam messages
+    C_AS_BlockKeywords = $03A3;                                         // String           Semicolon separated list of keywords marking message as spam
+    C_AS_SpamOutgoingRules = $03A6;                                     // Enum             values=(0 - Process with full Antispam, 1 - Process with Antispam Live only, 2 - Same as 0, 3 - Do not process with antispam) Outgoing messages antispam mode
+    C_AS_SpamUseCustomDB = $03A7;                                       // Bool             Use custom bayesian database
+    C_AS_SpamUseIMAP = $03A8;                                           // Bool             Integrate spam folder with IMAP folder
+    C_AS_SpamBypassNonUsers = $03AC;                                    // Bool             Process unknown accounts
+    C_AS_SpamBypassGroupware = $03AD;                                   // Bool             Whitelist senders in groupware address books
+    C_AS_SpamBypassIMRoster = $03AE;                                    // Bool             Whitelist senders in instant messaging server rosters
+    C_AS_SpamSkipBypassLocalUntrusted = $03AF;                          // Bool             Process local untrusted users
+    C_AS_SpamMaxThreads = $03B0;                                        // Int              Size of thread pool for antispam processing
+    C_AS_SpamAddOutgoing = $03B1;                                       // Bool             Auto whitelist trusted email recipients to database
+    C_AS_SpamApplyUnknown = $03B2;                                      // Bool             Obsolete
+    C_AS_SpamHTMLExternalURL = $03B3;                                   // Bool             Score HTML messages with external images
+    C_AS_SpamHTMLNoText = $03B4;                                        // Bool             Score HTML messages with no text content
+    C_AS_SpamHTMLScript = $03B5;                                        // Bool             Score HTML messages containing scripts
+    C_AS_SpamHTMLEqual = $03B6;                                         // Bool             Score HTML messages with different html and text parts
+    C_AS_SpamBlankMail = $03B8;                                         // Bool             Score messages containing blank subject and blank body
+    C_AS_SpamHTMLOtherFilters = $03B9;                                  // String           Broken - set this to anything to add C_AS_SpamHTMLOtherFiltersScore to each message
+    C_AS_SpamReceivedHeader = $03BA;                                    // Bool             Score messages delivered with no intermediary server
+    C_AS_SpamReset = $03BB;                                             // Int              Obsolete
+    C_AS_SpamRefuse = $03BC;                                            // Enum values=(0 - Delete, 1 - Reject) Refused messages action mode
+    C_AS_SpamRefusePath = $03BD;                                        // String           Archive refused messages to account
+    C_AS_SpamUpdateTime = $03BE;                                        // Int ;            Number of seconds from midnight
+    C_AS_SpamUpdate = $03BF;                                            // Bool             Enable regular spam updates
+    C_AS_SpamUpdateDays = $03C0;                                        // Int              Bitmask when spam db will be updated
+    C_AS_SpamUpdateURL = $03C1;                                         // String           Spam db update service URL
+    C_AS_SpamUpdateProxy = $03C2;                                       // String           Proxy settings needd for contacting C_AS_SpamUpdateURL
+    C_AS_SpamChallenge = $03C3;                                         // Bool             Quarantine active
+    C_AS_SpamChallengeOldCompatibility = $03C4;                         // Bool             Obsolete
+    C_AS_SpamChallengeMarked = $03C5;                                   // Bool             Obsolete
+    C_AS_SpamChallengeUnMarked = $03C6;                                 // Bool             Obsolete
+    C_AS_SpamChallengeManual = $03C7;                                   // Bool             Send challenge response email for messages to be quarantined
+    C_AS_SpamChallengeExpires = $03C8;                                  // Int              Remove pending messages after (Days)
+    C_AS_SpamChallengePerc = $03C9;                                     // Bool             Obsolete
+    C_AS_SpamChallengeSpam = $03CA;                                     // Int              Obsolete
+    C_AS_SpamChallengeGenuine = $03CB;                                  // Int              Obsolete
+    C_AS_SpamChallengeSAPerc = $03CC;                                   // Bool             Obsolete
+    C_AS_SpamChallengeSAGenuine = $03CD;                                // String           Obsolete
+    C_AS_SpamChallengeSASpam = $03CE;                                   // String           Obsolete
+    C_AS_SpamChallengeURL = $03CF;                                      // String           Spam reports URL
+    C_AS_SpamChallengeMailSender = $03D0;                               // String           Obsolete - spam report uses C_AS_SpamReportMailSender
+    C_AS_SpamChallengeMailFrom = $03D1;                                 // String           Obsolete - spam report uses C_AS_SpamReportMailFrom
+    C_AS_SpamReportMailSender = $03D2;                                  // String           Spam reports mail sender
+    C_AS_SpamReportMailFrom = $03D3;                                    // String           Spam reports mail from header
+    C_AS_SpamReportsDebugLevel = $03D4;                                 // Int              OBSOLETE
+    C_AS_SpamReportsLogLevel = $03D5;                                   // Enum values=(0 - None, 2 - Summary, 3 - Debug, 4 - Extended) Spam reports log level
+    C_AS_SpamReportsSkin = $6C6;                                        // String           Spam reports skin
+    C_AS_SpamChallengeSendOnce = $03D6;                                 // Bool             Send report only once
+    C_AS_SpamChallengeFont = $03D7;                                     // String           Font used when generating challenge
+    C_AS_SpamChallengeFontSize = $03D8;                                 // Int              Font size used when generatin challenge
+    C_AS_SpamChallengeLocalDomains = $03D9;                             // Enum values=(0 - Do not quarantine / whitelist / blacklist local users, 1 - Quarantine / whitelist / blacklist all local users, 2 - Quarantine / whitelist / blacklist local users from other domains) Quarantine mode for local domains
+    C_AS_SpamChallengeMoveToSpam = $03DA;                               // Bool             Deliver quarantine expired messages to mailbox as spam
+    C_AS_SpamAssassinEnabled = $03DB;                                   // Bool             Enable SpamAssassin
+    C_AS_SpamAssassinMarked = $03DC;                                    // Bool             Force running SA even if score is below C_AS_SpamAssassinScoreValue threshold
+    C_AS_SpamAssassinPath = $03DD;                                      // String           Path to spam assassin rules, if not set, default spam/rules is used
+    C_AS_SpamAssassinReporting = $03DE;                                 // Bool             Enable spam assassin reporting functions
+    C_AS_SpamAssassinNoCustom = $03DF;                                  // Bool             Disable loading rules from custom subdorectory
+    C_AS_SpamAssassinMaxScore = $03E0;                                  // Int              Maximum SA score in promiles, 1000 by definition
+    C_AS_SpamAssassinRulesStats = $03E1;                                // String           Daily SpamAssassin statistics log file
+    C_AS_CommTouch = $03E2;                                             // Bool             Enable Anti-Spam live
+    C_AS_Live_Enable = $7B3;                                            // Bool             Enable Anti-Spam live (alias of old C_AS_Commtouch)
+    C_AS_CommTouchServer = $03E3;                                       // String           Server for inbound Anti-Spam live evaluation
+    C_AS_CommTouchServerOutbound = $773;                                // String           Server for outbound Anti-Spam live evaluation
+    C_AS_CommTouchHighScore = $03E4;                                    // String           Anti-Spam live score for bulk and highly suspected virus messages
+    C_AS_CommTouchHighestScore = $03E5;                                 // String           Anti-Spam live score for confirmed spam and virus messages
+    C_AS_CommTouchLowScore = $03E6;                                     // String           Anti-Spam live score for non spam messages
+    C_AS_CommTouchForce = $03E7;                                        // Bool             Override all limits and always perform Anti-Spam live
+    C_AS_Live_Force = $7B4;                                             // Bool             Override all limits and always perform Anti-Spam live (alias of old C_AS_CommTouchForce)
+    C_AS_Sophos_Log_Reasons = $890;                                     // Bool             Log Sophos engine detected spam reasons
+    C_AS_Sophos_LASED_Log_Level = $891;                                 // Enum value=(-1 - Use sasidaemon.conf, 0 - derive from IW, 1 - Fatal, 2 - Message, 3 - Error, 4 - Important, 5 - Info) Sophos AntiSpam daemon log level to be set after daemon is started
+    C_AS_AntivirusSuspectedAction = $6F1;                               // Int              Zero-Hour Anti-Virus Suspected virus message action (actions: Add spam score = 0, Delete = 1, Reject = 2)
+    C_AS_AntivirusConfirmedAction = $6F2;                               // Int              Zero-Hour Anti-Virus Confirmed virus message action (actions: Add spam score = 0, Delete = 1, Reject = 2)
+    C_AS_OutgoingRefuse = $7B6;                                         // Bool             Enable action on mails, which spam score is greater than C_AS_OutgoingRefuseScore
+    C_AS_OutgoingRefuseScore = $7B7;                                    // String           Spam score which triggers C_AS_OutgoingRefuseAction
+    C_AS_OutgoingRefuseAction = $7B8;                                   // Enum value=(0 - Delete, 1 - Reject) Action to do on outgoing spam (when C_AS_OutgoingRefuse is enabled)
+    C_AS_OutgoingBlockUser = $7B9;                                      // Bool             Block sender when outgoing mail spam score is greater than C_AS_OutgoingBlockUserScore
+    C_AS_SpamAssassinScore = $03E8;                                     // Bool             Allow classifying messages as spam when score is over C_AS_SpamAssassinScoreValue
+    C_AS_SpamAssassinScoreValue = $03E9;                                // String           Score threshold for classifying message as spam
+    C_AS_SpamAssassinQuarantine = $03EA;                                // Bool             Allow quarantining messages when score is over C_AS_QuarantineScore
+    C_AS_SpamAssassinDelete = $03EC;                                    // Bool             Allow deleting messages when score is over C_AS_DeleteScore
+    C_AS_SpamGLActive = $03EE;                                          // Bool             Enable greylisting
+    C_AS_SpamGLAdaptive = $45C;                                         // Bool             Turns on special adaptive mode for greylisting.  Sender is greylisted after fist message classified as spam is received from him
+    C_AS_BypassDistributedDomain = $460;                                // Bool             If enabled, Anti-Spam is skipped for non local recipients in distrubuted domain
+    C_AS_SpamGLAllow = $03EF;                                           // Int              Allow new session authorization after how many seconds
+    C_AS_SpamGLPending = $03F0;                                         // Int              Expire pending sessions after how many hours
+    C_AS_SpamGLAuthorized = $03F1;                                      // Int              Delete authorized sessions after how many days
+    C_AS_SpamGLResponse = $03F2;                                        // String           Custom SMTP response when greylisting
+    C_AS_SpamGLDisconnect = $03F3;                                      // Bool             Disconnect client when greylisting
+    C_AS_SpamGLMode = $03F4;                                            // Enum values=(0 - IP, 1 - Sender, 2 - Sender + IP, 3 - IP + HELO/EHLO) Greylisting mode
+    C_AS_SpamGLOwnerMode = $03F5;                                       // Enum values=(0 - Email, 1 - Domain) Greylisting owner mode
+    C_AS_CharsetSpamScore = $03F6;                                      // String           Score for messages with charset listed in c_as_skipcharsets
+    C_AS_SpamHTMLExternalURLScore = $03F8;                              // String           Score for messages with external URLs (images)
+    C_AS_SpamHTMLNoTextScore = $03F9;                                   // String           Score for messages with no text content
+    C_AS_SpamHTMLScriptScore = $03FA;                                   // String           Score for messages containing scripts
+    C_AS_SpamHTMLEqualScore = $03FB;                                    // String           Score for messages with different html and text part
+    C_AS_SpamHTMLOtherFiltersScore = $03FD;                             // String           Broken - score for messages filtered by HTMLOtherFilters
+    C_AS_SpamBlankMailScore = $03FE;                                    // String           Score for messages with blank subject and body
+    C_AS_SpamReceivedHeaderScore = $03FF;                               // String           Score for messages delivered with no intermediary server
+    C_AS_SpamHashActive = $0400;                                        // Bool             Enable spam hsah evaluation
+    C_AS_SpamHashThreshold = $0401;                                     // Int              Count of messages with same hash per C_AS_SpamHashThresholdExpire minutes causing message to be calssified as spam
+    C_AS_SpamHashThresholdExpire = $0402;                               // Int              Hash expiration time in minutes
+    C_AS_SpamHashExpire = $0403;                                        // Int              Hash expiration time in minutes - whole file
+    C_AS_SpamHashScore = $0404;                                         // String           Score to add when spamhash triggers
+    C_AS_SpamHashMode = $0405;                                          // Enum values=(0 - subject + from, 1 - subject + from + body, 2 - body) Hash calclulation mode
+    C_AS_SpamNoSenderDomain = $0406;                                    // Bool             Enable scoring of messages where originator's domain does not exist
+    C_AS_SpamNoSenderDomainScore = $0407;                               // String           Score for messages where originator's domain does not exist
+    C_AS_SpamHELOIP = $0408;                                            // Bool             Enable scoring of messages where HELO host does not resolve to remote IP
+    C_AS_SpamHELOIPScore = $0409;                                       // String           Score messages where HELO host does not resolve to remote IP
+    C_AS_SpamRemoteSMTP = $040A;                                        // Bool             Enable scoring of messages where SMTP callback verification fails
+    C_AS_SpamRemoteSMTPScore = $040B;                                   // String           Score for messages where SMTP callback verification fails
+    C_AS_SpamRemoteSMTPConnectTimeout = $040C;                          // Int              SMTP verification connection timeout
+    C_AS_SpamBList = $040D;                                             // Bool             Enable blacklist
+    C_AS_SpamWList = $040E;                                             // Bool             Enable whitelist
+    C_AS_SpamBDelete = $040F;                                           // Bool             Obsolete, only for backward compatibility, use C_AS_BlacklistAction instead
+    C_AS_BlacklistAction = $469;                                        // Int              // 0 = Mark As Spam, 1= Delete, 2= Reject
+    C_AS_SpamQReports = $0410;                                          // Bool             Enable quarantine reports by default
+    C_AS_SpamFReports = $0411;                                          // Bool             Enable spam folder reports by default
+    C_AS_SpamReportsEnabled =$4D1;                                      // Bool             Global switch for disabling spam reports processing
+    C_AS_SpamQReportsMode = $0412;                                      // Enum values=(0 - new items, 1 - all items) Spam reports mode
+    C_AS_SpamLang = $0413;                                              // String           Spam reports language
+    C_AS_SpamReportsDateFormat = $0415;                                 // String           Spam reports date format ( PHP date format )
+    C_AS_SpamReportsTimeFormat = $0416;                                 // String           Spam reports time format ( PHP time format )
+    C_AS_Mailinglist_Antispam_Disable = $0478;                          // Bool             Disable processing mailing list spam folders
+    C_AS_SpamReportsDBConn = $4A5;                                      // String           PDO-like connection string for spam reports database, if empty, default sqlite database will be used
+    C_AS_SpamReportsDBUser = $4A6;                                      // String           Username for non default Spam Reports database
+    C_AS_SpamReportsDBPass = $4A7;                                      // String           Password for non default Spam Reports database
+    C_AS_Live_Cyren = $7B1;                                             // Bool [R]         Anti-spam live engine Cyren is in use
+    C_AS_Live_Bitdefender = $7B2;                                       // Bool [R]         Anti-spam live engine Bitdefender is in use
+    C_AS_Live_Sophos = $811;                                            // Bool [R]         Anti-spam live engine Sophos is in use
+    ST_SMTP_FailedRBL = $653;                                           // Int              Number of messages marked as spam by RBL
+    ST_SMTP_FailedSpam = $64E;                                          // Int              Number of spam messages
+    ST_SMTP_FailedSpamQuarantine = $641;                                // Int              Number of quarantined messages
+    ST_SMTP_FailedSpamRefused = $63F;                                   // Int              Number of spam refused messages
+    ST_SMTP_FailedSA = $63E;                                            // Int              Number of SpamAssassin spam messages
+    ST_SMTP_FailedCTBulk = $63C;                                        // Int              Number of Anti-Spam Live bulk messages
+    ST_SMTP_FailedCTSpam = $63A;                                        // Int              Number of Anti-Spam Live spam messages
+    V_SpamQueues = $589;                                                // Bool             Right to manage spam queues - quarantine, whitelist, blacklist
+

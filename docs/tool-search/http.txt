@@ -1,0 +1,17 @@
+    C_System_Services_Fulltext_Scanner_URL = $733;                      // String [D]       Set fulltext search scanner service URL, possible values - http(s)://server:port/
+    C_System_Services_Fulltext_Database_URL = $720;                     // String [D]       Set fulltext search database service URL, possible values - http(s)://server:port/
+    C_System_Services_Fulltext_DocConv_URL = $752;                      // String [D]       Set documents conversion service URL, possible values - http(s)://server:port/
+    C_System_RemoteConsoleProtocol_Port = $756;                         // Int             0 = RCP administration is available on webserver HTTP/HTTPS ports, otherwise defines port where is RCP available instead of usual webserver ports. This alternate port is SSL only.
+    C_System_Conn_Proxy = $338;                                         // String           Proxy for downloading files via HTTP
+    C_System_Adv_Ext_SSLServerMethod = $1F5;                            // Enum values=(0 - Default (currently the same as 6; but will be increased in future according to the actual security trends), 1 - Deprecated (the same as 3), 2 - Deprecated (the same as 3), 3 - Support SSL3 and newer (SSL3;TLS1;TLS1.1;TLS1.2), 4 - Support TLS1 and newer (TLS1;TLS1.1;TLS1.2), 5 - Support TLS1.1 and newer (TLS1.1;TLS1.2), 6 - Support TLS1.2 and newer - same as 5 on Linux RHEL5 and RHEL6), 7 - Same as 6 but TLS1.3 will be disabled (required for client renegotiation for HTTP service and - require client certificate)
+    C_System_Adv_Ext_SSLCipherList   = $286;                            // String           List of supported ciphers according to (http://www.openssl.org/docs/apps/ciphers.html#)
+    C_System_Adv_Ext_SSLHonorCipherOrder = $4D5;                        // Bool             When choosing a cipher, use the server's preferences instead of the client preferences (SSL_OP_CIPHER_SERVER_PREFERENCE in https://www.openssl.org/docs/ssl/SSL_CTX_set_options.html)
+    C_System_Adv_Protocols_HTTPTimeout = $31F;                          // Int              HTTP timeout
+    C_AV_IWA_TransferMode = $7C0;                                       // Enum values=(0 - Network - Send scanned file in request, 1 - Callback - Send HTTP link to scanned file, 2 - Path - Send file path to scanned file) IWA scanned file transfer mode
+    C_WebService_CustomHttpIncludeText = $4C1;                          // Longstring       Custom text to be filled in the HttpIncludeText (HttpIncludeText will be "Server: + CustomHttpIncludeText + cCRLF + 'Date: %s' + cCRLF")
+    C_WebService_Security_Enable_HSTS = $7C4;                           // Bool             Enable HTTP Strict Transport Security protocol
+    C_WebDocuments_Connection = $6DF;                                   // String [D]       SSL Connection to external OnlyOffice online service, (e.g. 192.168.6.5 , or 192.168.6.5:9098 , or  https://192.168.6.5/ )
+    C_Webmail_HTTPSecureCookie = $7A6;                                  // String           Webclient(pda,tablet) usage of cookies. If true, allows cookies only over secure connection
+    C_GW_WebDAVURL = $37B;                                              // String           WebDAV HTTP link prefix
+    C_GW_FreeBusyURL = $37C;                                            // String           Free/Busy HTTP link used in vCard
+

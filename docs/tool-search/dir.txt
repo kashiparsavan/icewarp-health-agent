@@ -1,0 +1,50 @@
+// These variables can be used either with the tool.exe command line tool or directly       //
+    D_BaseMailboxPath = $459;                                           // String           Full path to root of the domain storage, read only, equals to C_System_Storage_Dir_MailPath/Domain name
+    D_DumpSMTPAccountCache = $4C8;                                      // String           Write only property. Seting a value causes SMTP service to write info about actual account cache into file in temp dirctory
+    D_DirectoryCache_RefreshNow = $4DA;                                 // Bool             Write only variable , if anything is written there, refresh of the directorycache of this domain is scheduled
+    U_AuthMode   = $64A;                                                // Enum values=(0 - Standard, 1 - NT domain, 2 - Active Directory) Authentication mode
+    U_ExcludeFromGAL = $4BF;                                            // Bool             Do not put this user into GAL, unless he is direct member of the group (i.e. his membership is not based on membership in another group )
+    U_ExcludeFromSharedRoster = $4C0;                                   // Bool             Do not put this user into shared IM roster, unless he is directly specified (i.e. his membership is not based on membership in another group )
+    U_ExcludeFromDirectoryServiceSync = $53C;                           // Bool             User will not be synchronized with Directory Service
+    U_DirectoryCache_RefreshNow = $4D8;                                 // Bool             Write only variable , if anything is written there, refresh of the directorycache  of this account is scheduled
+    G_DirectoryCache_RefreshNow = $4D9;                                 // Bool             Write only variable , if anything is written there, refresh of the directorycache  of this account is scheduled
+    RA_TLSSSL = $59B;                                                   // Enum values=(0 - Detect TLS/SSL, 1 - Direct TLS/SSL, 2 - Disable TLS/SSL) TLS/SSL
+    T_CatalogDir = $5B9;                                                // Bool             Dir right
+    C_Accounts_Global_Accounts_DirectoryCacheWaveSleep = $425;          // Int              number of miliseconds to wait after wave processes WaveSafecount items, default = 0, which means automated sophisticated choice
+    C_Accounts_Global_Accounts_DirectoryCacheWaveSafeCount = $427;      // Int              number of items to process before waiting, default = 0, which means automated sophisticated choice
+    C_Accounts_Global_Accounts_DirectoryCacheConnectionString = $458;   // String           Connection string to directory cache database
+    C_Accounts_Global_Accounts_DirectoryCacheConnectionString_Real = $78A; // String [R]    Connection string to directory cache database (calculated value based on env variable IW_DB_DIRCACHE and API settings)
+    C_Accounts_Global_Accounts_DirCache_PDO = $7FB;                     // String           Directory cache PDO connection string
+    C_Accounts_Global_Accounts_DirectoryCacheSchedule = $498;           // Schedule         Schedule data for directorycache
+    C_Accounts_Global_Accounts_DirectoryCacheExclusiveLocking = $49D;   // Bool             If set to true, the only one quaery against the directory cache is done at a time  (changing requires restart of all services)
+    C_Accounts_Global_Accounts_DirectoryCache_RefreshNow = $4D7;        // Bool             Write only variable , if anything is written there, full refresh of the directorycache is scheduled
+    C_Accounts_Global_Accounts_DirectoryCache_WaveStopped = $4F6;       // Bool             If set to true, wave mode processing is interupted and no new wave is started unless this variable is set to false again
+    C_System_Server_DirectoryCacheDontUseTransactions = $517;           // Bool             Disable transaction usage in directorycache processing
+    C_System_Log_Services_DirectoryCache = $492;                        // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Directory Cache logging level
+    C_Accounts_Global_ActiveDirectorySyncInterval = $1D7;               // Int              Minutes interval
+    C_System_Services_Fulltext_Mail_Scanning_Enabled = $757;            // Bool [D]         Enable fulltext indexing of mail directory
+    C_System_Services_Fulltext_Archive_Scanning_Enabled = $758;         // Bool [D]         Enable fulltext indexing of archive directory
+    C_System_Services_IMAP_FullSyncInterval =$48C;                      // Int              (hours) Determines how often is IMAP going to sync contents of imapindex.dat with filesystem. When the time for next sync is evalueted, random number between 0 and this value is added to this value. The full item sync should be needed only if some files were added directly on filesystem.
+    C_System_Services_SmallFilesCache_DelayWrite= $470;                 // Bool             If set to true, cache write operations are not directly done on filesystem, but are procesed in background thread - temporarily switched off (i.e. this setting has no effect now)
+    C_System_Services_IMAP_LockType = $88B;                             // Enum values=(0 - Directory, 1 - RedLock) Lock used for locking mailboxes among services and load balanced nodes
+    C_System_Services_IMAP_MemoryEfficientIndex = $858;                 // Bool             Enable IMAP memory efficient mode, when enabled, imap storage uses direct access to small files cache
+    C_System_Tools_IncludeMailDir = $FE;                                // Bool             Include mail folder settings to backup
+    C_System_Tools_Backup_Dirs = $1AD;                                  // String           Additional directories to backup
+    C_System_Tools_Backup_DB_DirectoryCacheEnabled = $4B3;              // Bool             Backup directory cache database
+    C_System_Tools_Backup_DB_DirectoryCache = $4B4;                     // String           Directory cache database backup target DSN
+    C_System_Tools_AutoArchive_TrailerPath = $309;                      // String           Archive directory trailer path
+    C_System_Tools_Migration_SSLMode = $335;                            // Enum values=(0 - Detect TLS/SSL, 1 - Direct TLS/SSL, 2 - Disable TLS/SSL) Migration service
+    // Directories
+    C_System_Storage_Dir_MailPath = $17;                                // String           Path to mail folder
+    C_System_Storage_Dir_TempPath = $16;                                // String           Path to temp folder
+    C_System_Storage_Dir_SharedTempPath = $7F0;                         // String           Path to temp dir accessible from all services and LB nodes
+    C_System_Storage_Dir_LogPath = $18;                                 // String           Path to log folder
+    C_System_Storage_Dir_Shutdown_Timeout = $760;                       // Int              Timeout in seconds to check accessibility of provisioned.dat file in storage path. If check fails, all services are shut down. Set value to 0 to disable.
+        // Default charset for direct mysql client library - older icewarps (version 5 and older) used to be set to latin1 for Mysql connection. On IceWarp 10 it uses utf8 by default. If your DB is in latin 1, in a fresh install you need to set this to latin1 or convert your DB to utf8
+    C_Mail_SMTP_General_TempPath = $761;                                // String           Temp path to be used by SMTP. When empty (default), C_System_Storage_Dir_TempPath/SMTP is used.
+    C_Mail_SMTP_Delivery_MXReconnectFailure = $C7;                      // Bool             Deliver message via relay server when direct delivery fails
+    C_Webmail_TempDeleteOlder = $320;                                   // Int              Days, after which webClient temporary directory is cleaned
+    C_GW_Attachments = $374;                                            // String           Root directory for attachments (relative or absolute)
+    C_System_DirectoryIteratorThreshold = $740;                         // Int [D]          Directory cache iterator threshold - this number specifies the number of files in single batch without waiting (wait will be performed each time server iterates this number of files)
+    C_System_DirectoryIteratorWait = $741;                              // Int [D]          Directory cache iterator wait - this number specifies how long will server wait after processing C_System_DirectoryIteratorThreshold files count
+

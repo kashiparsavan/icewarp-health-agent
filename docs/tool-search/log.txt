@@ -1,0 +1,143 @@
+  E_LOGIN_BLOCKED = -$0B; // Login blocked
+    D_DisableLogin = $65E;                                              // Bool ddar=r      Disable login to this domain
+    D_DKIM_Active = $709;                                               // Bool ddar=w [D]   DomainKeys technology for sending messages from the domain you are defining.
+    U_Type = $69E;                                                      // Enum values=(0 - User, 1 - Mailing list, 2 - Executable, 3 - Notification, 4 - Static Route, 5 - Catalog, 6 - List server, 7 - Group, 8 - Resource) Account type [A]
+    U_Login =$430;                                                      // String           Read only - string which should be used for logging into API, respects c_accounts_policies_login_loginsettings
+    U_AccountDisabled = $65C;                                           // Enum values=(0 - Enabled, 1 - Disabled (Login), 2 - Disabled (Login; Receive), 3 - Disabled (Tarpitting), 4 - Domain disabled (this value can not be set; it can be only returned in certain situations) Account state
+    U_SIP_ONLINE = $45D;                                                // Bool             User is logged into local VOIP service , read only
+    U_SIP_AVAILABLE = $45E;                                             // Bool             User is logged into local VOIP service and is not calling now , read only
+    U_Blocked = $4C7;                                                   // Bool             User account blocked due to Login policy. Write 0 here to unblock.
+    RA_APOP = $59F;                                                     // Bool             Login using APOP
+    // Catalog Accounts
+    // Catalog
+    // GROUP_BEGIN Catalog
+    T_CatalogPass = $5C1;                                               // String           Password
+    T_CatalogSubject = $D1;                                             // Bool             Commands in subject
+    T_CatalogFile = $5B7;                                               // String           Catalog file
+    T_CatalogGet = $5C0;                                                // Bool             Get right
+    T_CatalogDir = $5B9;                                                // Bool             Dir right
+    T_CatalogSendTo = $5B6;                                             // Bool             SendTo right
+    T_CatalogSender = $5B8;                                             // Enum values=(0 - Empty, 1 - Sender, 2 - Owner) Originator
+    // GROUP_BEGIN Logging
+    C_System_Log_Services_DirectoryCache = $492;                        // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Directory Cache logging level
+    C_System_Log_IncludeSubjectInSMTPLog = $7DE;                        // Bool             Enable Subject logging in the SMTP logs
+    C_Accounts_Global_Accounts_MaintenanceLog = $1BD;                   // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Maintenance logging level
+           C_Accounts_Global_Accounts_AuthLog = $4C6;                   // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Auth logging level
+    C_Accounts_Global_Domains_UserAccountDisabledReceive = $4AD;        // Bool             False for Disabled(Login) or True for Disabled(Login, Reeceive)
+    C_System_ADSyncLogType = $419;                                      // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary) AD synchronization logging level
+    C_System_KerberosLogType = $42A;                                    // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary) Kerberos Authentication logging level
+    // Login Policy
+    C_Accounts_Policies_Login_Enable = $F3;                             // Bool             Enable Login policy
+    C_Accounts_Policies_Login_Attempts = $F4;                           // Int              Number of failed logins
+    C_Accounts_Policies_Login_BlockPeriod = $F5;                        // Int              Block user login for (Min)
+    C_Accounts_Policies_Login_LoginSettings = $73;                      // Bool values=(0 - login with username, 1 - login with full email address) Login settings mode
+    C_Accounts_Policies_Login_Block = $1F4;                             // Enum values=(0 - Do not block but delay authentication, 1 - Block account for specified time,  2 - Block account for specified time (strict)) Login policy mode
+    C_Accounts_Policies_Login_ConvertChars = $79;                       // Bool             Convert chars %/ to @ in username
+    C_Accounts_Policies_Login_IPRestriction = $134;                     // Bool             Enables account IP restriction
+    C_Accounts_Policies_Login_DisableDomainIPLogin = $1F8;              // Bool             Disable logging with domain IP, domain name has to be used
+    C_Accounts_Policies_Login_Bypass_2f = $7E1;                         // Bool             If set, for hosts defined in config/twofactorbypass.dat will not be required 2F authentication
+    C_Accounts_Policies_SuperUser = $1EA;                               // Bool             Enable super user login
+    C_Accounts_Policies_Login_AuthWISIDDisable = $215;                  // Bool             Obsolete
+    C_Accounts_Cluster_AllowSlaveLogin = $6AF;                          // Bool         If enabled, users can login into domain cluster also with their true email (from slave domain)
+    C_System_Services_SMTP_Traffic = $103;                              // Bool             Enable SMTP traffic logs
+    C_System_Services_POP3_Traffic = $104;                              // Bool             Enable SMTP traffic logs
+    C_System_POP3_Locking = $31E;                                       // Bool             POP3 does not allow multiple login of one account
+    C_System_Services_IMAP_Traffic = $105;                              // Bool             Enable IMAP traffic logs
+    C_System_Services_Fulltext_DoNotIndexDisabledAccounts = $738;       // Bool             Do not index accounts which are disabled for login
+    C_System_Services_Fulltext_Logging = $727;                          // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) [D] Fulltext search services communication logging level
+    C_System_Services_SmallFilesCache_Debug_Logging = $714;             // Int              Set SFC logging scope mask (0 - None, 0x1 - classic verbose logs, 0x2 - exclusive access feature logs, 0x4 - not cached files logs)
+    C_System_Services_IMAP_RedLock_LockExpiration_Sec = $889;           // Int              Expiration time of lock in seconds - when the log is not refreshed in time, becomes unlocked.
+    C_System_Services_IMAP_DebugIndexHistory = $80B;                    // Bool             Enable IMAP storage history debug logging, when enabled and file imapindex.savehistory is present in mailbox, imapindex.bin backup will be created before each change
+    C_System_Services_IM_Traffic = $106;                                // Bool             Enable IM traffic logs
+    C_System_Services_GW_Traffic = $107;                                // Bool             Enable GW traffic logs
+    C_System_Services_Control_Traffic = $108;                           // Bool             Enable Control traffic logs
+    C_System_Services_FTP_Traffic = $11A;                               // Bool             Enable FTP traffic logs
+    C_System_Services_Minger_Logging = $348;                            // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Minger log level
+// Logging
+    // GROUP_BEGIN Logging
+    C_System_Logging_General_AppendFiles = $19A;                        // Bool             Append logs to files
+    C_System_Logging_General_DeleteOlder = $34;                         // Int              Delete logs after (Days)
+    C_System_Logging_General_Archive = $1DD;                            // Bool             Enable deleted logs archiving
+    C_System_Logging_General_ArchiveTo = $1DE;                          // String           Deleted log archive target
+    C_System_Logging_General_LogCache = $67;                            // Int              Logging cache size (B)
+    C_System_Logging_General_LogRotation = $12D;                        // Int              Size of the log file to rotate (kB)
+    C_System_Logging_General_SystemLogFunction = $7B;                   // Bool             Send logs to system log function
+    C_System_Logging_Syslog_Active = $19B;                              // Bool             Send logs to server
+    C_System_Logging_Syslog_Server = $19C;                              // String           Syslog server name
+    C_System_Logging_Syslog_Facility = $6EF;                            // Int              Syslog server index of LOCAL facility used for logging, allowed values 0-7
+    C_System_Logging_Syslog_Include_Hostname = $76F;                    // Bool             Include hostname in logging records via syslog
+    C_System_Logging_General_EnableODBCLog = $6C;                       // Bool             Enable DB logging
+    C_System_Logging_General_ODBCLogConn = $6B;                         // String           DB logging connection
+    C_System_Logging_General_ODBCLogConn_Real = $78D;                   // String [R]       DB logging connection (calculated value based on env variable IW_DB_LOGS and API settings)
+    C_System_Logging_General_Logs_PDO = $7FC;                           // String           Logs PDO connection
+    C_System_Logging_General_LogTimeFormat = $1B9;                      // Enum values=(0 - sltfTime, 1 - sltfScientific, 2 - sltfRFC822, 3 - sltfTimeDetailed) Log time format
+    C_System_Logging_General_ExperimentalFastLogging = $46B;            // Bool             Enables experimental file logging mode - everything is sent to control service using pipe connection, from background thread
+    C_System_Logging_General_EnableStackTrace = $476;                   // Bool             Enables more detailed logging of system exceptions, if enabled, whole stacktrace is logged
+    C_System_Logging_Maintenance_Identity = $281;                       // String           Thread variable - will be used in maintenance logs as "WHO"
+    c_system_logging_syslog_format = $786;                              // Enum values=(0 - slfLegacy, 1 - slfExtended) syslog format
+    // GROUP_BEGIN Logging
+    C_System_Log_Services_SMTP = $64;                                   // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) SMTP service logging level
+    C_System_Log_Services_POP3 = $69;                                   // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) POP3 service logging level
+    C_System_Log_Services_IMAP = $10F;                                  // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) IMAP service logging level
+    C_System_Log_Services_IM = $E0;                                     // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) IM service logging level
+    C_System_Log_Services_GW = $B1;                                     // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) GW service logging level
+    C_System_Log_Services_Control = $6E;                                // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Control service logging level
+    C_System_Log_Services_FTP = $10E;                                   // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) FTP service logging level
+    C_System_Log_Services_LDAP = $110;                                  // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) LDAP service logging level
+    C_System_Log_Services_AV = $97;                                     // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) AV logging level
+    C_System_Log_Services_AS = $15F;                                    // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) AS logging level
+    C_System_Log_Services_SIP = $18A;                                   // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) SIP logging level
+    C_System_Log_Services_SMS = $210;                                   // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) SMS service logging level
+    C_System_Log_Services_SyncPush = $213;                              // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Push service logging level
+    C_System_Log_Services_Socks = $310;                                 // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Socks logging level
+    C_System_Log_Services_CISCO  = $4E7;                                // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Cisco Sync logging level
+    C_System_Log_Services_TeamChat = $6C5;                              // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) TeamChat logging level
+    C_System_Log_Services_TeamChat_GWLog = $803;                        // Bool             Enable extra TeamChat logging for the GW protocol
+    C_System_Log_Services_TeamChat_JSON_Format = $80F;                  // Bool             False - None, True - Format
+    C_System_Log_Services_WebDocuments = $6E9;                           // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) WebDocuments logging level
+    C_System_Log_MailQueue = $1E4;                                      // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Mail processing logging level
+    C_System_Log_API = $300;                                            // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) API logging level
+    C_System_Log_DNS = $30C;                                            // Bool             Debug DNS logging - internal usage only
+    C_System_Log_Performance = $34E;                                    // Int              Debug performance - actions exceeding time in seconds
+    C_System_Log_Performance_Level = $423;                              // Int              Debug performance - level of importance  0 - basic, 10 - brutal
+    C_System_Log_Performance_Callstack_Threshold = $742;                // Int              Debug performance - log also callstack when action exceeds this time in seconds
+    C_System_Log_MaxLogSize = $4D6;                                     // Int              Maximum single log size in bytes - 0 means unlimited
+    C_System_Collect_Logs = $804;                                       // Int              Defines time in minutes to collect all logs on maximum loglevel. After time elapses, logs from period are extracted and stored in single archive. Setting to 0 finalizes collection immediately, value higher than remaining time can be used to prolong collection. Negative value can be used to collect existing logs.
+    C_System_SentryErrorReportingSendAll = $7E3;                        // Bool             Online error reporting via Sentry - Report also additional errors/exceptions logged
+    C_System_Tools_Backup_Logs = $1B2;                                  // Bool             Backup logs
+    C_System_Tools_Migration_LogFile = $170;                            // String           Path to log file
+    C_System_Storage_Dir_LogPath = $18;                                 // String           Path to log folder
+    C_System_SQLLogType = $221;                                         // Enum values=(0 - Do not log SQL queries, 1 - Log all SQL Queries, 2 - Log only Failed SQL Queries, 3 - Log SQL connections maintenance) Type of SQL logging
+    C_System_Adv_Ext_UseExtraSSLErrorLogging = $7A3;                    // Bool            Enables extra SSL error logging
+    C_System_Adv_Ext_Pipes_Logging = $7CA;                              // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Interprocess pipes communication logging level
+    C_System_Adv_Protocols_BackLog = $54;                               // Int              Listen back logs
+    C_Mail_Security_Tarpit_Login = $299;                                // Bool             Block IPs that blocked an account by exceeding number of failed login attempts
+    C_Mail_Security_Tarpit_LoginCount = $331;                           // Int              Count for C_Mail_Security_Tarpit_Login
+    C_AS_SpamReportsLogLevel = $03D5;                                   // Enum values=(0 - None, 2 - Summary, 3 - Debug, 4 - Extended) Spam reports log level
+    C_AS_SpamAssassinRulesStats = $03E1;                                // String           Daily SpamAssassin statistics log file
+    C_AS_Sophos_Log_Reasons = $890;                                     // Bool             Log Sophos engine detected spam reasons
+    C_AS_Sophos_LASED_Log_Level = $891;                                 // Enum value=(-1 - Use sasidaemon.conf, 0 - derive from IW, 1 - Fatal, 2 - Message, 3 - Error, 4 - Important, 5 - Info) Sophos AntiSpam daemon log level to be set after daemon is started
+    C_Proxy_Logging = $37E;                                             // Bool             Enable proxy logs
+    C_Proxy_DayLogging = $380;                                          // Bool values=(False - Standard logging, True - Day logging)            Logging type
+    C_Proxy_DeleteLogs = $381;                                          // Int              Delete logs older than day
+    C_Proxy_LoggingS = $382;                                            // String           Logging path
+    C_Proxy_CommonLog = $38B;                                           // Bool values=(False - Standard, True - W3C extended) Log format
+        // GROUP_BEGIN Logging
+    C_System_Log_Services_ActiveSync = $4E1;                            // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) ActiveSync logging level
+    C_System_Log_Services_WCS = $4B2;                                   // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summar, 4 - Extended) WS / WCS logging level
+    C_WebMail_Logs = $4C9;                                              // Int              WebClient log level
+    C_GW_UpgradeStatus = $7D1;                                          // String [R]       Status of GW DB upgrade - first line contains 0 or 1 (1 means running), next lines forms progress log snippet, which was not yet read.
+    // GROUP_BEGIN Logging
+    C_System_Log_Services_Meeting = $490;                               // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Meeting logging level (1 - debug, 2 - summary, 3 - debug&summary, 4 - extended)
+        // GROUP_BEGIN Logging
+    C_System_Log_Services_SyncML = $4E0;                                // Enum             Obsolete
+    // GROUP_BEGIN Logging
+    C_System_Log_Services_WebDAV = $4DF;                                // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) WevDAV logging level (1 - debug, 2 - summary, 3 - debug&summary, 4 - extended)
+    C_System_Services_SIP_DebugFile = $189;                             // String           SIP debug log filename
+    C_System_Services_SIP_Calls = $192;                                 // Bool             Enable SIP calls log
+    C_System_Services_SIP_MediaProxyDebug = $4FA;                       // Bool             Enable SIP media proxy debugging (sipmp.log)
+    C_System_Services_SIP_MediaProxyTrafficDebug = $4FB;                // Bool             Log encoding and decoding of SRTP packets to SIP media proxy log
+    A_LastLoginTime = $52D;                                             // Int              Last login timestamp
+    A_LastLoginIP = $52E;                                               // String           Last login timestamp
+    A_State = $53A;                                                     // Enum values=(0 - Enabled, 1 - Disabled (Login), 2 - Disabled (Login, Receive), 3 - Disabled (Tarpitting)) Account name and surname
+

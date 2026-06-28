@@ -1,0 +1,77 @@
+    D_AutoArchiveCustom_IMAPArchive = $780;                                   // Bool ddar=w     Enable integration of archive with IMAP
+    D_AutoArchiveCustom_IMAPArchiveName = $781;                               // String ddar=w   Archive IMAP folder name
+    D_SmartDiscover_IMAP = $831;                                            // String ddar=r     Domain SmartDiscover IMAP setting
+    D_SmartDiscover_IMAPType = $832;                                        // Enum ddar=r values=(0 - Standard, 1 - SSL, 2 - STARTTLS) Domain SmartDiscover IMAP type
+    D_SmartDiscover_IMAP_Real = $847;                                       // String [R]     Effective SmartDiscover IMAP setting (resolved via parent chain)
+    D_SmartDiscover_IMAPType_Real = $848;                                   // Enum [R]       Effective SmartDiscover IMAP type (resolved via parent chain)
+    U_AccountType = $646;                                               // Enum values=(0 - POP3, 1 - IMAP & POP3, 2 - IMAP) Mailbox protocol type
+    U_POP3IMAP = $46;                                                   // Bool             Policy - IMAP & POP3
+    U_IMAPMailbox = $643;                                               // String           IMAP mailbox settings
+    RA_IMAP = $59C;                                                     // Bool values=(0 - POP3, 1 - IMAP) Server type
+    // GROUP_BEGIN SMTP/POP3/IMAP
+    // GROUP_BEGIN SMTP/POP3/IMAP
+    // IMAP service
+    // GROUP_BEGIN SMTP/POP3/IMAP
+    C_System_Services_IMAP_Port = $1F;                                  // Int              IMAP service port
+    C_System_Services_IMAP_SSLPort = $1C;                               // Int              IMAP service SSL port
+    C_System_Services_IMAP_Traffic = $105;                              // Bool             Enable IMAP traffic logs
+    C_System_Services_IMAP_ThreadCache = $12B;                          // Int              IMAP service thread cache
+    C_System_Services_IMAP_MaxInConn = $114;                            // Int              Max number of Incoming connections
+    C_System_Services_IMAP_MaxOutConn = $12C;                           // Int              Max number of Outgoing connections
+    C_System_Services_IMAP_Bandwidth = $121;                            // Int              Max transfer bandwidth (kB/s)
+    C_System_Services_IMAP_MaxAppendsPerMinute = $814;                  // Int              Number of IMAP APPEND commands performed at full speed, additional commands are delayed, 0 - unlimited
+    C_System_Services_IMAP_IPList = $127;                               // String           List of Denied/Granted IPs
+    C_System_Services_IMAP_Accessmode = $128;                           // Bool             Service Policy
+    C_System_Services_IMAP_MonitorData = $153;                          // Int              Monitor increased traffic
+    C_System_Services_IMAP_MonitorConn = $154;                          // Int              Monitor number of increased connections
+    C_System_Services_IMAP_FileNameFlags = $1C7;                        // Bool             Use IMAP flags encoded in mail filename
+    C_System_Services_IMAP_AllowBinaryAppend = $7C8;                    // Bool             Allow binary zeros in IMAP APPEND
+    C_System_Services_IMAPSearchCache_MaxCount = $721;                  // Int              Number of cached IMAP SEARCH query result strings. 0 - unlimited.
+    C_System_Services_IMAPSearchCache_Expiration = $722;                // Int              Sec, Expiration time of results in cache. 0 - caching disabled
+    C_System_Services_IMAPSearchCache_MaxSize = $723;                   // Int              kB, Maximum size of IMAP SEARCH query cache. 0 - limit does not apply
+    C_System_Services_IMAPSearchCache_Reset = $725;                     // String           Write only. Clean IMAP search cache.
+    C_System_Services_IMAPSearch_PageSize = $726;                       // Int              How many results are processed by IMAP search at once.
+    C_System_Services_IMAPSearch_MaxResults = $730;                     // Int              Maximal number of IMAP search returned results, 0 - unlimited
+    C_System_Services_IMAP_RSSInterval = $340;                          // Int              Integrate IMAP search with indexing service
+    C_System_Services_IMAP_ForceFullsync =$426;                         // Bool             Obsolete, only for backward compatibility
+    C_System_Services_IMAP_CopyBWFunction =$45B;                        // Bool             Copy/Move from Inbox to Spam indexes e-mail to Blacklist, Copy/Move from Spam to Inbox indexes e-mail to WhiteList
+    C_System_Services_IMAP_FullSyncInterval =$48C;                      // Int              (hours) Determines how often is IMAP going to sync contents of imapindex.dat with filesystem. When the time for next sync is evalueted, random number between 0 and this value is added to this value. The full item sync should be needed only if some files were added directly on filesystem.
+    C_System_Services_IMAP_FreeMemoryOnIdle =$4A1;                      // Bool             When IDLE is performed, information about all items are freed from memory and reloaded only after changes are detected or when idle is terminated
+    C_System_Services_SmallFilesCache_Size = $46E;                      // String           Maximal size (in bytes) of cache for small files, (imapindex.dat, flags.dat...), Set 0 to disable, make sure that UDP traffic is enabled between IceWarp nodes on LB scenarios and path.dat is properly configured
+    C_System_Services_SmallFilesCache_MaxFileSize = $46F;               // Int              Maximal size (in bytes) of file, which will be cached in cache for small files, (imapindex.dat, flags.dat...)
+    C_System_Services_IMAP_IndexStorage = $6C7;                         // Enum values=(0 - textual storage(imapindex.dat), 1 - binary mode for all, 2 - binary mode for selected) list of selected accounts must be placed in config/imapbinary.dat
+    C_System_Services_IMAP_LockType = $88B;                             // Enum values=(0 - Directory, 1 - RedLock) Lock used for locking mailboxes among services and load balanced nodes
+    C_System_Services_IMAP_RedLock_Servers = $888;                      // String           Semicolon separated list of redis servers to be used for inter-LB-nodes locking, when empty, filesystem storage flock is used instead
+    C_System_Services_IMAP_RedLock_LockExpiration_Sec = $889;           // Int              Expiration time of lock in seconds - when the log is not refreshed in time, becomes unlocked.
+    C_System_Services_IMAP_RedLock_LockRefreshPeriod_MS = $88A;         // Int              How often the lock is refreshed in milliseconds.
+    C_System_Services_IMAP_DebugIndexHistory = $80B;                    // Bool             Enable IMAP storage history debug logging, when enabled and file imapindex.savehistory is present in mailbox, imapindex.bin backup will be created before each change
+    C_System_Services_IMAP_MemoryEfficientIndex = $858;                 // Bool             Enable IMAP memory efficient mode, when enabled, imap storage uses direct access to small files cache
+    C_System_AutoDiscover_IMAP = $36A;                                  // String           SmartDiscover IMAP setting
+    C_System_AutoDiscover_IMAPType = $36B;                              // Enum values=(0 - Standard, 1 - SSL, 2 - STARTTLS) SmartDiscover IMAP type
+    C_SmartDiscover_IMAP = $81C;                                        // String           SmartDiscover IMAP setting
+    C_SmartDiscover_IMAPType = $81D;                                    // Enum values=(0 - Standard, 1 - SSL, 2 - STARTTLS) SmartDiscover IMAP type
+    C_System_Log_Services_IMAP = $10F;                                  // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) IMAP service logging level
+    C_System_Tools_AutoArchive_IMAPArchiveName = $30A;                  // String           Archive IMAP folder name
+    C_System_Tools_AutoArchive_IMAPArchive = $30B;                      // Bool             Enable integration of archive with IMAP
+    C_System_Tools_AutoArchive_IMAPArchiveSent = $329;                  // String           Archive Sent IMAP folder name
+    C_System_Tools_AutoArchive_IMAPArchiveInbox = $32A;                 // String           Archive Inbox IMAP folder name
+    C_System_Tools_Migration_MigrateService = $175;                     // Enum values=(0 - Both, 1 - POP3, 2 - IMAP) Migration service
+    C_System_Tools_Migration_Impersonification_User = $6D4;             // String           Admin username used for impersonification for IMAP migration (remote server must support it)
+    C_System_Tools_Migration_Impersonification_Password = $6D5;         // String           Admin password used for impersonification for IMAP migration (remote server must support it)
+    C_System_Adv_Protocols_IMAPTimeout = $1F0;                          // Int              IMAP timeout
+    C_Mail_IMAP_Active = $356;                                          // Bool             Enable IMAP
+    C_Mail_IMAP_IDLEDisable = $43D;                                     // Bool             Disable IMAP IDLE
+    C_Mail_Security_Tarpit_EnableIMAPPOP3 =$330;                        // Bool             Enable POP3/IMAP tarpitting
+    C_AS_SpamFolderName = $313;                                         // String           IMAP spam folder name when AS is integrated with IMAP
+    C_AS_UseSpamFolder = $314;                                          // Bool             Enable AS integration with IMAP
+    C_AS_SpamUseIMAP = $03A8;                                           // Bool             Integrate spam folder with IMAP folder
+    C_AV_Action_MailIMAPEnabled = $41C;                                 // Bool             Enables AV for IMAP APPEND
+    ST_SMTP_IMAPClient = $7D8;                                          // Int              Current IMAP client connection count
+    ST_SMTP_IMAPClientPeak = $7D9;                                      // Int              Peak IMAP client connection count
+    ST_SMTP_IMAPClientIn = $7DA;                                        // Int              kB
+    ST_SMTP_IMAPClientOut = $7DB;                                       // Int              kB
+    ST_SMTP_IMAPMessageIn = $7DC;                                       // Int              Number of received messages
+    ST_SMTP_IMAPMessageFailed = $7DD;                                   // Int              Number of failed messages
+    Statistics_IMAPConn = $57E;                                         // Int              IMAP Connections
+    Statistics_IMAPConnPeak = $581;                                     // Int              IMAP Connections peak
+

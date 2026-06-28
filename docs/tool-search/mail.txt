@@ -1,0 +1,288 @@
+  E_INVALID = -$08; // Invalid mailbox / alias characters
+    D_AdminEmail = $05;                                                 // String ddar=w    Administrator's email
+    D_UserMailbox = $66B;                                               // Int ddar=w       User Mailbox size (kB)
+    D_GroupMailbox = $6CE;                                              // Int ddar=w       Group Mailbox size (kB)
+    D_NumberLimit = $62F;                                               // Int ddar=r       Limit of emails sent from domain per day
+    D_BaseMailboxPath = $459;                                           // String           Full path to root of the domain storage, read only, equals to C_System_Storage_Dir_MailPath/Domain name
+    D_MailboxSize = $4D3;                                               // Int ddar=r       Domain mailbox size [R]
+    D_DKIM_Selector = $70A;                                             // String ddar=w [D] DKIM Selector Specifies the domain key used to sign an outgoing email. There can be only one valid selector at a time.
+    D_SmartDiscover_General_HostName = $85A;                                // String            Mailserver hostname
+    D_SmartDiscover_Webmail_URL = $839;                                     // String ddar=r     Domain SmartDiscover Webmail URL
+    D_SmartDiscover_General_HostName_Real = $85B;                           // String [R]     Mailserver hostname
+    D_SmartDiscover_Webmail_URL_Real = $84F;                                // String [R]     Effective SmartDiscover Webmail URL (resolved via parent chain)
+    U_Type = $69E;                                                      // Enum values=(0 - User, 1 - Mailing list, 2 - Executable, 3 - Notification, 4 - Static Route, 5 - Catalog, 6 - List server, 7 - Group, 8 - Resource) Account type [A]
+    U_AliasList = $487;                                                 // String [R]       Read only list of all account e-mails (i.e. uses also knowledge about domain aliases)
+    U_Email = $881;                                                     // String [R][D]    Read only display e-mail of the account
+    U_GW_DailyAgenda = $447;                                            // Bool             Enable daily mail with daily agenda to user [A]
+    U_GW_Reminders = $448;                                              // Bool             Enable email reminders [A]
+    U_GW_TeamChat_DailyNotify = $6FA;                                   // Bool             Daily digest notification email of amount of unread post of all active rooms where unread is.
+    U_EmailAlias = $609;                                                // String           Email alias
+    U_Mailbox = $10;                                                    // String           Username
+    U_AccountType = $646;                                               // Enum values=(0 - POP3, 1 - IMAP & POP3, 2 - IMAP) Mailbox protocol type
+    // Mailbox
+    U_UseRemoteAddress = $625;                                          // Bool values=(0 - Local mailbox, 1 - Remote address) Mailbox local/remote
+    U_MailBoxPath = $633;                                               // String ddar=r    Mailbox path
+    U_FullMailboxPath = $640;                                           // String           Full mailbox path [R]
+    U_MaxBox = $62E;                                                    // Bool             Enable mailbox size limit
+    U_MaxBoxSize = $62C;                                                // Int              Mailbox size limit (kB)
+    U_MailIn = $621;                                                    // String           Copy incoming email address
+    U_MailInUseCF = $307;                                               // Bool             Apply CF on incoming mail being copied
+    U_MailOut = $620;                                                   // String           Copy outgoing email address
+    U_MailOutUseCF = $308;                                              // Bool             Apply CF on outgoing mail being copied
+    U_AlternateEmail = $60B;                                            // String           Alternate email
+    U_NoMailList = $619;                                                // Bool             No mailing lists
+    U_WebMail = $612;                                                   // Bool             Policy - WebClient
+    U_NoRespondFor = $321;                                              // String           List of emails or domains where to not autorespond
+    U_WebMailSupport = $772;                                            // Bool             Read only variable to check if the user has WebMail enabled [R]
+    U_IMAPMailbox = $643;                                               // String           IMAP mailbox settings
+    U_MailboxQuota = $593;                                              // Int [R]          Read only, effective mailbox quota in kB - groupware and email data
+    U_MailboxSize = $592;                                               // Int [R]          Read only, current mailbox size in kB - groupware and email data
+    U_GWMailboxQuota = $6DA;                                            // Int [R]          Read only, effective mailbox quota in kB - groupware data
+    U_GWMailboxSize = $6DB;                                             // Int [R]          Read only, current mailbox size in kB - groupware data
+    U_EmailMailboxQuota = $7C2;                                         // Int [R]          Read only, effective mailbox quota in kB - email data
+    U_EmailMailboxSize = $7C3;                                          // Int [R]          Read only, current mailbox size in kB - email data
+    U_MaxMailSize = $7C1;                                               // Integer          Email size limit - only email data (kB)
+    U_Fulltext_ReindexAccount = $73A;                                   // String [W]       Writing (mail|archive|gw)/folder_path will reindex given folder in given namespace. Appending /* will reindex also subfolders recursively. Writing anything else will schedule whole account fulltext database reindex from scratch.
+    U_Fulltext_Index_Mail = $748;                                       // String [D][R]    Read only - list of files indexed in mail fulltext database (JSON format)
+    U_POP3_IgnoreOlderThan = $7BC;                                      // Integer          All messages older than value(unix timestamp) will be excluded while using mailbox via POP3 protocol
+    G_GroupwareMailDelivery = $596;                                     // Bool             Groupware mail delivery
+    G_MailboxPath = $809;                                               // String ddar=r    Mailbox path
+    G_FullMailboxPath = $80A;                                           // String [R]       Full mailbox path
+    G_GroupwareDL = $4BC;                                               // int              0 - Add group to GAL as Distribution list, 1 - do not add to GAL, 2 - Add to GAL as Simnple Email.
+    G_GroupwareGalDontExpandMailingList = $6AA;                         // Bool             If this option is ON, members of mailing lists will not be considered as members of the group, and their contacts will not be auto-created in GAL, however, if "Create distribution list" option is ON, there will still be distribution lists autocreated in GAL for all mailing lists that are members of the group
+    G_CheckMailbox = $4D2;                                              // Bool             Do not deliver to members with exceeded quotas
+    G_MaxBox = $6CA;                                                    // Bool             Enable mailbox size limit
+    G_MaxBoxSize = $6CC;                                                // Int              Mailbox size limit (kB)
+    G_GWMailBoxQuota = $702;                                            // Int  [R][D]      Read only - Group groupware max size (kB)
+    G_GWMailBoxSize = $703;                                             // Int  [R][D]      Read only - Group groupware actual size (kB)
+    G_Fulltext_ReindexAccount = $73B;                                   // String [W]       Writing (mail|archive|gw)/folder_path will reindex given folder in given namespace. Appending /* will reindex also subfolders recursively. Writing anything else will schedule whole account fulltext database reindex from scratch.
+    G_Fulltext_Index_Mail = $74C;                                       // String [D][R]    Read only - list of files indexed in mail fulltext database (filename per line)
+    // Mailing List Accounts
+    // Mailing list
+    // GROUP_BEGIN Mailinglist
+    M_Created = $885;                                                   // String [R][D]    Day and time when was mailing list created
+    M_DigestConfirmed = $5FE;                                           // Bool             Digest mailing list
+    M_ListSubject = $5AC;                                               // Bool             Process mailing list variables
+    M_Personalized = $5F4;                                              // Bool             Personalized mailing list
+    M_RemoveDead = $5F7;                                                // Bool             Remove dead email addresses
+    M_CheckMailbox = $42F;                                              // Bool             Do not deliver to members with exceeded quotas
+    L_SendAllLists = $5EC;                                              // Enum values=(0 - List file, 1 - All domain mailing lists) Members source
+    // GROUP_BEGIN Mailinglist
+    // GROUP_BEGIN Mailinglist
+    // GROUP_BEGIN Mailinglist
+    M_ListServer = $5FA;                                                // Bool             List server vs mailing list
+    S_Manager = $324;                                                   // String           Manager email
+    RA_Dedupe = $5A2;                                                   // Bool             Dedupe collected emails
+    RA_Routing = $EE;                                                   // Bool             Email address routing
+    RA_MatchEmail = $5A7;                                               // String           If email:
+    C_SuiteType = $15;                                                  // Enum values=(1 - Pro, 2 - Standard, 3 - Lite) Mail server license type [R]
+    C_InstallPath = $10A;                                               // String           Mail server installation path [R]
+    C_License_Modules_Report_Email = $495;                              // String           Generate detailed XML report about "used seats" and send it to this email
+    C_ObtainTrialLicense = $489;                                        // String           Registers trial license, value have to be "Name;Email;Company;Address;ZIP;CountryCode;Phone"
+    C_System_Services_SMTP_SoftQuota=$543;                              // Bool             When enabled,  user can receive messages even if his mailbox is full, but he can not send any message instead
+    C_Accounts_Global_Domains_WarnMailboxUsage = $D3;                   // Int              Warn when mailbox size exceeds (%)
+    C_Accounts_Global_Domains_UserQuotaWrnMsgRepeat = $4AC;             // Int              Repeat period of warning message user mailbox size quota exceeded in hours (0 means no repeat)
+    C_Accounts_Policies_Login_LoginSettings = $73;                      // Bool values=(0 - login with username, 1 - login with full email address) Login settings mode
+    C_Accounts_Policies_Auth_ToMailFrom = $436;                         // Bool             Make authenticated user the actual sender
+    C_Accounts_Cluster_AllowSlaveLogin = $6AF;                          // Bool         If enabled, users can login into domain cluster also with their true email (from slave domain)
+    C_System_Services_IMAP_FileNameFlags = $1C7;                        // Bool             Use IMAP flags encoded in mail filename
+    C_System_Services_Fulltext_Mail_Scanning_Enabled = $757;            // Bool [D]         Enable fulltext indexing of mail directory
+    C_System_Services_IMAP_CopyBWFunction =$45B;                        // Bool             Copy/Move from Inbox to Spam indexes e-mail to Blacklist, Copy/Move from Spam to Inbox indexes e-mail to WhiteList
+    C_System_Services_IMAP_LockType = $88B;                             // Enum values=(0 - Directory, 1 - RedLock) Lock used for locking mailboxes among services and load balanced nodes
+    C_System_Services_IMAP_DebugIndexHistory = $80B;                    // Bool             Enable IMAP storage history debug logging, when enabled and file imapindex.savehistory is present in mailbox, imapindex.bin backup will be created before each change
+    C_System_Storage_Mailbox_Checkavailability = $711;                  // Bool             if turned on and provisioned.dat doesn't exist services are not turned on
+    C_SmartDiscover_General_HostName = $859;                            // String           Mailserver hostname
+    C_SmartDiscover_Webmail_URL = $824;                                 // String           SmartDiscover Webmail URL
+    C_System_Log_MailQueue = $1E4;                                      // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) Mail processing logging level
+    C_System_Tools_IncludeMailDir = $FE;                                // Bool             Include mail folder settings to backup
+    C_System_Tools_Backup_Emails = $1AA;                                // Bool             Backup emails
+    C_System_Tools_Backup_SkipLarger = $1AB;                            // Int              Skip emails larger (MB)
+    C_System_Tools_Backup_SkipOlder = $1AC;                             // Int              Skip emails older (Days)
+    // Mail archive
+    C_System_Tools_AutoArchive_UnknownUsers = $33F;                     // Bool             Archive mail for unknown users
+    C_System_Tools_RemoteServer_Email = $162;                           // String           Report Email address
+    C_System_Tools_Migration_Stat_TotalUsers = $17A;                    // Int              Total number of migrated mailboxes [R]
+    C_System_Tools_Migration_Stat_Users = $177;                         // Int              Number of migrated mailboxes [R]
+    C_System_Tools_Migration_Stat_Last = $17D;                          // Int              Unix time of last migrated mailbox [R]
+    C_System_Storage_Dir_MailPath = $17;                                // String           Path to mail folder
+    C_System_Storage_Mailbox_UseSorting = $12F;                         // Bool             Enables mailbox path alphabetical sorting
+    C_System_Storage_Mailbox_PrefixLen = $130;                          // Int              Number of characters from alias in path prefix
+    C_System_Storage_Mailbox_GroupedPrefix = $337;                      // Int              Number of grouped characters in path prefix
+// Mail service
+    // All mail services
+    // GROUP_BEGIN Mail
+    C_Mail_SMTP_Active = $354;                                          // Bool             Enable SMTP
+    C_Mail_POP_Active = $355;                                           // Bool             Enable POP3
+    C_Mail_IMAP_Active = $356;                                          // Bool             Enable IMAP
+    C_Mail_IMAP_IDLEDisable = $43D;                                     // Bool             Disable IMAP IDLE
+    C_Mail_Control_Active = $357;                                       // Bool             Enable control services (Web, SOCKS, SNMP...)
+    C_Mail_Control_DisableWeb = $518;                                   // Bool             Disable Web server
+    C_Mail_SMTP_General_HostName = $0B;                                 // String           Mailserver hostname
+    C_Mail_SMTP_General_DeliveryMode = $29;                             // Bool values=(0 - Use SMTP relay server, 1 - Use DNS lookup) SMTP service delivery mode
+    C_Mail_SMTP_General_VerifyDANE = $7F5;                              // Bool             Use SMTP DANE
+    C_Mail_SMTP_General_RelayMailServer = $26;                          // String           SMTP relay server
+    C_Mail_SMTP_General_DNSServer = $28;                                // String           DNS servers
+    C_Mail_SMTP_General_ParallelIPConnectionsLimit = $4D4;              // Int              Global limit of maximal allowed parallel connections from one IP
+    C_Mail_SMTP_General_TempPath = $761;                                // String           Temp path to be used by SMTP. When empty (default), C_System_Storage_Dir_TempPath/SMTP is used.
+    C_Mail_SMTP_Delivery_UseTLSSSL = $87;                               // Bool             Use TLS/SSL
+    C_Mail_SMTP_Delivery_RetrySMTP = $89;                               // Bool             Retry with SMTP when ESMTP failed
+    C_Mail_SMTP_Delivery_LimitMsgSize = $56;                            // Bool             Enable Max message size
+    C_Mail_SMTP_Delivery_MaxMsgSize = $57;                              // Int              Max message size (B)
+    C_Mail_SMTP_Delivery_MXReconnectFailure = $C7;                      // Bool             Deliver message via relay server when direct delivery fails
+    C_Mail_SMTP_Delivery_HideIP = $78;                                  // Bool             Hide IP from received header
+    C_Mail_SMTP_Delivery_HideServerVersion = $788;                      // Bool             Hide IceWarp server version from received header
+    C_Mail_SMTP_Delivery_RDNSLookup = $1C2;                             // Bool             Add rDNS result to Received: header for all messages
+    C_Mail_SMTP_Delivery_UndelivAfter = $93;                            // Int              Undeliverable after (Minutes)
+    C_Mail_SMTP_Delivery_UndelivWarning = $92;                          // Int              Undeliverable warning (Minutes)
+    C_Mail_SMTP_Delivery_DaemonAlias = $49;                             // String           Mailer Daemon report alias
+    C_Mail_SMTP_Delivery_DaemonName = $4A;                              // String           Mailer Daemon report name
+    C_Mail_SMTP_Delivery_BadMail = $6A;                                 // String           Bad mail address
+    C_Mail_SMTP_Delivery_DoNoTruncate = $109;                           // Bool             Do not truncate mailer daemon's msgs
+    C_Mail_SMTP_Delivery_InfoToAdmin = $8F;                             // Bool             Send info to admin
+    C_Mail_SMTP_Delivery_UseIncomingQueue = $1C9;                       // Bool             Use incoming mail queue
+    C_Mail_SMTP_Delivery_IncomingQueueSize = $1CA;                      // Int              Size of the queue (# threads)
+    C_Mail_SMTP_Delivery_IncomingQueuePersonalized = $6D2;              // Bool             If enabled, separate message will be put into the incomming queue for each recipient
+    C_Mail_SMTP_Delivery_MDAInternal = $1E6;                            // Bool             Use MDA queue for internal delivery
+    C_Mail_SMTP_Delivery_ReturnPath = $1F7;                             // Bool             Add return-path
+    C_Mail_SMTP_Delivery_MessageSubmission = $32F;                      // Bool             Message submission should be checked as in RFC4409 (first port is MTA and second port is MSA)
+    C_Mail_SMTP_Delivery_EnforceTlsOnSecondarySmtpPort = $520;          // Bool             Server rejects non encrypted connection on submission port
+    C_Mail_SMTP_Delivery_IMIPAutoProcess = $71A;                        // Bool             Server processes IMIP mails automatically
+    C_Mail_SMTP_HeaderFooter_Enable = $3C;                              // Bool             Enable Header/Footer
+    C_Mail_SMTP_Other_Dedupe = $C2;                                     // Bool             Dedupe email messages
+    C_Mail_SMTP_Other_SearchInLocalDomains = $58;                       // Bool             Search for alias in other local domains
+    C_Mail_SMTP_Other_HeaderFunctions = $59;                            // Bool             Activate message header functions
+    C_Mail_SMTP_Other_MaxHopCount = $90;                                // Int              Max SMTP hop count
+    C_Mail_SMTP_Other_MaxRecipients = $39;                              // Int              Max SMTP server recipients
+    C_Mail_SMTP_Other_MaxMAIL = $6C2;                                   // Int              Max allowed RSET count (NOOP is also counted as RSET)
+    C_Mail_SMTP_Other_MaxMTARecipients = $1A5;                          // Int              Max SMTP client recipients
+    C_Mail_SMTP_Other_LocalDelivery = $FC;                              // Bool             Enable remote delivery from local server
+    C_Mail_SMTP_Other_ExternalDelivery = $C6;                           // Bool             Deliver all messages externally, can by bypassed using externalbypass.dat
+    C_Mail_SMTP_Other_NoRetryQueue = $BE;                               // Bool             Do not queue messages
+    C_Mail_SMTP_Other_BounceBackMode = $199;                            // Int              Bounce back mode
+    C_Mail_SMTP_Other_SMTPPipelining = $D4;                             // Bool             Enable SMTP pipelining
+    C_Mail_SMTP_Other_SPFSRS = $13E;                                    // Bool             Enable SRS
+    C_Mail_SMTP_Other_SPFSRSKey = $13F;                                 // String           SRS secret key
+    C_Mail_SMTP_Other_SPFSRSNDRVerify = $257;                           // Bool             Use SRS NDR (Non-Delivery Report) Validation
+    C_Mail_SMTP_Other_FullMailboxPermanentError = $439;                 // Bool             Treat full mailbox error as permanent (522 response)
+    C_Mail_SMTP_Accept_Invalid_Recipients = $441;                       // Bool             If this is enabled and catch all account on primary email is enabled, all invalid recipients are rewritten to catch all account
+    C_Mail_SMTP_Other_MailboxSeparator = $16C;                          // String           Mailbox separator / extension separator (eg: alias:extension@domain)
+    C_Mail_SMTP_Other_IncomingMessageLimits = $285;                     // Bool             Should size of incoming mails also be checked
+    C_Mail_SMTP_Other_Extensions = $43A;                                // String           List of SMTP extensions to alter or disable via "!", separate with semi-colon
+    C_Mail_SMTP_Other_UseReturnPathInNDR = $4B5;                        // Bool             Include Returnpath in NDR (if exists) instead of "From:"
+    C_Mail_SMTP_Other_Disable_DSN = $73C;                               // Bool             Disable DSN
+    C_Mail_Security_Relay_RelayMode = $83;                              // Enum values=(0 - Open relay, 1 - Close relay) Relay mode
+    C_Mail_Security_Relay_IPList = $84;                                 // String           List of relayed IP addresses
+    C_Mail_Security_Relay_POPSMTP = $8D;                                // Bool             Enable POP before SMTP
+    C_Mail_Security_Relay_POPSMTPInt = $8C;                             // Int              POP before SMTP interval (Min)
+    C_Mail_Security_Relay_POPSMTPGlobal = $1D4;                         // Bool             Enable POP before SMTP global mode
+    C_Mail_Security_Relay_RejectLocalUnauth = $B6;                      // Bool             Reject if orig's domain is local&unauth
+    C_Mail_Security_Protection_DNSBL = $3E;                             // Bool             Enable DNSBL
+    C_Mail_Security_Protection_DNSBL_Temporary_Error = $358;            // Bool             DNSBL returns temporary error
+    C_Mail_Security_Protection_CloseDNSBLConn = $BF;                    // Bool             Close connection for DNSBL sessions
+    C_Mail_Security_Protection_RejectrDNS = $30;                        // Bool             Reject if sender's IP has no rDNS
+    C_Mail_Security_Protection_CloseRejectrDNSConn = $4BE;              // Bool             Close connection rejected because sender's IP has no rDNS
+    C_Mail_Security_Protection_RejectMX = $8B;                          // Bool             Reject if orig's domain has no MX rec
+    C_Mail_Security_Protection_CloseRejectMXConn = $4BD;                // Bool             Close connection for sessions rejected due missing MX
+    C_Mail_Security_Protection_SMTPWait = $14C;                         // Int              Wait before processing a new conn
+    C_Mail_Security_Protection_LocalDomain = $91;                       // Bool             Relay only if orig's domain's local
+    C_Mail_Security_Protection_DomainIPShield = $A1;                    // Bool             Use Domain IP shielding
+    C_Mail_Security_Protection_RejectSMTPAuthSender = $1C8;             // Bool             Reject if SMTP AUTH different from sender
+    C_Mail_Security_Protection_HELOEHLO = $36;                          // Bool             Require HELO/EHLO
+    C_Mail_Security_Protection_IgnoreBlankHeloHost = $16B;              // Bool             Ignore Blank Helo Host
+    C_Mail_Security_Protection_EarlyCheck = $6D0;                       // Bool             Do early check against filter and bypass
+    C_Mail_Security_DMARC_UseSPF = $7E7;                                // Bool             Enable SPF
+    C_Mail_Security_DMARC_SPFSoftFail = $7E8;                           // Enum             values=(0 - dnsaNone, 1 - dnsaMarkAsSpam, 2 - dnsaRefuse)
+    C_Mail_Security_DMARC_SPFHardFail = $7E9;                           // Enum             values=(0 - dnsaNone, 1 - dnsaMarkAsSpam, 2 - dnsaRefuse)
+    C_Mail_Security_DMARC_UseDKIM = $7EA;                               // Bool             Enable DKIM
+    C_Mail_Security_DMARC_DKIMInvalid = $7EB;                           // Enum             values=(0 - dnsaNone, 1 - dnsaMarkAsSpam, 2 - dnsaRefuse)
+    C_Mail_Security_DMARC_UseDMARC = $7EC;                              // Bool             Enable DMARC
+    C_Mail_Security_DMARC_DMARCQuarantine = $7ED;                       // Enum             values=(0 - dsaMarkAsSpam, 1 - dsaRefuse)
+    C_Mail_Security_DMARC_DMARCReject = $7EE;                           // Enum             values=(0 - dsaMarkAsSpam, 1 - dsaRefuse)
+    C_Mail_Security_DMARC_DMARCSendReports = $7EF;                      // Bool             Send DMARC reports
+    C_Mail_Security_UseARC = $7F1;                                      // Bool             Use ARC along with DKIM signatures on domains
+    C_Mail_Security_Tarpit_Enable = $88;                                // Bool             Enable tarpitting
+    C_Mail_Security_Tarpit_EnableSMTP = $7AE;                           // Bool             Enable SMTP tarpitting  (synonym for C_Mail_Security_Tarpit_Enable)
+    C_Mail_Security_Tarpit_EnableIMAPPOP3 =$330;                        // Bool             Enable POP3/IMAP tarpitting
+    C_Mail_Security_Tarpit_Recipient = $332;                            // Bool             Tarpit IP that exceeds unknown users delivery count
+    C_Mail_Security_Tarpit_Count = $25;                                 // Int              Number of attempts
+    C_Mail_Security_Tarpit_RecipientCount = $7AC;                       // Int              Synonym for C_Mail_Security_Tarpit_Count
+    C_Mail_Security_Tarpit_Period = $1D;                                // Int              Tarpitting interval
+    C_Mail_Security_Tarpit_RelayTarpit = $B2;                           // Bool             Tarpit relay rejected IPs
+    C_Mail_Security_Tarpit_RelayTarpitCount = $333;                     // Int              Count for C_Mail_Security_Tarpit_RelayTarpit
+    C_Mail_Security_Tarpit_BlockIP = $C1;                               // Bool             Block IPs that establish more than BlockIPValue connections within a minute
+    C_Mail_Security_Tarpit_BlockIPValue = $C0;                          // Int              Number of limited of connections
+    C_Mail_DoNot_Tarpit_IPs = $133;                                     // Bool             Do not tarpit IP addresses
+    C_Mail_Security_Tarpit_CloseConnection = $14D;                      // Bool             Close tarpitted connections
+    C_Mail_Security_Tarpit_CloseAllConnections = $6A5;                  // Bool             Immediately close all other connections from the tarpitted IP (within the same service)
+    C_Mail_Security_Tarpit_CrossSession = $14E;                         // Bool             Cross session processing
+    C_Mail_Security_Tarpit_Msg_Enabled = $1BA;                          // Bool             Tarpit message size
+    C_Mail_Security_Tarpit_Msg_Value = $1BB;                            // Int              Tarpit message size value
+    C_Mail_Security_Tarpit_Spam = $1C0;                                 // Bool             Tarpit spam
+    C_Mail_Security_Tarpit_SpamScore = $1C1;                            // Int              Tarpit spam score (* 100)
+    C_Mail_Security_Tarpit_DNSBL = $1C3;                                // Bool             Tarpit DNSBL
+    C_Mail_Security_Tarpit_RSET = $1C5;                                 // Bool             Tarpit RSET
+    C_Mail_Security_Tarpit_RSETCount = $1C6;                            // Int              Tarpit RSET count
+    C_Mail_Security_Tarpit_Login = $299;                                // Bool             Block IPs that blocked an account by exceeding number of failed login attempts
+    C_Mail_Security_Tarpit_LoginCount = $331;                           // Int              Count for C_Mail_Security_Tarpit_Login
+    C_Mail_Security_Protocols_DenyESMTP = $2A;                          // Bool             Deny ESMTP protocol
+    C_Mail_Security_Protocols_AllowSMTPAuth = $76;                      // Bool             Allow SMTP Auth
+    C_Mail_Security_Protocols_DenyVRFY = $2B;                           // Bool             Deny VRFY command
+    C_Mail_Security_Protocols_DenyEXPN = $2C;                           // Bool             Deny EXPN command
+    C_Mail_Security_Protocols_DenyTelnet = $2D;                         // Bool             Deny Telnet access
+    C_Mail_Filter_Content_Enable = $77;                                 // Bool             Enable Content filters
+    C_Mail_Filter_BW_Enable = $8E;                                      // Bool             Enable Rules
+    C_Mail_Filter_RulesContentXML = $1E5;                               // Longstring [D]   Global rules file content in content filter format
+    C_Mail_Filter_RulesSieve = $88F;                                    // Longstring [D]   Global rules Sieve filter
+    C_Mail_Filter_MaxThreads = $13A;                                    // Int              Number of filter threads
+    C_Mail_ETRN_Active = $245;                                          // Bool             Enable ETRN download
+    C_Mail_ETRN_Schedule = $17E;                                        // Schedule         ETRN Schedule
+    C_AS_Live_IgnoreFilesLarger = $468;                                 // Int              Greater mails will not be checked by AS Live  (value in KB)
+    C_AS_DeleteSpamMailOlder = $039B;                                   // Int              Delete spam messages from spam folders when older than (Days)
+    C_AS_SpamAddOutgoing = $03B1;                                       // Bool             Auto whitelist trusted email recipients to database
+    C_AS_SpamBlankMail = $03B8;                                         // Bool             Score messages containing blank subject and blank body
+    C_AS_SpamChallengeManual = $03C7;                                   // Bool             Send challenge response email for messages to be quarantined
+    C_AS_SpamChallengeMailSender = $03D0;                               // String           Obsolete - spam report uses C_AS_SpamReportMailSender
+    C_AS_SpamChallengeMailFrom = $03D1;                                 // String           Obsolete - spam report uses C_AS_SpamReportMailFrom
+    C_AS_SpamReportMailSender = $03D2;                                  // String           Spam reports mail sender
+    C_AS_SpamReportMailFrom = $03D3;                                    // String           Spam reports mail from header
+    C_AS_SpamChallengeMoveToSpam = $03DA;                               // Bool             Deliver quarantine expired messages to mailbox as spam
+    C_AS_OutgoingRefuse = $7B6;                                         // Bool             Enable action on mails, which spam score is greater than C_AS_OutgoingRefuseScore
+    C_AS_OutgoingBlockUser = $7B9;                                      // Bool             Block sender when outgoing mail spam score is greater than C_AS_OutgoingBlockUserScore
+    C_AS_OutgoingBlockUserScore = $7BA;                                 // String           Score threshold for blocking outgoing mail sender
+    C_AS_SpamGLOwnerMode = $03F5;                                       // Enum values=(0 - Email, 1 - Domain) Greylisting owner mode
+    C_AS_SpamBlankMailScore = $03FE;                                    // String           Score for messages with blank subject and body
+    C_AS_Mailinglist_Quarantine_Disable = $0477;                        // Bool             Disable processing mailing list quarantines
+    C_AS_Mailinglist_Antispam_Disable = $0478;                          // Bool             Disable processing mailing list spam folders
+    C_AV_General_ActiveAddress = $EC;                                   // String           Active update email trigger
+    C_AV_Action_MailEnabled = $41B;                                     // Bool             Enables AV for mails
+    C_AV_Action_MailIMAPEnabled = $41C;                                 // Bool             Enables AV for IMAP APPEND
+    C_SMSService_DeliverContent = $271;                                 // Bool             Incoming SMS - deliver according to #email# in received messages
+    C_Webmail_Active = $4E2;                                            // Int              WebClient service active
+    C_Webmail_URL = $28B;                                               // String           WebClient service URL
+    C_Webmail_Licensed = $771;                                          // Bool [R]         WebClient licensing status
+    C_Webmail_TempDeleteOlder = $320;                                   // Int              Days, after which webClient temporary directory is cleaned
+    C_WebMail_Logs = $4C9;                                              // Int              WebClient log level
+    C_WebMail_SessionCookie = $4D0;                                     // String           Webclient(pda,tablet) usage of cookies. If true, stores the session id in browser cookie
+    C_Webmail_HTTPSecureCookie = $7A6;                                  // String           Webclient(pda,tablet) usage of cookies. If true, allows cookies only over secure connection
+    C_Webmail_DBConnection = $77B;                                      // String [D]       Webclient DB PDO connection
+    C_GW_From = $373;                                                   // String           Notification From (email)
+    C_GW_AttachmentsMailboxPath = $375;                                 // Bool             If true, store attachments in user $mailboxes, otherwise use central storage
+    C_GW_GAL_DoNotForcePrimaryEmail = $6BA;                             // Bool             If set to true, the primary email will not be inserted to Email1 nor Email3 nor Email2, instead, it is stored in metadata
+    C_GW_DisableMasterUpdate =  $6D9;                                   // Bool             If set to true, changes of attendee status will not be immediately updated in the organizer's event (the changes will be updated once the organizer reads the email about acceptance)
+    C_TeamChat_Enable_Notification_Mails = $6FF;                        // Bool             Enable notifications Mails in Teamchat (Daily, immediate) - Digest
+    C_System_Services_SIP_WebSocketsUseProxyServer = $4F8;              // Bool             Enable Mail4Cisco media proxy mode
+    C_Account_Delete_External_Mailbox = $880;                           // Bool             when not set (default), external mailboxes are not deleted when account is deleted
+    C_DeleteExpiredDomain_KeepMailboxData = $88D;                       // Bool             When set, automated deletion of expired domain will keep its mailbox data
+    // Members for group/mailing list/resource
+    A_MemberList = $541;                                                // String           List of mailing list members
+    V_CreateMailingList = $545;                                         // Bool             MailingList creating right
+    V_DeleteMailingList = $549;                                         // Bool             MailingList deleting right
+    Device_SyncMail = $557;                                             // Bool             Synchronize mail folders
+    Device_SyncMailPast = $558;                                         // Int              Synchronize mail folders past days
+    Device_SyncMailPastMax = $568;                                      // Int     [R]      Limit of Device_SyncMailPast
+    Device_SyncCalPastMax = $569;                                       // Int   [R]        Limit of Device_SyncMailPast
+    Device_SyncMailFolders = $562;                                      // Int              Mail folders synchronization value
+    Statistics_LicensedUsers = $579;                                    // Int              Number of licensed users (for "mail server" module)
+    Statistics_MailSent = $57B;                                         // Int              SMTP - Messages - Sent
+    Statistics_MailReceived = $57C;                                     // Int              SMTP - Messages - Received
+

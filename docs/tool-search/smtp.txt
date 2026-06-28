@@ -1,0 +1,140 @@
+    D_DumpSMTPAccountCache = $4C8;                                      // String           Write only property. Seting a value causes SMTP service to write info about actual account cache into file in temp dirctory
+    D_SmartDiscover_SMTP = $82D;                                            // String ddar=r     Domain SmartDiscover SMTP setting
+    D_SmartDiscover_SMTPType = $82E;                                        // Enum ddar=r values=(0 - Standard, 1 - SSL, 2 - 2nd basic port (no SSL), 3 - 2nd basic port (STARTTLS)) Domain SmartDiscover SMTP type
+    D_SmartDiscover_SMTP_Real = $843;                                       // String [R]     Effective SmartDiscover SMTP setting (resolved via parent chain)
+    D_SmartDiscover_SMTPType_Real = $844;                                   // Enum [R]       Effective SmartDiscover SMTP type (resolved via parent chain)
+    U_SMTP = $613;                                                      // Bool             Policy - SMTP
+    C_System_Log_IncludeSubjectInSMTPLog = $7DE;                        // Bool             Enable Subject logging in the SMTP logs
+    // GROUP_BEGIN SMTP/POP3/IMAP
+    C_System_Services_SMTP_Rewrite_Backup_Recipients = $461;            // Bool             if set to false, sending to aliases of backup and distributed domains does not rewrite recipients domain with the domain where the alias points to
+    C_System_Services_SMTP_MaxOutgoingLimitPerDomainEnabled=$522;       // Bool             enables limiting of number of outgoing connections to the same domain per minute
+    C_System_Services_SMTP_MaxOutgoingLimitPerDomainValue= $523;        // Int              for  C_System_Services_SMTP_MaxOutgoingLimitPerDomainEnabled
+    C_System_Services_SMTP_MaxSenderLimitPerDomainEnabled= $524;        // Bool             enables limiting of number of outgoing connections from the same domain per minute
+    C_System_Services_SMTP_MaxSenderLimitPerDomainValue= $525;          // Int              Value for C_System_Services_SMTP_MaxSenderLimitPerDomainEnabled
+    C_System_Services_SMTP_SendingStopped=$526;                         // Bool             Experimental - Never set this to true
+    C_System_Services_SMTP_SoftQuota=$543;                              // Bool             When enabled,  user can receive messages even if his mailbox is full, but he can not send any message instead
+    // SMTP service
+    // GROUP_BEGIN SMTP/POP3/IMAP
+    C_System_Services_SMTP_Port = $1B;                                  // Int              SMTP service port
+    C_System_Services_SMTP_SSLPort = $3B;                               // Int              SMTP service SSL port
+    C_System_Services_SMTP_AltPort = $13;                               // Int              SMTP service alternative port
+    C_System_Services_SMTP_Traffic = $103;                              // Bool             Enable SMTP traffic logs
+    C_System_Services_SMTP_IPList = $5D;                                // String           List of Denied/Granted IPs
+    C_System_Services_SMTP_AccessMode = $5C;                            // Bool values=(0 - Deny, 1 - Grant) Service Policy
+    C_System_Services_SMTP_Startup = $251;                              // Int              (ssAutomatic, ssManual)
+    C_System_Services_SMTP_ThreadCache = $51;                           // Int              SMTP service Thread cache
+    C_System_Services_SMTP_MonitorData = $14F;                          // Int              Monitor increased traffic
+    C_System_Services_SMTP_MonitorConn = $150;                          // Int              Monitor number of increased connections
+    C_System_Services_SMTP_MaxInConn = $112;                            // Int              Max number of Incoming connections
+    C_System_Services_SMTP_MaxOutConn = $50;                            // Int              Max number of Outgoing connections
+    C_System_Services_SMTP_Bandwidth = $11F;                            // Int              Max transfer bandwidth (kB/s)
+    C_System_Services_SMTP_Tarpitting_MoreRestrictive= $586;            // Bool             If set to true, presence of the session IP in Intrusion prevention list will be performed more often and not only at the beginning of the session
+    C_System_Services_POP3_Traffic = $104;                              // Bool             Enable SMTP traffic logs
+    // GROUP_BEGIN SMTP/POP3/IMAP
+    C_System_AutoDiscover_SMTP = $4A8;                                  // String           SmartDiscover SMTP setting
+    C_System_AutoDiscover_SMTPType = $367;                              // Enum values=(0 - Standard, 1 - SSL, 2 - 2nd basic port (no SSL)), 3 - 2nd basic port (STARTTLS) SmartDiscover SMTP type
+    C_SmartDiscover_SMTP = $818;                                        // String           SmartDiscover SMTP setting
+    C_SmartDiscover_SMTPType = $819;                                    // Enum values=(0 - Standard, 1 - SSL, 2 - 2nd basic port (no SSL), 3 - 2nd basic port (STARTTLS)) SmartDiscover SMTP type
+    C_System_Log_Services_SMTP = $64;                                   // Enum values=(0 - None, 1 - Debug, 2 - Summary, 3 - Debug & Summary, 4 - Extended) SMTP service logging level
+    C_System_Tools_WatchDog_SMTP = $2E;                                 // Bool             Enable Watchdog for SMTP
+    C_System_Adv_Protocols_SMTPClientTimeout = $424;                    // Int              timeout for SMTP client sessions
+    C_Mail_SMTP_Active = $354;                                          // Bool             Enable SMTP
+    // SMTP service
+    C_Mail_SMTP_General_HostName = $0B;                                 // String           Mailserver hostname
+    C_Mail_SMTP_General_DeliveryMode = $29;                             // Bool values=(0 - Use SMTP relay server, 1 - Use DNS lookup) SMTP service delivery mode
+    C_Mail_SMTP_General_VerifyDANE = $7F5;                              // Bool             Use SMTP DANE
+    C_Mail_SMTP_General_RelayMailServer = $26;                          // String           SMTP relay server
+    C_Mail_SMTP_General_DNSServer = $28;                                // String           DNS servers
+    C_Mail_SMTP_General_ParallelIPConnectionsLimit = $4D4;              // Int              Global limit of maximal allowed parallel connections from one IP
+    C_Mail_SMTP_General_TempPath = $761;                                // String           Temp path to be used by SMTP. When empty (default), C_System_Storage_Dir_TempPath/SMTP is used.
+    C_Mail_SMTP_Delivery_UseTLSSSL = $87;                               // Bool             Use TLS/SSL
+    C_Mail_SMTP_Delivery_RetrySMTP = $89;                               // Bool             Retry with SMTP when ESMTP failed
+    C_Mail_SMTP_Delivery_LimitMsgSize = $56;                            // Bool             Enable Max message size
+    C_Mail_SMTP_Delivery_MaxMsgSize = $57;                              // Int              Max message size (B)
+    C_Mail_SMTP_Delivery_MXReconnectFailure = $C7;                      // Bool             Deliver message via relay server when direct delivery fails
+    C_Mail_SMTP_Delivery_HideIP = $78;                                  // Bool             Hide IP from received header
+    C_Mail_SMTP_Delivery_HideServerVersion = $788;                      // Bool             Hide IceWarp server version from received header
+    C_Mail_SMTP_Delivery_RDNSLookup = $1C2;                             // Bool             Add rDNS result to Received: header for all messages
+    C_Mail_SMTP_Delivery_UndelivAfter = $93;                            // Int              Undeliverable after (Minutes)
+    C_Mail_SMTP_Delivery_UndelivWarning = $92;                          // Int              Undeliverable warning (Minutes)
+    C_Mail_SMTP_Delivery_DaemonAlias = $49;                             // String           Mailer Daemon report alias
+    C_Mail_SMTP_Delivery_DaemonName = $4A;                              // String           Mailer Daemon report name
+    C_Mail_SMTP_Delivery_BadMail = $6A;                                 // String           Bad mail address
+    C_Mail_SMTP_Delivery_DoNoTruncate = $109;                           // Bool             Do not truncate mailer daemon's msgs
+    C_Mail_SMTP_Delivery_InfoToAdmin = $8F;                             // Bool             Send info to admin
+    C_Mail_SMTP_Delivery_UseIncomingQueue = $1C9;                       // Bool             Use incoming mail queue
+    C_Mail_SMTP_Delivery_IncomingQueueSize = $1CA;                      // Int              Size of the queue (# threads)
+    C_Mail_SMTP_Delivery_IncomingQueuePersonalized = $6D2;              // Bool             If enabled, separate message will be put into the incomming queue for each recipient
+    C_Mail_SMTP_Delivery_MDAInternal = $1E6;                            // Bool             Use MDA queue for internal delivery
+    C_Mail_SMTP_Delivery_ReturnPath = $1F7;                             // Bool             Add return-path
+    C_Mail_SMTP_Delivery_MessageSubmission = $32F;                      // Bool             Message submission should be checked as in RFC4409 (first port is MTA and second port is MSA)
+    C_Mail_SMTP_Delivery_EnforceTlsOnSecondarySmtpPort = $520;          // Bool             Server rejects non encrypted connection on submission port
+    C_Mail_SMTP_Delivery_IMIPAutoProcess = $71A;                        // Bool             Server processes IMIP mails automatically
+    C_Mail_SMTP_HeaderFooter_Enable = $3C;                              // Bool             Enable Header/Footer
+    C_Mail_SMTP_Other_Dedupe = $C2;                                     // Bool             Dedupe email messages
+    C_Mail_SMTP_Other_SearchInLocalDomains = $58;                       // Bool             Search for alias in other local domains
+    C_Mail_SMTP_Other_HeaderFunctions = $59;                            // Bool             Activate message header functions
+    C_Mail_SMTP_Other_MaxHopCount = $90;                                // Int              Max SMTP hop count
+    C_Mail_SMTP_Other_MaxRecipients = $39;                              // Int              Max SMTP server recipients
+    C_Mail_SMTP_Other_MaxMAIL = $6C2;                                   // Int              Max allowed RSET count (NOOP is also counted as RSET)
+    C_Mail_SMTP_Other_MaxMTARecipients = $1A5;                          // Int              Max SMTP client recipients
+    C_Mail_SMTP_Other_LocalDelivery = $FC;                              // Bool             Enable remote delivery from local server
+    C_Mail_SMTP_Other_ExternalDelivery = $C6;                           // Bool             Deliver all messages externally, can by bypassed using externalbypass.dat
+    C_Mail_SMTP_Other_NoRetryQueue = $BE;                               // Bool             Do not queue messages
+    C_Mail_SMTP_Other_BounceBackMode = $199;                            // Int              Bounce back mode
+    C_Mail_SMTP_Other_SMTPPipelining = $D4;                             // Bool             Enable SMTP pipelining
+    C_Mail_SMTP_Other_SPFSRS = $13E;                                    // Bool             Enable SRS
+    C_Mail_SMTP_Other_SPFSRSKey = $13F;                                 // String           SRS secret key
+    C_Mail_SMTP_Other_SPFSRSNDRVerify = $257;                           // Bool             Use SRS NDR (Non-Delivery Report) Validation
+    C_Mail_SMTP_Other_FullMailboxPermanentError = $439;                 // Bool             Treat full mailbox error as permanent (522 response)
+    C_Mail_SMTP_Accept_Invalid_Recipients = $441;                       // Bool             If this is enabled and catch all account on primary email is enabled, all invalid recipients are rewritten to catch all account
+    C_Mail_SMTP_Other_MailboxSeparator = $16C;                          // String           Mailbox separator / extension separator (eg: alias:extension@domain)
+    C_Mail_SMTP_Other_IncomingMessageLimits = $285;                     // Bool             Should size of incoming mails also be checked
+    C_Mail_SMTP_Other_Extensions = $43A;                                // String           List of SMTP extensions to alter or disable via "!", separate with semi-colon
+    C_Mail_SMTP_Other_UseReturnPathInNDR = $4B5;                        // Bool             Include Returnpath in NDR (if exists) instead of "From:"
+    C_Mail_SMTP_Other_Disable_DSN = $73C;                               // Bool             Disable DSN
+    C_Mail_Security_Relay_POPSMTP = $8D;                                // Bool             Enable POP before SMTP
+    C_Mail_Security_Relay_POPSMTPInt = $8C;                             // Int              POP before SMTP interval (Min)
+    C_Mail_Security_Relay_POPSMTPGlobal = $1D4;                         // Bool             Enable POP before SMTP global mode
+    C_Mail_Security_Protection_SMTPWait = $14C;                         // Int              Wait before processing a new conn
+    C_Mail_Security_Protection_RejectSMTPAuthSender = $1C8;             // Bool             Reject if SMTP AUTH different from sender
+    C_Mail_Security_Tarpit_EnableSMTP = $7AE;                           // Bool             Enable SMTP tarpitting  (synonym for C_Mail_Security_Tarpit_Enable)
+    C_Mail_Security_Protocols_DenyESMTP = $2A;                          // Bool             Deny ESMTP protocol
+    C_Mail_Security_Protocols_AllowSMTPAuth = $76;                      // Bool             Allow SMTP Auth
+    C_AS_SpamGLResponse = $03F2;                                        // String           Custom SMTP response when greylisting
+    C_AS_SpamRemoteSMTP = $040A;                                        // Bool             Enable scoring of messages where SMTP callback verification fails
+    C_AS_SpamRemoteSMTPScore = $040B;                                   // String           Score for messages where SMTP callback verification fails
+    C_AS_SpamRemoteSMTPConnectTimeout = $040C;                          // Int              SMTP verification connection timeout
+    ST_SMTP_MessageOut = $66D;                                          // Int              Number of sent messages
+    ST_SMTP_MessageIn = $669;                                           // Int              Number of received messages
+    ST_SMTP_MessageFailed = $665;                                       // Int              Number of failed messages
+    ST_SMTP_FailedGL = $661;                                            // Int              Number of greylisted messages
+    ST_SMTP_FailedVirus = $65D;                                         // Int              Number of messages containing virus
+    ST_SMTP_FailedCF = $65A;                                            // Int              Number of messages rejected by content filter
+    ST_SMTP_FailedStaticFilter = $657;                                  // Int              Number of messages rejected by statis filter
+    ST_SMTP_FailedFilter = $656;                                        // Int              Number of messages rejected by rules
+    ST_SMTP_FailedRBL = $653;                                           // Int              Number of messages marked as spam by RBL
+    ST_SMTP_FailedTarpit = $651;                                        // Int              Number of tarpitted messages
+    ST_SMTP_FailedSpam = $64E;                                          // Int              Number of spam messages
+    ST_SMTP_FailedSpamQuarantine = $641;                                // Int              Number of quarantined messages
+    ST_SMTP_FailedSpamRefused = $63F;                                   // Int              Number of spam refused messages
+    ST_SMTP_FailedSA = $63E;                                            // Int              Number of SpamAssassin spam messages
+    ST_SMTP_FailedCTBulk = $63C;                                        // Int              Number of Anti-Spam Live bulk messages
+    ST_SMTP_FailedCTSpam = $63A;                                        // Int              Number of Anti-Spam Live spam messages
+    ST_SMTP_POP3Client = $7D2;                                          // Int              Current POP3 client connection count
+    ST_SMTP_POP3ClientPeak = $7D3;                                      // Int              Peak PO3 client connection count
+    ST_SMTP_POP3ClientIn = $7D4;                                        // Int              kB
+    ST_SMTP_POP3ClientOut = $7D5;                                       // Int              kB
+    ST_SMTP_POP3MessageIn = $7D6;                                       // Int              Number of received messages
+    ST_SMTP_POP3MessageFailed = $7D7;                                   // Int              Number of failed messages
+    ST_SMTP_IMAPClient = $7D8;                                          // Int              Current IMAP client connection count
+    ST_SMTP_IMAPClientPeak = $7D9;                                      // Int              Peak IMAP client connection count
+    ST_SMTP_IMAPClientIn = $7DA;                                        // Int              kB
+    ST_SMTP_IMAPClientOut = $7DB;                                       // Int              kB
+    ST_SMTP_IMAPMessageIn = $7DC;                                       // Int              Number of received messages
+    ST_SMTP_IMAPMessageFailed = $7DD;                                   // Int              Number of failed messages
+    Statistics_MailSent = $57B;                                         // Int              SMTP - Messages - Sent
+    Statistics_MailReceived = $57C;                                     // Int              SMTP - Messages - Received
+    Statistics_SMTPConn = $57D;                                         // Int              SMTP Connections
+    Statistics_SMTPConnPeak = $580;                                     // Int              SMTP Connections peak
+
