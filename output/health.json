@@ -1,0 +1,20 @@
+{
+  "agent.hostname":"iceauto.prsavan.local",
+  "agent.time":"2026-06-28 12:54:12",
+  "agent.version":"0.1.0",
+  "general.date":"2026-06-28 12:54:12",
+  "general.icewarp.version":"14.3.0.7",
+  "general.os.name":"Rocky Linux",
+  "general.os.pretty":"Rocky Linux 9.8 (Blue Onyx)",
+  "general.os.version":"9.8",
+  "icewarp.archive.default":"/opt/icewarp/archive",
+  "icewarp.backup.default":"/opt/icewarp/backup",
+  "icewarp.config":"/opt/icewarp/config",
+  "icewarp.home":"/opt/icewarp",
+  "icewarp.installed":"true",
+  "icewarp.logs.default":"/opt/icewarp/logs",
+  "icewarp.mail.default":"/opt/icewarp/mail",
+  "icewarp.temp.default":"/opt/icewarp/temp",
+  "icewarp.tool":"/opt/icewarp/tool.sh",
+  "icewarp.tool.exists":"true"
+}
