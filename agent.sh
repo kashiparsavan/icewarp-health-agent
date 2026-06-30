@@ -37,19 +37,16 @@ case "$MODE" in
 
 esac
 
+acquire_lock
+trap release_lock EXIT
+
 agent_init
 
 while IFS= read -r COLLECTOR
 do
 
-    source "$COLLECTOR"
-
-    if declare -F collector_run >/dev/null
-    then
-        echo "[RUN ] ${COLLECTOR#$PROJECT_ROOT/}"
-        collector_run
-        unset -f collector_run
-    fi
+    echo "[RUN ] ${COLLECTOR#$PROJECT_ROOT/}"
+    run_collector "$COLLECTOR"
 
 done < <(find "$COLLECTOR_DIR" -type f -name "*.sh" | sort)
 
