@@ -105,6 +105,70 @@ iw_get() {
 
 }
 
+# Auto-discovers the real (non-internal) domains hosted on this server, so
+# domain-scoped collectors never need a manually-configured domain name -
+# critical for running unmodified across hundreds of production servers.
+#
+# Verified live syntax: `tool list domain` prints one domain per line, plus
+# an internal service domain ("##internalservicedomain.icewarp.com##") which
+# every IceWarp install has and which is NOT a real customer domain - it is
+# filtered out here.
+iw_list_domains() {
+
+    if [ -z "${IW_TOOL:-}" ] || [ ! -x "$IW_TOOL" ]; then
+        return
+    fi
+
+    timeout "$TOOL_TIMEOUT" "$IW_TOOL" list domain 2>/dev/null \
+        | tr -d '\r' \
+        | grep -v '^##.*##$' \
+        | grep -v '^\s*$'
+
+}
+
+# Domain-scoped variant of iw_get - for properties that only make sense per
+# domain (Daily Send Limit, Disk Quota, etc - the "D_*" properties in
+# tool.help). Takes the domain name explicitly so callers can loop over
+# iw_list_domains() output instead of relying on a static config value.
+#
+# Usage: iw_get_domain "<domain>" "<D_property>" "<config file>" "<regex>" "<os cmd>"
+iw_get_domain() {
+
+    local DOMAIN="$1"
+    local TOOL_KEY="$2"
+    local CONFIG_FILE="$3"
+    local CONFIG_REGEX="$4"
+    local OS_CMD="$5"
+    local VALUE=""
+
+    if [ -z "$DOMAIN" ]; then
+        printf ''
+        return
+    fi
+
+    if [ -n "$TOOL_KEY" ] && [ -n "${IW_TOOL:-}" ] && [ -x "$IW_TOOL" ]; then
+        local RAW
+        RAW="$(timeout "$TOOL_TIMEOUT" "$IW_TOOL" display domain "$DOMAIN" "$TOOL_KEY" 2>/dev/null)"
+        RAW="${RAW//$'\r'/}"
+        # BUGFIX: `tool display domain <domain> <prop>` prints the domain
+        # name as a header line BEFORE "PropName: value" - grep for the
+        # actual property line instead of blindly taking the first line
+        # (which would be the domain name, parsing to an empty value).
+        VALUE="$(printf '%s\n' "$RAW" | grep "^${TOOL_KEY}:" | awk -F': ' '{print $2}' | head -n1)"
+    fi
+
+    if [ -z "$VALUE" ] && [ -n "$CONFIG_FILE" ] && [ -f "$CONFIG_FILE" ] && [ -n "$CONFIG_REGEX" ]; then
+        VALUE="$(grep -oP "$CONFIG_REGEX" "$CONFIG_FILE" 2>/dev/null | head -n1)"
+    fi
+
+    if [ -z "$VALUE" ] && [ -n "$OS_CMD" ]; then
+        VALUE="$(timeout "$TOOL_TIMEOUT" bash -c "$OS_CMD" 2>/dev/null)"
+    fi
+
+    printf '%s' "$VALUE"
+
+}
+
 # Low level tool.sh caller, with timeout and output parsing.
 # IceWarp's tool.sh typically prints "PropertyName: value"
 iw_tool_get() {
