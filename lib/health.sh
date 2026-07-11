@@ -44,8 +44,11 @@ evaluate_health() {
     # --- Memory: compare live available RAM vs server's own alert floor ---
     local AVAIL_KB="${DATA[os.memory.available_kb]:-}"
     local FLOOR_KB="${DATA[monitor.memory.alert_below_kb]:-}"
+    local TOTAL_RAM_KB="${DATA[os.memory.total_kb]:-}"
     if _is_num "$AVAIL_KB" && _is_num "$FLOOR_KB" && [ "$FLOOR_KB" -gt 0 ]; then
-        if [ "$AVAIL_KB" -lt "$FLOOR_KB" ]; then
+        if _is_num "$TOTAL_RAM_KB" && [ "$FLOOR_KB" -gt "$TOTAL_RAM_KB" ]; then
+            _health_set "memory" "warn" "Configured alert threshold (${FLOOR_KB}KB) exceeds total installed RAM (${TOTAL_RAM_KB}KB) - this check can never pass as configured; review System Monitor in WebAdmin"
+        elif [ "$AVAIL_KB" -lt "$FLOOR_KB" ]; then
             _health_set "memory" "fail" "Available memory (${AVAIL_KB}KB) is below the server's configured alert threshold (${FLOOR_KB}KB)"
         else
             _health_set "memory" "pass" "Available memory (${AVAIL_KB}KB) is above threshold (${FLOOR_KB}KB)"
@@ -55,16 +58,51 @@ evaluate_health() {
     fi
 
     # --- Disk: compare each collected mount's free space vs server floor --
+    # Dedupe by device+mountpoint first - on single-partition installs,
+    # storage.archive / storage.install / storage.mail / storage.root_fs /
+    # storage.root_home often all resolve to the SAME physical filesystem,
+    # and evaluating each label independently made one under-threshold disk
+    # count as N separate failures in the summary. Only the first label seen
+    # per unique device+mount gets a real verdict; the rest are cross-linked.
     local DISK_FLOOR_MB="${DATA[monitor.disk.alert_below_mb]:-}"
-    local MOUNT_KEY MOUNT_NAME FREE_GB FREE_MB WORST="pass"
+    local MOUNT_KEY MOUNT_NAME FREE_GB FREE_MB TOTAL_GB TOTAL_MB DEVICE MOUNT DEDUPE_KEY WORST="pass"
+    declare -A _SEEN_DISK=()
     for MOUNT_KEY in "${!DATA[@]}"; do
         [[ "$MOUNT_KEY" == storage.*.free_gb ]] || continue
         MOUNT_NAME="${MOUNT_KEY#storage.}"
         MOUNT_NAME="${MOUNT_NAME%.free_gb}"
+        DEVICE="${DATA[storage.${MOUNT_NAME}.device]:-}"
+        MOUNT="${DATA[storage.${MOUNT_NAME}.mount]:-}"
+        DEDUPE_KEY="${DEVICE}|${MOUNT}"
+
+        if [ -n "${_SEEN_DISK[$DEDUPE_KEY]:-}" ]; then
+            # Same physical filesystem as an already-evaluated label - link
+            # to it instead of re-running (and re-failing) the same check.
+            collector_set "health.disk.${MOUNT_NAME}.result" "same_as:${_SEEN_DISK[$DEDUPE_KEY]}"
+            continue
+        fi
+        _SEEN_DISK["$DEDUPE_KEY"]="$MOUNT_NAME"
+
         FREE_GB="${DATA[$MOUNT_KEY]}"
         _is_num "$FREE_GB" || continue
         FREE_MB="$(awk -v g="$FREE_GB" 'BEGIN{printf "%d", g*1024}')"
-        if _is_num "$DISK_FLOOR_MB" && [ "$DISK_FLOOR_MB" -gt 0 ] && [ "$FREE_MB" -lt "$DISK_FLOOR_MB" ]; then
+        TOTAL_GB="${DATA[storage.${MOUNT_NAME}.total_gb]:-}"
+
+        if ! _is_num "$DISK_FLOOR_MB" || [ "$DISK_FLOOR_MB" -le 0 ]; then
+            _health_set "disk.${MOUNT_NAME}" "skip" "System Monitor disk threshold not configured on server"
+            continue
+        fi
+
+        if _is_num "$TOTAL_GB"; then
+            TOTAL_MB="$(awk -v g="$TOTAL_GB" 'BEGIN{printf "%d", g*1024}')"
+            if [ "$DISK_FLOOR_MB" -gt "$TOTAL_MB" ]; then
+                _health_set "disk.${MOUNT_NAME}" "warn" "Configured alert threshold (${DISK_FLOOR_MB}MB) exceeds total disk capacity (${TOTAL_MB}MB) - this check can never pass as configured; review System Monitor in WebAdmin"
+                [ "$WORST" = "pass" ] && WORST="warn"
+                continue
+            fi
+        fi
+
+        if [ "$FREE_MB" -lt "$DISK_FLOOR_MB" ]; then
             _health_set "disk.${MOUNT_NAME}" "fail" "Free space (${FREE_GB}GB) below configured alert threshold"
             WORST="fail"
         else
@@ -102,16 +140,28 @@ evaluate_health() {
         _health_set "password_policy" "fail" "Password policy is not active"
     fi
 
-    # --- Login blocking baseline ---
+    # --- Login blocking: two separate IceWarp features can provide this -
+    # "Login Policy" (account-level lockout) and "Intrusion Prevention ->
+    # Block IP after failed logins" (IP-level blocking). They're independent
+    # toggles. Previously this only looked at max_failed_attempts and never
+    # checked whether Login Policy was actually enabled, which could report
+    # "pass" even when that policy was off. Now it checks both mechanisms
+    # and passes if EITHER is genuinely active.
+    local POLICY_ENABLED="${DATA[security.login.policy_enabled]:-}"
     local LOGIN_MAX="${DATA[security.login.max_failed_attempts]:-}"
-    if _is_num "$LOGIN_MAX" && [ "$LOGIN_MAX" -gt 0 ]; then
+    local INTRUSION_ENABLED="${DATA[security.intrusion.block_failed_logins.enabled]:-}"
+    local INTRUSION_VAL="${DATA[security.intrusion.block_failed_logins.value]:-}"
+
+    if [ "$POLICY_ENABLED" = "1" ] && _is_num "$LOGIN_MAX" && [ "$LOGIN_MAX" -gt 0 ]; then
         if [ "$LOGIN_MAX" -gt "$HEALTH_MAX_LOGIN_ATTEMPTS" ]; then
-            _health_set "login_blocking" "warn" "Failed-login block threshold (${LOGIN_MAX}) is higher than recommended (${HEALTH_MAX_LOGIN_ATTEMPTS})"
+            _health_set "login_blocking" "warn" "Login Policy lockout threshold (${LOGIN_MAX}) is higher than recommended (${HEALTH_MAX_LOGIN_ATTEMPTS})"
         else
-            _health_set "login_blocking" "pass" "Failed-login block threshold (${LOGIN_MAX}) OK"
+            _health_set "login_blocking" "pass" "Login Policy lockout active, threshold (${LOGIN_MAX}) OK"
         fi
+    elif [ "$INTRUSION_ENABLED" = "1" ] && _is_num "$INTRUSION_VAL" && [ "$INTRUSION_VAL" -gt 0 ]; then
+        _health_set "login_blocking" "pass" "Login Policy lockout is off, but Intrusion Prevention blocks the IP after ${INTRUSION_VAL} failed logins"
     else
-        _health_set "login_blocking" "fail" "No failed-login blocking configured"
+        _health_set "login_blocking" "fail" "Neither Login Policy lockout nor Intrusion Prevention failed-login blocking is active"
     fi
 
     # --- TLS/SSL delivery ---

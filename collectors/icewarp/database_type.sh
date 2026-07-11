@@ -32,6 +32,16 @@ collector_run() {
         return
     fi
 
+    # Real IceWarp SQLite connection strings look like
+    # "config/accounts.db;;;;7;3" - a relative .db file path, not the
+    # literal word "sqlite". Catch that pattern before falling through.
+    if echo "$CONN" | grep -qiE '\.db(;|$)'; then
+        collector_set "database.type" "sqlite"
+        collector_set "database.scope" "local"
+        collector_set "database.mysql_server_section_applicable" "false"
+        return
+    fi
+
     if echo "$CONN" | grep -qi "mysql\|mariadb"; then
         collector_set "database.type" "mysql"
 
