@@ -36,7 +36,7 @@ Legend: ✅ collected via tool.sh property (verified in tool.help) | 🟡 collec
 | Configure Archive Backup Settings | icewarp/backup.sh | 🟡 | partial - directory only, retention/schedule TBD |
 | Enable System Watchdog | icewarp/watchdog.sh | ✅ | C_System_Tools_WatchDog_SMTP/POP3 |
 | Enable System Monitor / Mem/Disk/CPU thresholds | os/cpu.sh, os/memory.sh, storage/storage.sh | 🟡 | raw values collected; threshold *rules* (4GB/100GB/50%) belong in M5 (Health Rules), not collectors |
-| Check for Storage Locations | icewarp/storage.sh | ✅ | (already existed) |
+| Check for Storage Locations | icewarp/storage_paths.sh | ✅ | renamed from icewarp/storage.sh |
 | Check for Certificates | icewarp/certificate.sh | 🟡 | see above |
 | RBL Valli Check | - | ❌ | No verified property found yet - needs more tool.help exploration |
 | Enable Full Text Search Services | fulltext/scanner_queue.sh | ✅ | C_System_Services_Fulltext_Scanner_Queues |
@@ -68,7 +68,7 @@ Legend: ✅ collected via tool.sh property (verified in tool.help) | 🟡 collec
 | Antispam mode / thread pool | security/antispam_policy.sh | ✅ | C_AS_General_AntispamMode / SpamMaxThreads |
 | Block IP (failed logins) | security/login_policy.sh | ✅ | C_Accounts_Policies_Login_Attempts/BlockPeriod |
 | Use DNSBL / IP Reputation / RBL blocking thresholds | - | ❌ | Not located yet - needs dedicated tool.help search |
-| Archive Active | - | ❌ | Existing icewarp/storage.sh covers paths only; "active" flag TBD |
+| Archive Active | icewarp/archive.sh | ✅ | C_System_Tools_AutoArchive_Enable - implemented since this table was last edited, see appendix below |
 | Password Policy | - | ❌ | TBD - separate password-policy property group exists in tool.help, not yet mapped |
 | Disable DIGEST-MD5 | - | ❌ | Not located in available reference subset |
 | Disable IMAP/POP3 | mailserver/process_protocols.sh | ✅ | same Active flags, inverse reading |
@@ -80,3 +80,47 @@ Not started - these checks target a *different* host (the app/MySQL server, not 
 
 ---
 _This table replaces the previous draft version. Anything marked 🟡 or ⚠️ should be run once on the lab server and corrected if the property name, path, or CLI syntax turns out to be wrong._
+
+---
+
+## Appendix: collectors implemented but not yet mapped to a checklist row
+
+26 collectors exist in the codebase that were never added to the tables above
+(they were written across sessions and this doc fell behind). They are all
+real, working, tested collectors — just not yet cross-referenced against the
+original checklist item names. Re-mapping these against the source checklist
+document is a remaining M5 documentation task; for now, here's what each one
+actually collects (auto-generated from source, 2026-07-11):
+
+| Collector | Purpose | Keys produced |
+|---|---|---|
+| general/os.sh | OS name/version detection | `general.os.*` |
+| general/version.sh | IceWarp version (general-info duplicate of icewarp/version.sh) | `general.icewarp.version` |
+| icewarp/env.sh | Base install paths / tool.sh presence | `icewarp.home`, `icewarp.installed`, `icewarp.tool*`, default path fields |
+| icewarp/archive.sh | Archive settings (active, retention, IMAP integration, archive backup) | `archive.*` |
+| icewarp/admin_access.sh | WebAdmin URL / dedicated port change detection | `admin.*` |
+| icewarp/database_type.sh | SQLite vs local/remote MySQL detection (gates the MySQL Server section) | `database.*` |
+| icewarp/directory_cache.sh | Directory cache schedule (raw only - format not decoded yet) | `directory_cache.*` |
+| icewarp/domain_limits.sh | Per-domain send/quota limits, iterates all real domains | `domain.*` |
+| icewarp/protocol_advanced.sh | Daytime clock sync, DIGEST-MD5 detection via auth scheme list | `icewarp.daytime_clock_sync.enabled`, `security.digest_md5.enabled` |
+| icewarp/system_monitor.sh | IceWarp's own System Monitor alert thresholds (mem/disk/CPU) - now consumed directly by `lib/health.sh` | `monitor.*` |
+| icewarp/watchdog_extra.sh | Watchdog services beyond SMTP/POP3 (IM, GW, Control, interval) | `watchdog.*` |
+| http/port.sh, http/max_connections.sh | WebAdmin HTTP port/connections (⚠️ config-file key names unverified) | `http.port`, `http.max_connections` |
+| mailserver/security_advanced.sh | Require HELO/EHLO, greeting delay, global POP-before-SMTP | `smtp.require_helo_ehlo`, `smtp.greeting_delay_seconds`, `smtp.global_pop_before_smtp` |
+| mailserver/smtp_limits.sh | Hop count, recipient limits, per-domain throttling, header/footer, fulltext endpoint | `smtp.max_hop_count`, `smtp.max_*_recipients`, `smtp.max_per_domain_*`, `fulltext.enabled` |
+| os/memory.sh | RAM/swap from /proc/meminfo | `os.memory.*`, `os.swap.*` |
+| queue/incoming_queue.sh, queue/incoming_queue_enabled.sh, queue/no_retry.sh | SMTP incoming queue size/enabled/no-retry flag | `queue.smtp.*` |
+| security/dnsbl_rdns.sh | DNSBL use, reverse-DNS/MX rejection rules, IP reputation | `security.dnsbl.*`, `security.reject_*`, `security.ip_reputation.use` |
+| security/intrusion_prevention.sh | Full "Block IP that..." rule set (failed logins, relay denials, spam score, etc.) | `security.intrusion.*` (23 keys) |
+| security/login_policy_mode.sh | Login policy mode (companion to login_policy.sh) | `security.login.block_mode` |
+| security/password_policy.sh | Full password policy (length, complexity, expiration) - now evaluated by `lib/health.sh` | `security.password_policy.*` |
+| smtp/max_incoming_connections.sh, smtp/max_outgoing_connections.sh | SMTP connection ceilings | `smtp.max_incoming_connections`, `smtp.max_outgoing_connections` |
+| smtp/relay_server.sh | Configured relay server (companion to smtp/relay.sh) | `smtp.relay.server` |
+| storage/storage.sh | Per-mount disk usage (install/mail/archive/root) - now evaluated by `lib/health.sh` | `storage.*.free_gb`, `.used_percent`, etc. |
+
+**Corrected checklist tally as of 2026-07-11** (counting only the tables above,
+not the appendix): 31 ✅ fully verified, 16 🟡 collected via fallback, 3 ⚠️
+unverified syntax, 13 ❌ not yet found — 63 checklist rows tracked so far
+against the original ~110-item document. The appendix adds ~26 more collectors
+that already work but haven't been cross-referenced against checklist item
+names yet.

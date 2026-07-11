@@ -50,7 +50,12 @@ do
 
 done < <(find "$COLLECTOR_DIR" -type f -name "*.sh" | sort)
 
+evaluate_health
 build_json
+
+if [ "${BUILD_PDF:-1}" = "1" ]; then
+    build_pdf
+fi
 
 if [ "$MODE" = "--report" ]
 then

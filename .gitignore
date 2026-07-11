@@ -1,8 +1,4 @@
+# Runtime artifacts - regenerated on every agent.sh run, not source
 output/*
 logs/*
-
-*.log
-*.tmp
-*.swp
-*.pid
-.DS_Store
+.agent.lock
