@@ -2,156 +2,234 @@
 
 ###############################################################################
 #
-# PDF Report Writer (M5)
+# PDF Report Writer (M5) - v2, designed report
 #
-# Deliberately dependency-free: this agent runs unattended on customer
-# production IceWarp mail servers, and we can't assume python3/reportlab/
-# wkhtmltopdf/pandoc are installed there (and won't have internet access to
-# install them). So the report is written directly in the PDF file format -
-# a well-known technique for simple single-column monospace text reports -
-# using only bash + printf + wc. No new runtime dependency is introduced.
-#
-# Produces one PDF with a Health Summary section followed by the full raw
-# data table, paginated automatically.
+# Still dependency-free (bash + printf + wc only - no python/wkhtmltopdf on
+# the production mail server), but now draws a real designed report instead
+# of a monospace data dump: a cover page, colored section banners, and
+# colored status badges per checklist item - using PDF's native color and
+# rectangle drawing operators, which cost nothing extra to support.
 #
 ###############################################################################
 
-PDF_PAGE_WIDTH=612
-PDF_PAGE_HEIGHT=792
-PDF_MARGIN_LEFT=40
-PDF_MARGIN_TOP=760
-PDF_LINE_HEIGHT=12
-PDF_FONT_SIZE=9
-PDF_LINES_PER_PAGE=58
-PDF_MAX_LINE_CHARS=112   # keeps text inside the printable width at 9pt Helvetica
+PDF_PAGE_W=612
+PDF_PAGE_H=792
+PDF_MARGIN=36
+PDF_TOP_Y=756
+PDF_BOTTOM_Y=44
+PDF_CONTENT_RIGHT=$((PDF_PAGE_W - PDF_MARGIN))
+PDF_CONTENT_W=$((PDF_CONTENT_RIGHT - PDF_MARGIN))
+
+# Palette (0-1 RGB floats, as PDF expects)
+PDF_C_NAVY="0.102 0.235 0.369"
+PDF_C_NAVY_LIGHT="0.925 0.941 0.957"
+PDF_C_WHITE="1 1 1"
+PDF_C_TEXT="0.15 0.17 0.2"
+PDF_C_GRAY="0.5 0.53 0.56"
+PDF_C_GRAY_LIGHT="0.955 0.96 0.965"
+PDF_C_GREEN="0.118 0.518 0.286"
+PDF_C_RED="0.753 0.224 0.169"
+PDF_C_AMBER="0.83 0.53 0.06"
+PDF_C_BLUEGRAY="0.30 0.42 0.55"
 
 _pdf_escape() {
     local S="$1"
-    # Strip anything outside printable ASCII to keep the PDF string literal
-    # syntax simple and safe (no encoding edge cases to worry about).
     S="$(printf '%s' "$S" | LC_ALL=C tr -c '\40-\176' '?')"
     S="${S//\\/\\\\}"
     S="${S//(/\\(}"
     S="${S//)/\\)}"
-    if [ "${#S}" -gt "$PDF_MAX_LINE_CHARS" ]; then
-        S="${S:0:$((PDF_MAX_LINE_CHARS-3))}..."
-    fi
     printf '%s' "$S"
 }
 
-# Builds one content stream (a page worth of text) from an array of lines.
-_pdf_build_stream() {
-    local -n LINES_REF=$1
-    local OUT="BT /F1 ${PDF_FONT_SIZE} Tf ${PDF_LINE_HEIGHT} TL ${PDF_MARGIN_LEFT} ${PDF_MARGIN_TOP} Td"$'\n'
-    local FIRST=1
-    local LINE ESCAPED
-    for LINE in "${LINES_REF[@]}"; do
-        ESCAPED="$(_pdf_escape "$LINE")"
-        if [ "$FIRST" -eq 1 ]; then
-            OUT="${OUT}(${ESCAPED}) Tj"$'\n'
-            FIRST=0
-        else
-            OUT="${OUT}T* (${ESCAPED}) Tj"$'\n'
-        fi
-    done
-    OUT="${OUT}ET"
-    printf '%s' "$OUT"
+# --- low-level drawing primitives, append to $_PDF_CUR --------------------
+
+_pdf_rect() {
+    # x y w h "r g b"
+    _PDF_CUR="${_PDF_CUR}${5} rg
+${1} ${2} ${3} ${4} re f
+"
 }
 
-# Records the byte offset of object $1 (current EOF position) then appends
-# the object's raw bytes to the output file.
-_pdf_obj() {
-    local NUM="$1"; shift
-    PDF_OFFSETS[$NUM]="$(wc -c < "$PDF_OUT_FILE")"
-    printf '%s' "$1" >> "$PDF_OUT_FILE"
+_pdf_text() {
+    # x y text font size "r g b"
+    local ESC
+    ESC="$(_pdf_escape "$3")"
+    _PDF_CUR="${_PDF_CUR}${6} rg
+BT /${4} ${5} Tf ${1} ${2} Td (${ESC}) Tj ET
+"
 }
 
-_pdf_write_file() {
-    local OUT_PDF="$1"
-    local -n PAGES_REF=$2
-    local P="${#PAGES_REF[@]}"
+_pdf_text_trunc() {
+    # like _pdf_text but truncates to a max character count first
+    local MAXCHARS="$7"
+    local TXT="$3"
+    if [ "${#TXT}" -gt "$MAXCHARS" ]; then
+        TXT="${TXT:0:$((MAXCHARS-1))}."
+    fi
+    _pdf_text "$1" "$2" "$TXT" "$4" "$5" "$6"
+}
 
-    if [ "$P" -eq 0 ]; then
-        echo "[WARN] build_pdf: nothing to render, skipping PDF output" >&2
-        return 1
+# --- page/layout engine -----------------------------------------------
+
+_PDF_PAGES=()
+_PDF_CUR=""
+_PDF_Y=$PDF_TOP_Y
+
+_layout_new_page() {
+    if [ -n "$_PDF_CUR" ]; then
+        _PDF_PAGES+=("$_PDF_CUR")
+    fi
+    _PDF_CUR=""
+    _PDF_Y=$PDF_TOP_Y
+}
+
+_layout_ensure() {
+    local NEEDED="$1"
+    if [ "$((_PDF_Y - NEEDED))" -lt "$PDF_BOTTOM_Y" ]; then
+        _layout_new_page
+    fi
+}
+
+_layout_finish() {
+    [ -n "$_PDF_CUR" ] && _PDF_PAGES+=("$_PDF_CUR")
+}
+
+_layout_section_header() {
+    local TITLE="$1"
+    _layout_ensure 46
+    _PDF_Y=$((_PDF_Y - 6))
+    _pdf_rect "$PDF_MARGIN" "$((_PDF_Y - 18))" "$PDF_CONTENT_W" 22 "$PDF_C_NAVY"
+    _pdf_text "$((PDF_MARGIN + 8))" "$((_PDF_Y - 12))" "$TITLE" "F2" 11 "$PDF_C_WHITE"
+    _PDF_Y=$((_PDF_Y - 30))
+}
+
+# badge color name -> "r g b" + label text
+_badge_color() {
+    case "$1" in
+        ON|PASS) echo "$PDF_C_GREEN" ;;
+        OFF) echo "$PDF_C_GRAY" ;;
+        FAIL) echo "$PDF_C_RED" ;;
+        WARN|TBD) echo "$PDF_C_AMBER" ;;
+        INFO) echo "$PDF_C_BLUEGRAY" ;;
+        *) echo "$PDF_C_GRAY" ;;
+    esac
+}
+
+_layout_row_index=0
+
+_layout_row() {
+    # label, value, badge_kind (ON/OFF/TBD/INFO/PASS/WARN/FAIL), badge_text, note(optional)
+    local LABEL="$1" VALUE="$2" BKIND="$3" BTEXT="$4" NOTE="${5:-}"
+    local ROW_H=16
+    [ -n "$NOTE" ] && ROW_H=27
+
+    _layout_ensure "$ROW_H"
+
+    local BG="$PDF_C_WHITE"
+    if [ $(( _layout_row_index % 2 )) -eq 1 ]; then BG="$PDF_C_GRAY_LIGHT"; fi
+    _layout_row_index=$((_layout_row_index + 1))
+
+    local ROW_TOP=$_PDF_Y
+    _pdf_rect "$PDF_MARGIN" "$((ROW_TOP - ROW_H + 4))" "$PDF_CONTENT_W" "$ROW_H" "$BG"
+
+    local TEXT_Y=$((ROW_TOP - 11))
+    _pdf_text_trunc "$((PDF_MARGIN + 8))" "$TEXT_Y" "$LABEL" "F1" 9 "$PDF_C_TEXT" 46
+    _pdf_text_trunc "$((PDF_MARGIN + 240))" "$TEXT_Y" "$VALUE" "F1" 9 "$PDF_C_GRAY" 34
+
+    local BADGE_W=76 BADGE_H=13
+    local BADGE_X=$((PDF_CONTENT_RIGHT - BADGE_W - 4))
+    local BADGE_Y=$((ROW_TOP - 12))
+    local BCOLOR
+    BCOLOR="$(_badge_color "$BKIND")"
+    _pdf_rect "$BADGE_X" "$BADGE_Y" "$BADGE_W" "$BADGE_H" "$BCOLOR"
+    _pdf_text_trunc "$((BADGE_X + 6))" "$((BADGE_Y + 4))" "$BTEXT" "F2" 7.5 "$PDF_C_WHITE" 14
+
+    if [ -n "$NOTE" ]; then
+        _pdf_text_trunc "$((PDF_MARGIN + 8))" "$((TEXT_Y - 11))" "note: ${NOTE}" "F3" 7.5 "$PDF_C_GRAY" 100
     fi
 
-    local FONT_OBJ=$((3 + 2*P))
-    declare -Ag PDF_OFFSETS=()
-    PDF_OUT_FILE="$OUT_PDF"
+    _PDF_Y=$((_PDF_Y - ROW_H))
+}
 
-    : > "$OUT_PDF"
-    printf '%%PDF-1.4\n' >> "$OUT_PDF"
+_layout_plain_line() {
+    local TEXT="$1"
+    _layout_ensure 12
+    _pdf_text_trunc "$PDF_MARGIN" "$_PDF_Y" "$TEXT" "F1" 8.5 "$PDF_C_TEXT" 110
+    _PDF_Y=$((_PDF_Y - 12))
+}
 
-    _pdf_obj 1 "1 0 obj
-<< /Type /Catalog /Pages 2 0 R >>
-endobj
-"
+_layout_spacer() {
+    _PDF_Y=$((_PDF_Y - ${1:-8}))
+}
 
-    local KIDS="" i
-    for ((i=1; i<=P; i++)); do
-        KIDS="${KIDS}$((2+i)) 0 R "
+# --- cover page ---------------------------------------------------------
+
+_layout_cover() {
+    local HOST="${DATA[agent.hostname]:-unknown}"
+    local GEN="${DATA[agent.time]:-unknown}"
+    local VER="${DATA[agent.version]:-unknown}"
+    local OVERALL="${DATA[health.summary.overall]:-n/a}"
+    local FAILED="${DATA[health.summary.failed]:-0}"
+    local WARNINGS="${DATA[health.summary.warnings]:-0}"
+    local CHECKED="${DATA[health.summary.total_checks]:-0}"
+
+    _pdf_rect 0 692 "$PDF_PAGE_W" 100 "$PDF_C_NAVY"
+    _pdf_text "$PDF_MARGIN" 754 "IceWarp Health Check Report" "F2" 22 "$PDF_C_WHITE"
+    _pdf_text "$PDF_MARGIN" 730 "Based on IceWarp CheckList v1.12" "F3" 12 "$PDF_C_WHITE"
+    _pdf_text "$PDF_MARGIN" 706 "Host: ${HOST}   Generated: ${GEN}   Agent v${VER}" "F1" 9.5 "$PDF_C_WHITE"
+
+    _PDF_Y=660
+
+    local INFO_ROWS=(
+        "Company Name|_______________________"
+        "Technician|_______________________"
+        "IceWarp Version|${DATA[icewarp.version]:-unknown}"
+        "Antispam Last Update|${DATA[icewarp.antispam.last_update]:-unknown}"
+        "Antivirus Last Update|${DATA[icewarp.antivirus.last_update]:-unknown}"
+        "Last Backup Date/Time|${DATA[icewarp.backup.last_time]:-unknown}"
+        "License Expiration|${DATA[icewarp.license.trial_expiration]:-N/A (perpetual license)}"
+        "SSL Expiration|${DATA[icewarp.ssl.expiration]:-not returned}"
+    )
+    local ROW
+    for ROW in "${INFO_ROWS[@]}"; do
+        local LBL="${ROW%%|*}"
+        local VAL="${ROW#*|}"
+        _pdf_text "$((PDF_MARGIN + 8))" "$_PDF_Y" "${LBL}:" "F2" 9.5 "$PDF_C_TEXT"
+        _pdf_text_trunc "$((PDF_MARGIN + 190))" "$_PDF_Y" "$VAL" "F1" 9.5 "$PDF_C_GRAY" 55
+        _PDF_Y=$((_PDF_Y - 16))
     done
-    _pdf_obj 2 "2 0 obj
-<< /Type /Pages /Kids [ ${KIDS}] /Count ${P} >>
-endobj
-"
 
-    for ((i=1; i<=P; i++)); do
-        local PAGE_NUM=$((2+i))
-        local CONTENT_NUM=$((2+P+i))
-        local STREAM="${PAGES_REF[$((i-1))]}"
-        local STREAM_LEN
-        STREAM_LEN="$(printf '%s' "$STREAM" | wc -c)"
+    _PDF_Y=$((_PDF_Y - 14))
 
-        _pdf_obj "$PAGE_NUM" "${PAGE_NUM} 0 obj
-<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 ${FONT_OBJ} 0 R >> >> /MediaBox [0 0 ${PDF_PAGE_WIDTH} ${PDF_PAGE_HEIGHT}] /Contents ${CONTENT_NUM} 0 R >>
-endobj
-"
-        _pdf_obj "$CONTENT_NUM" "${CONTENT_NUM} 0 obj
-<< /Length ${STREAM_LEN} >>
-stream
-${STREAM}
-endstream
-endobj
-"
+    local BANNER_COLOR
+    case "$OVERALL" in
+        pass) BANNER_COLOR="$PDF_C_GREEN" ;;
+        warn) BANNER_COLOR="$PDF_C_AMBER" ;;
+        fail) BANNER_COLOR="$PDF_C_RED" ;;
+        *) BANNER_COLOR="$PDF_C_GRAY" ;;
+    esac
+    _pdf_rect "$PDF_MARGIN" "$((_PDF_Y - 44))" "$PDF_CONTENT_W" 44 "$BANNER_COLOR"
+    _pdf_text "$((PDF_MARGIN + 14))" "$((_PDF_Y - 20))" "OVERALL: $(echo "$OVERALL" | tr '[:lower:]' '[:upper:]')" "F2" 15 "$PDF_C_WHITE"
+    _pdf_text "$((PDF_MARGIN + 14))" "$((_PDF_Y - 36))" "${CHECKED} checks run  -  ${FAILED} failed  -  ${WARNINGS} warnings" "F1" 9.5 "$PDF_C_WHITE"
+    _PDF_Y=$((_PDF_Y - 60))
+
+    _pdf_text "$PDF_MARGIN" "$_PDF_Y" "Legend:" "F2" 8.5 "$PDF_C_TEXT"
+    local LX=$((PDF_MARGIN + 46))
+    local LBLS=("ON=enabled" "OFF=disabled" "TBD=not collected yet" "INFO=informational value")
+    local LKINDS=("ON" "OFF" "TBD" "INFO")
+    local I
+    for I in 0 1 2 3; do
+        local BC
+        BC="$(_badge_color "${LKINDS[$I]}")"
+        _pdf_rect "$LX" "$((_PDF_Y - 3))" 26 11 "$BC"
+        _pdf_text "$((LX + 30))" "$_PDF_Y" "${LBLS[$I]}" "F1" 8 "$PDF_C_TEXT"
+        LX=$((LX + 30 + 6*${#LBLS[$I]} + 14))
     done
-
-    _pdf_obj "$FONT_OBJ" "${FONT_OBJ} 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
-endobj
-"
-
-    local XREF_START
-    XREF_START="$(wc -c < "$OUT_PDF")"
-    local TOTAL_OBJS=$((FONT_OBJ + 1))
-
-    {
-        printf 'xref\n0 %d\n' "$TOTAL_OBJS"
-        printf '0000000000 65535 f \n'
-        local n
-        for ((n=1; n<=FONT_OBJ; n++)); do
-            printf '%010d 00000 n \n' "${PDF_OFFSETS[$n]}"
-        done
-        printf 'trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n' "$TOTAL_OBJS" "$XREF_START"
-    } >> "$OUT_PDF"
-
-    echo "[INFO] PDF report written: $OUT_PDF ($(wc -c < "$OUT_PDF") bytes, ${P} page(s))"
+    _PDF_Y=$((_PDF_Y - 20))
 }
 
 ###############################################################################
-#
-# Checklist v1.12 definition
-#
-# Mirrors the actual paper form (IceWarp CheckList v1.12) section by section.
-# Each row: SECTION~LABEL~KIND~KEYS~NOTE
-#   KIND=B  bool-style item   -> shows ENABLED / DISABLED / N/A (single key)
-#   KIND=V  informational     -> shows the raw value(s) (comma-separated keys
-#                                 are joined as "shortname=value")
-#   KIND=X  not collected yet -> shows "NOT COLLECTED" (no key needed)
-# NOTE is optional - printed in parentheses when the mapping is ambiguous,
-# unverified, or otherwise needs a human to confirm it.
-#
+# Checklist v1.12 definition (unchanged content, same as v1 - see notes)
 ###############################################################################
 
 _CL_ITEMS='DNS & Mail Flow Verification~Check PTR~B~dns.ptr.checked~
@@ -241,13 +319,12 @@ APP OS / Infrastructure~Repository Access~X~~no collector yet
 APP OS / Infrastructure~Time Sync~V~icewarp.daytime_clock_sync.enabled~this is IceWarps own daytime sync, not OS-level NTP/chrony - needs confirming
 MySQL Server (Remote DB)~MySQL Server Section~X~~entire block only applies when database.mysql_server_section_applicable=true; not built yet'
 
-_cl_bool_render() {
-    local RAW="$1"
-    case "$RAW" in
-        1|true|TRUE|True) printf 'ENABLED' ;;
-        0|false|FALSE|False) printf 'DISABLED' ;;
-        "") printf 'N/A (not found)' ;;
-        *) printf '%s' "$RAW" ;;
+_cl_bool_kind() {
+    case "${1:-}" in
+        1|true|TRUE|True) echo "ON:ENABLED" ;;
+        0|false|FALSE|False) echo "OFF:DISABLED" ;;
+        "") echo "TBD:N/A" ;;
+        *) echo "INFO:$1" ;;
     esac
 }
 
@@ -269,110 +346,176 @@ _cl_value_render() {
     fi
 }
 
-_cl_render_lines() {
-    local -n OUT_REF=$1
+_render_checklist() {
     local CUR_SECTION=""
-    local LINE SECTION LABEL KIND KEYS NOTE
+    local SECTION LABEL KIND KEYS NOTE
     while IFS='~' read -r SECTION LABEL KIND KEYS NOTE; do
         [ -z "$SECTION" ] && continue
         if [ "$SECTION" != "$CUR_SECTION" ]; then
-            [ -n "$CUR_SECTION" ] && OUT_REF+=("")
-            OUT_REF+=("--- ${SECTION} ---")
+            _layout_section_header "$SECTION"
             CUR_SECTION="$SECTION"
+            _layout_row_index=0
         fi
-        local TAG VAL
         case "$KIND" in
             B)
-                VAL="$(_cl_bool_render "${DATA[$KEYS]:-}")"
-                case "$VAL" in
-                    ENABLED) TAG="[ON ]" ;;
-                    DISABLED) TAG="[OFF]" ;;
-                    *) TAG="[?? ]" ;;
-                esac
+                local RESULT
+                RESULT="$(_cl_bool_kind "${DATA[$KEYS]:-}")"
+                _layout_row "$LABEL" "${RESULT#*:}" "${RESULT%%:*}" "${RESULT%%:*}" "$NOTE"
                 ;;
             V)
+                local VAL
                 VAL="$(_cl_value_render "$KEYS")"
-                TAG="[i  ]"
+                _layout_row "$LABEL" "$VAL" "INFO" "INFO" "$NOTE"
                 ;;
             X)
-                VAL="NOT COLLECTED"
-                TAG="[TBD]"
-                ;;
-            *)
-                VAL=""
-                TAG="[?? ]"
+                _layout_row "$LABEL" "not collected" "TBD" "TBD" "$NOTE"
                 ;;
         esac
-        local ROW
-        ROW="$(printf '%s %-46s %s' "$TAG" "$LABEL" "$VAL")"
-        [ -n "$NOTE" ] && ROW="${ROW}  (${NOTE})"
-        OUT_REF+=("$ROW")
     done <<< "$_CL_ITEMS"
 }
 
-build_pdf() {
-
-    local OUT_PDF="${OUTPUT_PDF:-${PROJECT_ROOT}/output/report.pdf}"
-    local -a ALL_LINES=()
-
-    ALL_LINES+=("IceWarp Health Check Report  (based on IceWarp CheckList v1.12)")
-    ALL_LINES+=("Host: ${DATA[agent.hostname]:-unknown}   Generated: ${DATA[agent.time]:-unknown}   Agent v${DATA[agent.version]:-unknown}")
-    ALL_LINES+=("")
-    ALL_LINES+=("Company Name: ______________________     Technician: ______________________")
-    ALL_LINES+=("IceWarp Version: ${DATA[icewarp.version]:-unknown}   Antispam Update: ${DATA[icewarp.antispam.last_update]:-unknown}   Antivirus Update: ${DATA[icewarp.antivirus.last_update]:-unknown}")
-    ALL_LINES+=("Last Backup: ${DATA[icewarp.backup.last_time]:-unknown}   License Expiration: ${DATA[icewarp.license.trial_expiration]:-N/A (perpetual license)}   SSL Expiration: ${DATA[icewarp.ssl.expiration]:-not returned}")
-    ALL_LINES+=("")
-    ALL_LINES+=("=== Health Summary ===")
-    ALL_LINES+=("Overall: ${DATA[health.summary.overall]:-n/a}   Failed: ${DATA[health.summary.failed]:-0}   Warnings: ${DATA[health.summary.warnings]:-0}   Checked: ${DATA[health.summary.total_checks]:-0}")
-    ALL_LINES+=("")
-
+_render_health_summary() {
+    _layout_section_header "Health Summary"
+    _layout_row_index=0
     local K
-    if [ "${#HEALTH[@]}" -gt 0 ]; then
-        for K in $(printf '%s\n' "${!HEALTH[@]}" | sort); do
-            ALL_LINES+=("$(printf '[%-4s] %-20s %s' "${HEALTH[$K]}" "$K" "${HEALTH_MSG[$K]:-}")")
-        done
-    else
-        ALL_LINES+=("(health rules did not run)")
+    for K in $(printf '%s\n' "${!HEALTH[@]}" | sort); do
+        local RESULT="${HEALTH[$K]}"
+        local BKIND
+        case "$RESULT" in
+            pass) BKIND="PASS" ;;
+            warn) BKIND="WARN" ;;
+            fail) BKIND="FAIL" ;;
+            *) BKIND="INFO" ;;
+        esac
+        _layout_row "$K" "" "$BKIND" "$(echo "$RESULT" | tr '[:lower:]' '[:upper:]')" "${HEALTH_MSG[$K]:-}"
+    done
+}
+
+###############################################################################
+# Low-level PDF object writer (3 fonts: F1 regular, F2 bold, F3 oblique)
+###############################################################################
+
+_pdf_obj() {
+    local NUM="$1"; shift
+    PDF_OFFSETS[$NUM]="$(wc -c < "$PDF_OUT_FILE")"
+    printf '%s' "$1" >> "$PDF_OUT_FILE"
+}
+
+_pdf_write_file() {
+    local OUT_PDF="$1"
+    local P="${#_PDF_PAGES[@]}"
+
+    if [ "$P" -eq 0 ]; then
+        echo "[WARN] build_pdf: nothing to render, skipping PDF output" >&2
+        return 1
     fi
 
-    ALL_LINES+=("")
-    ALL_LINES+=("=== IceWarp CheckList v1.12 Walkthrough ===")
-    ALL_LINES+=("[ON]=enabled  [OFF]=disabled  [i]=informational value  [TBD]=not collected yet, needs manual check  [??]=unexpected value")
-    _cl_render_lines ALL_LINES
+    local F_REG=$((2 + 2*P + 1))
+    local F_BOLD=$((2 + 2*P + 2))
+    local F_OBL=$((2 + 2*P + 3))
+    declare -Ag PDF_OFFSETS=()
+    PDF_OUT_FILE="$OUT_PDF"
 
-    ALL_LINES+=("")
-    ALL_LINES+=("=== Collector Status ===")
-    local FAILED_COLLECTORS=0
+    : > "$OUT_PDF"
+    printf '%%PDF-1.4\n' >> "$OUT_PDF"
+
+    _pdf_obj 1 "1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+"
+    local KIDS="" i
+    for ((i=1; i<=P; i++)); do
+        KIDS="${KIDS}$((2+i)) 0 R "
+    done
+    _pdf_obj 2 "2 0 obj
+<< /Type /Pages /Kids [ ${KIDS}] /Count ${P} >>
+endobj
+"
+    for ((i=1; i<=P; i++)); do
+        local PAGE_NUM=$((2+i))
+        local CONTENT_NUM=$((2+P+i))
+        local STREAM="${_PDF_PAGES[$((i-1))]}"
+        local STREAM_LEN
+        STREAM_LEN="$(printf '%s' "$STREAM" | wc -c)"
+
+        _pdf_obj "$PAGE_NUM" "${PAGE_NUM} 0 obj
+<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 ${F_REG} 0 R /F2 ${F_BOLD} 0 R /F3 ${F_OBL} 0 R >> >> /MediaBox [0 0 ${PDF_PAGE_W} ${PDF_PAGE_H}] /Contents ${CONTENT_NUM} 0 R >>
+endobj
+"
+        _pdf_obj "$CONTENT_NUM" "${CONTENT_NUM} 0 obj
+<< /Length ${STREAM_LEN} >>
+stream
+${STREAM}
+endstream
+endobj
+"
+    done
+
+    _pdf_obj "$F_REG" "${F_REG} 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+"
+    _pdf_obj "$F_BOLD" "${F_BOLD} 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+"
+    _pdf_obj "$F_OBL" "${F_OBL} 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique >>
+endobj
+"
+
+    local XREF_START
+    XREF_START="$(wc -c < "$OUT_PDF")"
+    local TOTAL_OBJS=$((F_OBL + 1))
+
+    {
+        printf 'xref\n0 %d\n' "$TOTAL_OBJS"
+        printf '0000000000 65535 f \n'
+        local n
+        for ((n=1; n<=F_OBL; n++)); do
+            printf '%010d 00000 n \n' "${PDF_OFFSETS[$n]}"
+        done
+        printf 'trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n' "$TOTAL_OBJS" "$XREF_START"
+    } >> "$OUT_PDF"
+
+    echo "[INFO] PDF report written: $OUT_PDF ($(wc -c < "$OUT_PDF") bytes, ${P} page(s))"
+}
+
+###############################################################################
+# Entry point
+###############################################################################
+
+build_pdf() {
+    local OUT_PDF="${OUTPUT_PDF:-${PROJECT_ROOT}/output/report.pdf}"
+
+    _PDF_PAGES=()
+    _PDF_CUR=""
+    _PDF_Y=$PDF_TOP_Y
+
+    _layout_cover
+    if [ "${#HEALTH[@]}" -gt 0 ]; then
+        _render_health_summary
+    fi
+    _layout_new_page
+    _render_checklist
+
+    _layout_new_page
+    _layout_section_header "Collector Status"
+    local K FAILED_COLLECTORS=0
+    _layout_row_index=0
     for K in $(printf '%s\n' "${!STATUS[@]}" | sort); do
         [ "${STATUS[$K]}" = "ok" ] && continue
         FAILED_COLLECTORS=$((FAILED_COLLECTORS+1))
-        ALL_LINES+=("$(printf '[%s] %-30s %s' "${STATUS[$K]}" "$K" "${STATUS_MSG[$K]:-}")")
+        _layout_row "$K" "${STATUS_MSG[$K]:-}" "TBD" "${STATUS[$K]}" ""
     done
-    [ "$FAILED_COLLECTORS" -eq 0 ] && ALL_LINES+=("All collectors ran OK")
+    [ "$FAILED_COLLECTORS" -eq 0 ] && _layout_plain_line "All collectors ran OK"
 
-    ALL_LINES+=("")
-    ALL_LINES+=("=== Appendix: Full Raw Data (${#DATA[@]} keys) ===")
-    ALL_LINES+=("")
-
+    _layout_new_page
+    _layout_section_header "Appendix: Full Raw Data (${#DATA[@]} keys)"
     for K in $(printf '%s\n' "${!DATA[@]}" | sort); do
-        ALL_LINES+=("$(printf '%-42s %s' "$K" "${DATA[$K]}")")
+        _layout_plain_line "$(printf '%-42s %s' "$K" "${DATA[$K]}")"
     done
 
-    local -a PAGES_CONTENT=()
-    local -a CUR=()
-    local COUNT=0 LINE
-    for LINE in "${ALL_LINES[@]}"; do
-        CUR+=("$LINE")
-        COUNT=$((COUNT+1))
-        if [ "$COUNT" -ge "$PDF_LINES_PER_PAGE" ]; then
-            PAGES_CONTENT+=("$(_pdf_build_stream CUR)")
-            CUR=()
-            COUNT=0
-        fi
-    done
-    if [ "${#CUR[@]}" -gt 0 ]; then
-        PAGES_CONTENT+=("$(_pdf_build_stream CUR)")
-    fi
-
-    _pdf_write_file "$OUT_PDF" PAGES_CONTENT
+    _layout_finish
+    _pdf_write_file "$OUT_PDF"
 }
