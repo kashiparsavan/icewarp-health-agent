@@ -39,6 +39,60 @@ collector_set() {
 }
 
 ###############################################################################
+# Auto-resolvers - so DNS/certificate collectors never require manually
+# configured MAIL_HOSTNAME / MAIL_PUBLIC_IP. Config values still win if set
+# (explicit override), otherwise these derive them live:
+#   hostname -> first real domain from `tool list domain` (iw_list_domains)
+#   public IP -> external echo services, falling back to the local primary
+#                IP (clearly labeled as unconfirmed) if outbound internet
+#                to those services isn't available
+# Both are cached per-run (collectors run in the same shell, not subshells -
+# see run_collector below) so the network/tool.sh cost is paid once even
+# though several collectors need these.
+###############################################################################
+
+_RESOLVED_MAIL_HOSTNAME=""
+resolve_mail_hostname() {
+    if [ -n "${MAIL_HOSTNAME:-}" ]; then
+        printf '%s' "$MAIL_HOSTNAME"
+        return
+    fi
+    if [ -n "$_RESOLVED_MAIL_HOSTNAME" ]; then
+        printf '%s' "$_RESOLVED_MAIL_HOSTNAME"
+        return
+    fi
+    local DOMAIN
+    DOMAIN="$(iw_list_domains | head -n1)"
+    _RESOLVED_MAIL_HOSTNAME="$DOMAIN"
+    printf '%s' "$DOMAIN"
+}
+
+_RESOLVED_PUBLIC_IP=""
+resolve_public_ip() {
+    if [ -n "${MAIL_PUBLIC_IP:-}" ]; then
+        printf '%s' "$MAIL_PUBLIC_IP"
+        return
+    fi
+    if [ -n "$_RESOLVED_PUBLIC_IP" ]; then
+        printf '%s' "$_RESOLVED_PUBLIC_IP"
+        return
+    fi
+    local IP=""
+    local SVC
+    for SVC in "https://ifconfig.me" "https://icanhazip.com" "https://api.ipify.org"; do
+        IP="$(timeout 5 curl -s -4 --max-time 5 "$SVC" 2>/dev/null | tr -d '[:space:]')"
+        [[ "$IP" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]] && break
+        IP=""
+    done
+    if [ -z "$IP" ]; then
+        IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
+        [ -n "$IP" ] && IP="${IP}(unconfirmed-local)"
+    fi
+    _RESOLVED_PUBLIC_IP="$IP"
+    printf '%s' "$IP"
+}
+
+###############################################################################
 # Locking - prevents overlapping runs (e.g. triggered by cron)
 ###############################################################################
 

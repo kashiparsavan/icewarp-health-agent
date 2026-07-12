@@ -239,19 +239,19 @@ DNS & Mail Flow Verification~Check DMARC~B~dns.dmarc.checked~
 DNS & Mail Flow Verification~Check TLS and Start TLS~B~smtp.starttls_live_test~
 DNS & Mail Flow Verification~Check DNS Server~V~dns.configured_server~
 DNS & Mail Flow Verification~Test DNS Lookup~B~dns.lookup_test.ok~
-Logging~Enable Logging - Authentication~V~logging.auth_log_level~
-Logging~Enable Logging - Maintenance~V~logging.maintenance_log_level~
-Logging~Enable MailFlow Log~V~logging.mailqueue.level~
-Logging~Enable SQL Failed Logs~V~logging.sql_log_type~
+Logging~Enable Logging - Authentication~B~logging.auth_log_level~
+Logging~Enable Logging - Maintenance~B~logging.maintenance_log_level~
+Logging~Enable MailFlow Log~B~logging.mailqueue.level~
+Logging~Enable SQL Failed Logs~B~logging.sql_log_type~
 Backup, Watchdog and Monitoring~Enable System Backup~B~icewarp.backup.auto_enabled~
+Backup, Watchdog and Monitoring~Last Backup Date and Time~V~icewarp.backup.last_time~
 Backup, Watchdog and Monitoring~Enable Database Backup~X~~no collector yet, tool.help property not confirmed
 Backup, Watchdog and Monitoring~Configure Archive Backup Settings~B~archive.backup.active~
-Backup, Watchdog and Monitoring~Enable System Watchdog~V~watchdog.smtp,watchdog.pop3,watchdog.im,watchdog.gw,watchdog.control~
-Backup, Watchdog and Monitoring~Enable System Monitor (Mem/Disk/CPU)~V~monitor.memory.alert_below_gb,monitor.disk.alert_below_mb,monitor.cpu.threshold_percent~fails if threshold exceeds actual server capacity, see Health Summary
-Backup, Watchdog and Monitoring~Last Backup Date and Time~V~icewarp.backup.last_time~
+Backup, Watchdog and Monitoring~Enable System Watchdog~W~watchdog.control~smtp=${watchdog.smtp},pop3=${watchdog.pop3},im=${watchdog.im},gw=${watchdog.gw}
+Backup, Watchdog and Monitoring~Enable System Monitor (Mem/Disk/CPU)~H~memory,cpu,disk.overall~status pulled from Health Summary evaluation against these exact thresholds
 Storage, Certificates and Services~Check for Storage Locations~V~icewarp.path.mail~
-Storage, Certificates and Services~Check for Certificates~V~icewarp.ssl.cert_path~expiration date not returned on this server, needs verification
-Storage, Certificates and Services~RBL Valli Check~B~security.dnsbl.use~unclear if this means a spam-score threshold value, needs confirming
+Storage, Certificates and Services~Check for Certificates~V~icewarp.ssl.expiration,icewarp.ssl.days_left~live-checked via openssl against the mail domain on port 443, not just a local file path
+Storage, Certificates and Services~RBL Valli Check (is our IP blacklisted)~R~security.rbl_self_check.listed~queries Spamhaus/SpamCop/SORBS/Barracuda directly against our own IP
 Storage, Certificates and Services~Enable Full Text Search Services~V~fulltext.enabled~value is the service endpoint URL when active, empty when off
 Storage, Certificates and Services~Reject if SMTP AUTH Different from Sender~B~smtp.reject_auth_sender_mismatch~
 Storage, Certificates and Services~2FA~B~security.login.2fa_bypass_enabled~this is the BYPASS flag, not whether 2FA is required - needs correct property confirmed
@@ -297,7 +297,7 @@ Rejection Rules and Access~Remove Old AntiSpam Folders~X~~cleanup action, may no
 Rejection Rules and Access~Password Policy Min Length~V~security.password_policy.min_length~
 Rejection Rules and Access~Set Admin Email~V~monitor.alert_email~
 Rejection Rules and Access~Change Admin Port~B~admin.port_changed_from_default~
-Rejection Rules and Access~Block Outgoing Port 9001~X~~no collector yet
+Rejection Rules and Access~Block Outgoing Port 9001~G~security.port_9001_egress.blocked~checked via firewalld/iptables directly, see security.port_9001_egress.method
 Archive Settings~Archive to Directory~V~icewarp.archive.default~
 Archive Settings~Number of Used Seats / License Max Users~X~~no collector yet
 Archive Settings~Integrate Archive with IMAP Folder~B~archive.integrate_with_imap~
@@ -320,11 +320,18 @@ APP OS / Infrastructure~Time Sync~V~icewarp.daytime_clock_sync.enabled~this is I
 MySQL Server (Remote DB)~MySQL Server Section~X~~entire block only applies when database.mysql_server_section_applicable=true; not built yet'
 
 _cl_bool_kind() {
-    case "${1:-}" in
+    local V="${1:-}"
+    case "$V" in
+        "") echo "TBD:N/A" ;;
         1|true|TRUE|True) echo "ON:ENABLED" ;;
         0|false|FALSE|False) echo "OFF:DISABLED" ;;
-        "") echo "TBD:N/A" ;;
-        *) echo "INFO:$1" ;;
+        *)
+            if [[ "$V" =~ ^-?[0-9]+$ ]]; then
+                if [ "$V" -ne 0 ]; then echo "ON:ENABLED (level ${V})"; else echo "OFF:DISABLED"; fi
+            else
+                echo "INFO:$V"
+            fi
+            ;;
     esac
 }
 
@@ -346,11 +353,60 @@ _cl_value_render() {
     fi
 }
 
+# Health-status worst-of, for KIND=H rows that defer to lib/health.sh's
+# already-correct evaluation instead of re-deriving pass/fail here.
+_health_worst_of() {
+    local KEYS="$1"
+    local WORST="pass"
+    local -a MSGS=()
+    local K RESULT
+    IFS=',' read -ra _HKARR <<< "$KEYS"
+    for K in "${_HKARR[@]}"; do
+        RESULT="${HEALTH[$K]:-skip}"
+        [ -n "${HEALTH_MSG[$K]:-}" ] && MSGS+=("${HEALTH_MSG[$K]}")
+        case "$RESULT" in
+            fail) WORST="fail" ;;
+            warn) [ "$WORST" != "fail" ] && WORST="warn" ;;
+        esac
+    done
+    local JOINED_MSG
+    JOINED_MSG="$(IFS='; '; echo "${MSGS[*]}")"
+    printf '%s|%s' "$WORST" "$JOINED_MSG"
+}
+
+# Substitutes ${data.key} placeholders in a note template with live values -
+# used by KIND=W (watchdog) to show per-protocol detail without a separate
+# value column.
+_render_note_template() {
+    local TEMPLATE="$1"
+    local RESULT="$TEMPLATE"
+    while [[ "$RESULT" =~ \$\{([a-zA-Z0-9_.]+)\} ]]; do
+        local REF="${BASH_REMATCH[1]}"
+        local VAL="${DATA[$REF]:-?}"
+        RESULT="${RESULT//\$\{${REF}\}/${VAL}}"
+    done
+    printf '%s' "$RESULT"
+}
+
 _render_checklist() {
     local CUR_SECTION=""
+    local MYSQL_APPLICABLE="${DATA[database.mysql_server_section_applicable]:-}"
     local SECTION LABEL KIND KEYS NOTE
     while IFS='~' read -r SECTION LABEL KIND KEYS NOTE; do
         [ -z "$SECTION" ] && continue
+
+        # Auto N/A: any MySQL-labeled row, or the whole MySQL section, when
+        # this install isn't actually using a remote MySQL server.
+        if [ "$MYSQL_APPLICABLE" != "true" ] && { [[ "$SECTION" == "MySQL Server"* ]] || [[ "$LABEL" == *MySQL* ]]; }; then
+            if [ "$SECTION" != "$CUR_SECTION" ]; then
+                _layout_section_header "$SECTION"
+                CUR_SECTION="$SECTION"
+                _layout_row_index=0
+            fi
+            _layout_row "$LABEL" "N/A" "OFF" "N/A" "not applicable - this install uses SQLite, no remote MySQL server"
+            continue
+        fi
+
         if [ "$SECTION" != "$CUR_SECTION" ]; then
             _layout_section_header "$SECTION"
             CUR_SECTION="$SECTION"
@@ -369,6 +425,43 @@ _render_checklist() {
                 ;;
             X)
                 _layout_row "$LABEL" "not collected" "TBD" "TBD" "$NOTE"
+                ;;
+            W)
+                # watchdog-style: bool on primary key, detail via templated note
+                local RESULT
+                RESULT="$(_cl_bool_kind "${DATA[$KEYS]:-}")"
+                local DETAIL
+                DETAIL="$(_render_note_template "$NOTE")"
+                _layout_row "$LABEL" "${RESULT#*:}" "${RESULT%%:*}" "${RESULT%%:*}" "$DETAIL"
+                ;;
+            H)
+                # defers to lib/health.sh's already-evaluated pass/warn/fail
+                local COMBINED WORST MSG
+                COMBINED="$(_health_worst_of "$KEYS")"
+                WORST="${COMBINED%%|*}"
+                MSG="${COMBINED#*|}"
+                local BKIND="PASS"
+                [ "$WORST" = "warn" ] && BKIND="WARN"
+                [ "$WORST" = "fail" ] && BKIND="FAIL"
+                _layout_row "$LABEL" "" "$BKIND" "$(echo "$WORST" | tr '[:lower:]' '[:upper:]')" "${MSG:-$NOTE}"
+                ;;
+            G)
+                # true = good (green), false = bad (red) - e.g. "is this port actually blocked"
+                local RAW="${DATA[$KEYS]:-}"
+                case "$RAW" in
+                    1|true|TRUE|True) _layout_row "$LABEL" "YES" "ON" "OK" "$NOTE" ;;
+                    0|false|FALSE|False) _layout_row "$LABEL" "NO" "FAIL" "NOT BLOCKED" "$NOTE" ;;
+                    *) _layout_row "$LABEL" "not collected" "TBD" "TBD" "$NOTE" ;;
+                esac
+                ;;
+            R)
+                # true = bad (red), false = good (green) - e.g. "is our IP blacklisted"
+                local RAW="${DATA[$KEYS]:-}"
+                case "$RAW" in
+                    1|true|TRUE|True) _layout_row "$LABEL" "YES" "FAIL" "LISTED" "$NOTE" ;;
+                    0|false|FALSE|False) _layout_row "$LABEL" "NO" "ON" "CLEAN" "$NOTE" ;;
+                    *) _layout_row "$LABEL" "not collected" "TBD" "TBD" "$NOTE" ;;
+                esac
                 ;;
         esac
     done <<< "$_CL_ITEMS"

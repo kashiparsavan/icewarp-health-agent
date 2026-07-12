@@ -5,7 +5,10 @@ collector_run() {
 
     collector_set "dns.configured_server" "$(iw_get "C_Mail_SMTP_General_DNSServer" "" "" "")"
 
-    local TEST_HOST="${MAIL_HOSTNAME:-google.com}"
+    local TEST_HOST
+    TEST_HOST="$(resolve_mail_hostname)"
+    [ -z "$TEST_HOST" ] && TEST_HOST="google.com"
+
     local RESULT
     RESULT="$(timeout "$TOOL_TIMEOUT" dig +short "$TEST_HOST" 2>/dev/null | head -n1)"
 

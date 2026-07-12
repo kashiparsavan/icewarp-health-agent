@@ -1,12 +1,13 @@
 #!/bin/bash
 
-# Checklist: "Check TLS & StartTLS" - this is a live protocol-level check,
-# not a config lookup, so it always uses the OS-command layer.
+# Checklist: "Check TLS & StartTLS" - live protocol-level check.
 collector_run() {
 
-    local HOST="${MAIL_HOSTNAME:-localhost}"
-    local RESULT
+    local HOST
+    HOST="$(resolve_mail_hostname)"
+    [ -z "$HOST" ] && HOST="localhost"
 
+    local RESULT
     RESULT="$(echo -e "QUIT\r\n" | timeout "$TOOL_TIMEOUT" openssl s_client -starttls smtp -connect "${HOST}:25" 2>&1)"
 
     if echo "$RESULT" | grep -qi "Verify return code"; then
