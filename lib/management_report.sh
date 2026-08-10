@@ -252,6 +252,7 @@ Storage, Certificates and Services~Enable Full Text Search Services~V~fulltext.e
 Storage, Certificates and Services~Reject if SMTP AUTH Different from Sender~B~smtp.reject_auth_sender_mismatch
 Storage, Certificates and Services~2FA~R~security.login.2fa_bypass_enabled
 Storage, Certificates and Services~Archive Active~B~archive.active
+Storage, Certificates and Services~Daily Send Email limit~V~domain.primary.daily_send_messages_limit
 SMTP Delivery Settings~Max Message Size (MB)~V~smtp.max_message_size.mb
 SMTP Delivery Settings~Delivery Reports~B~smtp.delivery_reports_enabled
 SMTP Delivery Settings~Use TLS/SSL (Secured Delivery)~B~smtp.use_tls_ssl
@@ -316,6 +317,13 @@ Database~Database Type~V~database.type
 Database~Database Scope~V~database.scope
 Database~MySQL Service Active~V~mysql.service_active
 Database~MySQL Version~V~mysql.version_raw
+Database~MySQL OS version~L~general.os.pretty
+Database~MySQL Disk (Total GB / Used %)~L~storage.root_fs.total_gb
+Database~MySQL CPU Usage~L~os.cpu.load1
+Database~MySQL RAM (Total KB / Available KB)~L~os.memory.total_kb
+Database~MySQL OS Last Update~L~os.last_update_date
+Database~MySQL Repository Access~L~os.repository_access
+Database~MySQL Time Sync~L~os.time_sync.synced
 MySQL Server (Remote DB)~MySQL Host~V~mysql.host
 MySQL Server (Remote DB)~MySQL Reachable (port 3306)~B~mysql.reachable
 MySQL Server (Remote DB)~OS-level Stats~V~mysql.os_note'
@@ -357,6 +365,13 @@ _mr_render_checklist() {
                 ;;
             X) _mr_grid_item "$LABEL" "NA" ;;
             V) _mr_grid_item "$LABEL" "$([ -n "${DATA[$KEYS]:-}" ] && echo "INFO" || echo "NA")" ;;
+            L)
+                if [ "${DATA[database.type]:-}" = "mysql" ] && [ "${DATA[database.scope]:-}" = "local" ]; then
+                    _mr_grid_item "$LABEL" "$([ -n "${DATA[$KEYS]:-}" ] && echo "INFO" || echo "NA")"
+                else
+                    _mr_grid_item "$LABEL" "NA"
+                fi
+                ;;
             H)
                 local WORST="OK" K RESULT
                 IFS=',' read -ra _HK <<< "$KEYS"

@@ -256,6 +256,7 @@ Storage, Certificates and Services~Enable Full Text Search Services~V~fulltext.e
 Storage, Certificates and Services~Reject if SMTP AUTH Different from Sender~B~smtp.reject_auth_sender_mismatch~
 Storage, Certificates and Services~2FA~R~security.login.2fa_bypass_enabled~this is the BYPASS flag (true=bypass allowed=bad), not whether 2FA is required - needs correct property confirmed
 Storage, Certificates and Services~Archive Active~B~archive.active~
+Storage, Certificates and Services~Daily Send Email limit~V~domain.primary.daily_send_messages_limit~for the primary/first domain found - see appendix (domain.*.daily_send_messages_limit) for other domains if multiple exist
 SMTP Delivery Settings~Max Message Size (MB)~V~smtp.max_message_size.mb~
 SMTP Delivery Settings~Delivery Reports~B~smtp.delivery_reports_enabled~verified via C_Mail_SMTP_Other_Disable_DSN (inverted)
 SMTP Delivery Settings~Use TLS/SSL (Secured Delivery)~B~smtp.use_tls_ssl~
@@ -320,6 +321,13 @@ Database~Database Type~V~database.type~
 Database~Database Scope~V~database.scope~local = same server as IceWarp, remote = separate database server
 Database~MySQL Service Active~V~mysql.service_active~only populated when database is MySQL and running locally
 Database~MySQL Version~V~mysql.version_raw~only populated when database is MySQL and running locally
+Database~MySQL OS version~L~general.os.pretty~
+Database~MySQL Disk (Total GB / Used %)~L~storage.root_fs.total_gb~
+Database~MySQL CPU Usage~L~os.cpu.load1~1-min load average, not literal CPU percent
+Database~MySQL RAM (Total KB / Available KB)~L~os.memory.total_kb~
+Database~MySQL OS Last Update~L~os.last_update_date~
+Database~MySQL Repository Access~L~os.repository_access~
+Database~MySQL Time Sync~L~os.time_sync.synced~
 MySQL Server (Remote DB)~MySQL Host~V~mysql.host~
 MySQL Server (Remote DB)~MySQL Reachable (port 3306)~B~mysql.reachable~TCP reachability only - no query access without credentials
 MySQL Server (Remote DB)~OS-level Stats~V~mysql.os_note~this agent has no access to the remote box - needs a second agent run there, or SSH access'
@@ -475,6 +483,17 @@ _render_checklist() {
                     0|false|FALSE|False) _layout_row "$LABEL" "NO" "ON" "CLEAN" "$NOTE" ;;
                     *) _layout_row "$LABEL" "not collected" "TBD" "TBD" "$NOTE" ;;
                 esac
+                ;;
+            L)
+                # MySQL-parallel OS stat: only meaningful when MySQL is
+                # genuinely running locally (same box as IceWarp) - mirrors
+                # the already-collected APP OS value in that case, N/A
+                # otherwise (sqlite, or a genuinely remote MySQL server).
+                if [ "${DATA[database.type]:-}" = "mysql" ] && [ "${DATA[database.scope]:-}" = "local" ]; then
+                    _layout_row "$LABEL" "${DATA[$KEYS]:-(empty)}" "INFO" "INFO" "same host as IceWarp - mirrors the APP OS value"
+                else
+                    _layout_row "$LABEL" "N/A" "OFF" "N/A" "not applicable - MySQL is not local (see Database / MySQL Server sections)"
+                fi
                 ;;
         esac
     done <<< "$_CL_ITEMS"

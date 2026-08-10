@@ -42,6 +42,14 @@ collector_run() {
         collector_set "domain.${KEY_SAFE}.disk_quota_kb" "$(iw_get_domain "$DOMAIN" "D_DiskQuota" "" "" "")"
         collector_set "domain.${KEY_SAFE}.user_send_data_limit_mb_per_day" "$(iw_get_domain "$DOMAIN" "D_UserMB" "" "" "")"
 
+        # Fixed alias for the first domain seen, since the checklist report
+        # needs one stable key to point at regardless of the real domain
+        # name (which varies per install).
+        if [ "$COUNT" -eq 1 ]; then
+            collector_set "domain.primary.name" "$DOMAIN"
+            collector_set "domain.primary.daily_send_messages_limit" "${DATA[domain.${KEY_SAFE}.daily_send_messages_limit]:-}"
+        fi
+
     done <<< "$DOMAINS"
 
     collector_set "domain.count" "$COUNT"
