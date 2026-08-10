@@ -57,6 +57,10 @@ if [ "${BUILD_PDF:-1}" = "1" ]; then
     build_pdf
 fi
 
+if [ "${BUILD_MANAGEMENT_PDF:-1}" = "1" ]; then
+    build_management_pdf
+fi
+
 if [ "$MODE" = "--report" ]
 then
     print_report

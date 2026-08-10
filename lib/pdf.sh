@@ -232,10 +232,10 @@ _layout_cover() {
 # Checklist v1.12 definition (unchanged content, same as v1 - see notes)
 ###############################################################################
 
-_CL_ITEMS='DNS & Mail Flow Verification~Check PTR~B~dns.ptr.checked~
-DNS & Mail Flow Verification~Check SPF~B~dns.spf.checked~
-DNS & Mail Flow Verification~Check DKIM~B~dns.dkim.checked~
-DNS & Mail Flow Verification~Check DMARC~B~dns.dmarc.checked~
+_CL_ITEMS='DNS & Mail Flow Verification~Check PTR~B~dns.ptr.matches_hostname~was checking dns.ptr.checked (basically always true once resolved) instead of whether PTR actually matches
+DNS & Mail Flow Verification~Check SPF~B~dns.spf.found~
+DNS & Mail Flow Verification~Check DKIM~B~dns.dkim.found~
+DNS & Mail Flow Verification~Check DMARC~B~dns.dmarc.found~
 DNS & Mail Flow Verification~Check TLS and Start TLS~B~smtp.starttls_live_test~
 DNS & Mail Flow Verification~Check DNS Server~V~dns.configured_server~
 DNS & Mail Flow Verification~Test DNS Lookup~B~dns.lookup_test.ok~
@@ -245,7 +245,7 @@ Logging~Enable MailFlow Log~B~logging.mailqueue.level~
 Logging~Enable SQL Failed Logs~B~logging.sql_log_type~
 Backup, Watchdog and Monitoring~Enable System Backup~B~icewarp.backup.auto_enabled~
 Backup, Watchdog and Monitoring~Last Backup Date and Time~V~icewarp.backup.last_time~
-Backup, Watchdog and Monitoring~Enable Database Backup~X~~no collector yet, tool.help property not confirmed
+Backup, Watchdog and Monitoring~Enable Database Backup~B~icewarp.database_backup.enabled~verified via C_System_Tools_Backup_DB_Accounts
 Backup, Watchdog and Monitoring~Configure Archive Backup Settings~B~archive.backup.active~
 Backup, Watchdog and Monitoring~Enable System Watchdog~W~watchdog.control~smtp=${watchdog.smtp},pop3=${watchdog.pop3},im=${watchdog.im},gw=${watchdog.gw}
 Backup, Watchdog and Monitoring~Enable System Monitor (Mem/Disk/CPU)~H~memory,cpu,disk.overall~status pulled from Health Summary evaluation against these exact thresholds
@@ -254,10 +254,10 @@ Storage, Certificates and Services~Check for Certificates~V~icewarp.ssl.expirati
 Storage, Certificates and Services~RBL Valli Check (is our IP blacklisted)~R~security.rbl_self_check.listed~queries Spamhaus/SpamCop/SORBS/Barracuda directly against our own IP
 Storage, Certificates and Services~Enable Full Text Search Services~V~fulltext.enabled~value is the service endpoint URL when active, empty when off
 Storage, Certificates and Services~Reject if SMTP AUTH Different from Sender~B~smtp.reject_auth_sender_mismatch~
-Storage, Certificates and Services~2FA~B~security.login.2fa_bypass_enabled~this is the BYPASS flag, not whether 2FA is required - needs correct property confirmed
+Storage, Certificates and Services~2FA~R~security.login.2fa_bypass_enabled~this is the BYPASS flag (true=bypass allowed=bad), not whether 2FA is required - needs correct property confirmed
 Storage, Certificates and Services~Archive Active~B~archive.active~
 SMTP Delivery Settings~Max Message Size (MB)~V~smtp.max_message_size.mb~
-SMTP Delivery Settings~Delivery Reports~X~~no collector yet
+SMTP Delivery Settings~Delivery Reports~B~smtp.delivery_reports_enabled~verified via C_Mail_SMTP_Other_Disable_DSN (inverted)
 SMTP Delivery Settings~Use TLS/SSL (Secured Delivery)~B~smtp.use_tls_ssl~
 SMTP Delivery Settings~Process Incoming Messages in MDA Queue~B~smtp.use_incoming_queue~
 SMTP Delivery Settings~Use MDA Queue for Internal Message Delivery~B~smtp.mda_internal_delivery~may be the same underlying setting as the item above, needs confirming
@@ -290,34 +290,39 @@ Rejection Rules and Access~Close Connections for DNSBL Sessions~B~security.dnsbl
 Rejection Rules and Access~Use IP Reputation~B~security.ip_reputation.use~
 Rejection Rules and Access~Reject if Originators IP has no rDNS~B~security.reject_no_rdns~
 Rejection Rules and Access~Reject if Originators Domain Does Not Exist~B~security.reject_domain_no_mx~mapped to no-MX-record as a proxy, needs confirming
-Rejection Rules and Access~Reject if Originators Domain is Local and Not Authorized~X~~no collector yet
+Rejection Rules and Access~Reject if Originators Domain is Local and Not Authorized~B~smtp.relay.local_domain_only~likely a duplicate of Relay Only if Originators Domain is Local - same underlying property (C_Mail_Security_Protection_LocalDomain), no distinct property found
 Rejection Rules and Access~Set customers-stat@parsavan.com~X~~unclear if distinct from monitor.alert_email, needs correct property name
-Rejection Rules and Access~Disable AntiSpam Live~X~~no collector yet
+Rejection Rules and Access~Disable AntiSpam Live~R~security.antispam_live.enabled~verified via C_AS_Live_Enable (true=live enabled=bad, inverted)
 Rejection Rules and Access~Remove Old AntiSpam Folders~X~~cleanup action, may not fit the collector pattern
 Rejection Rules and Access~Password Policy Min Length~V~security.password_policy.min_length~
 Rejection Rules and Access~Set Admin Email~V~monitor.alert_email~
 Rejection Rules and Access~Change Admin Port~B~admin.port_changed_from_default~
 Rejection Rules and Access~Block Outgoing Port 9001~G~security.port_9001_egress.blocked~checked via firewalld/iptables directly, see security.port_9001_egress.method
 Archive Settings~Archive to Directory~V~icewarp.archive.default~
-Archive Settings~Number of Used Seats / License Max Users~X~~no collector yet
+Archive Settings~Number of Used Seats / License Max Users~V~icewarp.license.max_users_raw~best-effort from C_License_XML - tag name unconfirmed, see icewarp.license.max_users_note if empty
 Archive Settings~Integrate Archive with IMAP Folder~B~archive.integrate_with_imap~
 Archive Settings~Do Not Archive Spam~B~archive.do_not_archive_spam~
 Archive Settings~Enable Daytime Clock Synchronization~B~icewarp.daytime_clock_sync.enabled~
 Protocol and Access Hardening~Disable VRFY~B~smtp.deny_vrfy~
-Protocol and Access Hardening~Disable DIGEST-MD5~B~security.digest_md5.enabled~
-Protocol and Access Hardening~Session Timeout~X~~no collector yet
+Protocol and Access Hardening~Disable DIGEST-MD5~R~security.digest_md5.enabled~true means DIGEST-MD5 is still enabled, which is bad - inverted polarity
+Protocol and Access Hardening~Session Timeout~V~icewarp.session_timeout_minutes~verified via C_System_Adv_Protocols_SessionTimeOut
 Protocol and Access Hardening~Enable SSL/TLS~B~smtp.use_tls_ssl~may be a broader admin/IMAP/POP3 toggle distinct from the SMTP item above, needs confirming
-Protocol and Access Hardening~Disable Cloud Features~X~~no collector yet
+Protocol and Access Hardening~Disable Cloud Features~R~icewarp.cloud_api.autoconfigure~verified via C_CloudAPI_AutoConfigure (true=cloud autoconfig active=bad, inverted)
 Protocol and Access Hardening~Disable IMAP/POP3~V~service.imap.active,service.pop3.active~
 APP OS / Infrastructure~APP OS Version~V~general.os.pretty~
 APP OS / Infrastructure~Disk (Total GB / Used %)~V~storage.root_fs.total_gb,storage.root_fs.used_percent~
 APP OS / Infrastructure~CPU Usage~V~os.cpu.load1~1-min load average collected, not literal CPU percent - needs confirming if acceptable
 APP OS / Infrastructure~RAM (Total KB / Available KB)~V~os.memory.total_kb,os.memory.available_kb~
-APP OS / Infrastructure~APP OS Last Update~X~~no collector yet
-APP OS / Infrastructure~MySQL IP Address~V~database.host~only populated when a remote MySQL server is detected
-APP OS / Infrastructure~Repository Access~X~~no collector yet
-APP OS / Infrastructure~Time Sync~V~icewarp.daytime_clock_sync.enabled~this is IceWarps own daytime sync, not OS-level NTP/chrony - needs confirming
-MySQL Server (Remote DB)~MySQL Server Section~X~~entire block only applies when database.mysql_server_section_applicable=true; not built yet'
+APP OS / Infrastructure~APP OS Last Update~V~os.last_update_date~from dnf/yum/apt history
+APP OS / Infrastructure~Repository Access~B~os.repository_access~live repo reachability check via dnf/yum/apt
+APP OS / Infrastructure~Time Sync (OS-level NTP)~B~os.time_sync.synced~via timedatectl/chronyc - distinct from IceWarps own daytime sync (see icewarp.daytime_clock_sync.enabled)
+Database~Database Type~V~database.type~
+Database~Database Scope~V~database.scope~local = same server as IceWarp, remote = separate database server
+Database~MySQL Service Active~V~mysql.service_active~only populated when database is MySQL and running locally
+Database~MySQL Version~V~mysql.version_raw~only populated when database is MySQL and running locally
+MySQL Server (Remote DB)~MySQL Host~V~mysql.host~
+MySQL Server (Remote DB)~MySQL Reachable (port 3306)~B~mysql.reachable~TCP reachability only - no query access without credentials
+MySQL Server (Remote DB)~OS-level Stats~V~mysql.os_note~this agent has no access to the remote box - needs a second agent run there, or SSH access'
 
 _cl_bool_kind() {
     local V="${1:-}"
@@ -390,20 +395,28 @@ _render_note_template() {
 
 _render_checklist() {
     local CUR_SECTION=""
-    local MYSQL_APPLICABLE="${DATA[database.mysql_server_section_applicable]:-}"
     local SECTION LABEL KIND KEYS NOTE
     while IFS='~' read -r SECTION LABEL KIND KEYS NOTE; do
         [ -z "$SECTION" ] && continue
 
-        # Auto N/A: any MySQL-labeled row, or the whole MySQL section, when
-        # this install isn't actually using a remote MySQL server.
-        if [ "$MYSQL_APPLICABLE" != "true" ] && { [[ "$SECTION" == "MySQL Server"* ]] || [[ "$LABEL" == *MySQL* ]]; }; then
+        # Auto N/A: the "MySQL Server (Remote DB)" section only applies
+        # when there's an actually separate remote database server to
+        # report on - not for SQLite installs, and not for MySQL running
+        # locally on the same box (that's covered by the Database section
+        # above instead, using the same data already collected).
+        if [[ "$SECTION" == "MySQL Server"* ]] && [ "${DATA[database.scope]:-}" != "remote" ]; then
+            local NA_REASON="not applicable"
+            case "${DATA[database.type]:-}" in
+                sqlite) NA_REASON="not applicable - this install uses SQLite, no MySQL server involved" ;;
+                mysql) NA_REASON="not applicable - MySQL runs locally on this same server, see the Database section above" ;;
+                *) NA_REASON="not applicable - database type could not be determined" ;;
+            esac
             if [ "$SECTION" != "$CUR_SECTION" ]; then
                 _layout_section_header "$SECTION"
                 CUR_SECTION="$SECTION"
                 _layout_row_index=0
             fi
-            _layout_row "$LABEL" "N/A" "OFF" "N/A" "not applicable - this install uses SQLite, no remote MySQL server"
+            _layout_row "$LABEL" "N/A" "OFF" "N/A" "$NA_REASON"
             continue
         fi
 
