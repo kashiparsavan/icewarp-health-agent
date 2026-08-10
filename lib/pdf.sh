@@ -293,7 +293,7 @@ Rejection Rules and Access~Reject if Originators Domain Does Not Exist~B~securit
 Rejection Rules and Access~Reject if Originators Domain is Local and Not Authorized~B~smtp.relay.local_domain_only~likely a duplicate of Relay Only if Originators Domain is Local - same underlying property (C_Mail_Security_Protection_LocalDomain), no distinct property found
 Rejection Rules and Access~Set customers-stat@parsavan.com~X~~unclear if distinct from monitor.alert_email, needs correct property name
 Rejection Rules and Access~Disable AntiSpam Live~R~security.antispam_live.enabled~verified via C_AS_Live_Enable (true=live enabled=bad, inverted)
-Rejection Rules and Access~Remove Old AntiSpam Folders~X~~cleanup action, may not fit the collector pattern
+Rejection Rules and Access~Remove Old AntiSpam Folders~V~security.antispam_folders.old_count_90d~folders older than 90 days - agent is read-only, reports count for manual review, never deletes
 Rejection Rules and Access~Password Policy Min Length~V~security.password_policy.min_length~
 Rejection Rules and Access~Set Admin Email~V~monitor.alert_email~
 Rejection Rules and Access~Change Admin Port~B~admin.port_changed_from_default~

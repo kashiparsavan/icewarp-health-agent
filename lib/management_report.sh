@@ -289,7 +289,7 @@ Rejection Rules and Access~Reject if Originators Domain Does Not Exist~B~securit
 Rejection Rules and Access~Reject if Originators Domain is Local and Not Authorized~B~smtp.relay.local_domain_only
 Rejection Rules and Access~Set customers-stat@parsavan.com~X~
 Rejection Rules and Access~Disable AntiSpam Live~R~security.antispam_live.enabled
-Rejection Rules and Access~Remove Old AntiSpam Folders~X~
+Rejection Rules and Access~Remove Old AntiSpam Folders~V~security.antispam_folders.old_count_90d
 Rejection Rules and Access~Password Policy Min Length~V~security.password_policy.min_length
 Rejection Rules and Access~Set Admin Email~V~monitor.alert_email
 Rejection Rules and Access~Change Admin Port~B~admin.port_changed_from_default
