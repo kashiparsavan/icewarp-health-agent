@@ -2,13 +2,7 @@
 
 ###############################################################################
 #
-# PDF Report Writer (M5) - v2, designed report
-#
-# Still dependency-free (bash + printf + wc only - no python/wkhtmltopdf on
-# the production mail server), but now draws a real designed report instead
-# of a monospace data dump: a cover page, colored section banners, and
-# colored status badges per checklist item - using PDF's native color and
-# rectangle drawing operators, which cost nothing extra to support.
+# PDF Report Writer (M5) - v5
 #
 ###############################################################################
 
@@ -20,7 +14,6 @@ PDF_BOTTOM_Y=44
 PDF_CONTENT_RIGHT=$((PDF_PAGE_W - PDF_MARGIN))
 PDF_CONTENT_W=$((PDF_CONTENT_RIGHT - PDF_MARGIN))
 
-# Palette (0-1 RGB floats, as PDF expects)
 PDF_C_NAVY="0.102 0.235 0.369"
 PDF_C_NAVY_LIGHT="0.925 0.941 0.957"
 PDF_C_WHITE="1 1 1"
@@ -41,17 +34,13 @@ _pdf_escape() {
     printf '%s' "$S"
 }
 
-# --- low-level drawing primitives, append to $_PDF_CUR --------------------
-
 _pdf_rect() {
-    # x y w h "r g b"
     _PDF_CUR="${_PDF_CUR}${5} rg
 ${1} ${2} ${3} ${4} re f
 "
 }
 
 _pdf_text() {
-    # x y text font size "r g b"
     local ESC
     ESC="$(_pdf_escape "$3")"
     _PDF_CUR="${_PDF_CUR}${6} rg
@@ -60,34 +49,25 @@ BT /${4} ${5} Tf ${1} ${2} Td (${ESC}) Tj ET
 }
 
 _pdf_text_trunc() {
-    # like _pdf_text but truncates to a max character count first
     local MAXCHARS="$7"
     local TXT="$3"
-    if [ "${#TXT}" -gt "$MAXCHARS" ]; then
-        TXT="${TXT:0:$((MAXCHARS-1))}."
-    fi
+    [ "${#TXT}" -gt "$MAXCHARS" ] && TXT="${TXT:0:$((MAXCHARS-1))}."
     _pdf_text "$1" "$2" "$TXT" "$4" "$5" "$6"
 }
-
-# --- page/layout engine -----------------------------------------------
 
 _PDF_PAGES=()
 _PDF_CUR=""
 _PDF_Y=$PDF_TOP_Y
 
 _layout_new_page() {
-    if [ -n "$_PDF_CUR" ]; then
-        _PDF_PAGES+=("$_PDF_CUR")
-    fi
+    [ -n "$_PDF_CUR" ] && _PDF_PAGES+=("$_PDF_CUR")
     _PDF_CUR=""
     _PDF_Y=$PDF_TOP_Y
 }
 
 _layout_ensure() {
     local NEEDED="$1"
-    if [ "$((_PDF_Y - NEEDED))" -lt "$PDF_BOTTOM_Y" ]; then
-        _layout_new_page
-    fi
+    [ "$((_PDF_Y - NEEDED))" -lt "$PDF_BOTTOM_Y" ] && _layout_new_page
 }
 
 _layout_finish() {
@@ -103,7 +83,6 @@ _layout_section_header() {
     _PDF_Y=$((_PDF_Y - 30))
 }
 
-# badge color name -> "r g b" + label text
 _badge_color() {
     case "$1" in
         ON|PASS) echo "$PDF_C_GREEN" ;;
@@ -118,7 +97,6 @@ _badge_color() {
 _layout_row_index=0
 
 _layout_row() {
-    # label, value, badge_kind (ON/OFF/TBD/INFO/PASS/WARN/FAIL), badge_text, note(optional)
     local LABEL="$1" VALUE="$2" BKIND="$3" BTEXT="$4" NOTE="${5:-}"
     local ROW_H=16
     [ -n "$NOTE" ] && ROW_H=27
@@ -126,7 +104,7 @@ _layout_row() {
     _layout_ensure "$ROW_H"
 
     local BG="$PDF_C_WHITE"
-    if [ $(( _layout_row_index % 2 )) -eq 1 ]; then BG="$PDF_C_GRAY_LIGHT"; fi
+    [ $(( _layout_row_index % 2 )) -eq 1 ] && BG="$PDF_C_GRAY_LIGHT"
     _layout_row_index=$((_layout_row_index + 1))
 
     local ROW_TOP=$_PDF_Y
@@ -139,30 +117,20 @@ _layout_row() {
     local BADGE_W=76 BADGE_H=13
     local BADGE_X=$((PDF_CONTENT_RIGHT - BADGE_W - 4))
     local BADGE_Y=$((ROW_TOP - 12))
-    local BCOLOR
-    BCOLOR="$(_badge_color "$BKIND")"
+    local BCOLOR="$(_badge_color "$BKIND")"
     _pdf_rect "$BADGE_X" "$BADGE_Y" "$BADGE_W" "$BADGE_H" "$BCOLOR"
     _pdf_text_trunc "$((BADGE_X + 6))" "$((BADGE_Y + 4))" "$BTEXT" "F2" 7.5 "$PDF_C_WHITE" 14
 
-    if [ -n "$NOTE" ]; then
-        _pdf_text_trunc "$((PDF_MARGIN + 8))" "$((TEXT_Y - 11))" "note: ${NOTE}" "F3" 7.5 "$PDF_C_GRAY" 100
-    fi
+    [ -n "$NOTE" ] && _pdf_text_trunc "$((PDF_MARGIN + 8))" "$((TEXT_Y - 11))" "note: ${NOTE}" "F3" 7.5 "$PDF_C_GRAY" 100
 
     _PDF_Y=$((_PDF_Y - ROW_H))
 }
 
 _layout_plain_line() {
-    local TEXT="$1"
     _layout_ensure 12
-    _pdf_text_trunc "$PDF_MARGIN" "$_PDF_Y" "$TEXT" "F1" 8.5 "$PDF_C_TEXT" 110
+    _pdf_text_trunc "$PDF_MARGIN" "$_PDF_Y" "$1" "F1" 8.5 "$PDF_C_TEXT" 110
     _PDF_Y=$((_PDF_Y - 12))
 }
-
-_layout_spacer() {
-    _PDF_Y=$((_PDF_Y - ${1:-8}))
-}
-
-# --- cover page ---------------------------------------------------------
 
 _layout_cover() {
     local HOST="${DATA[agent.hostname]:-unknown}"
@@ -219,8 +187,7 @@ _layout_cover() {
     local LKINDS=("ON" "OFF" "TBD" "INFO")
     local I
     for I in 0 1 2 3; do
-        local BC
-        BC="$(_badge_color "${LKINDS[$I]}")"
+        local BC="$(_badge_color "${LKINDS[$I]}")"
         _pdf_rect "$LX" "$((_PDF_Y - 3))" 26 11 "$BC"
         _pdf_text "$((LX + 30))" "$_PDF_Y" "${LBLS[$I]}" "F1" 8 "$PDF_C_TEXT"
         LX=$((LX + 30 + 6*${#LBLS[$I]} + 14))
@@ -228,9 +195,52 @@ _layout_cover() {
     _PDF_Y=$((_PDF_Y - 20))
 }
 
-###############################################################################
-# Checklist v1.12 definition (unchanged content, same as v1 - see notes)
-###############################################################################
+# ---- Get status from watchdog or fallback to calculation ----
+_get_status_for_os_item() {
+    local KEYS="$1"
+    local WATCHDOG_KEY=""
+    case "$KEYS" in
+        *storage.root_fs.used_percent*) WATCHDOG_KEY="watchdog.disk" ;;
+        *os.cpu.load1*) WATCHDOG_KEY="watchdog.cpu" ;;
+        *os.memory.total_kb*) WATCHDOG_KEY="watchdog.memory" ;;
+        *os.last_update_date*) WATCHDOG_KEY="watchdog.os_update" ;;
+    esac
+    if [ -n "$WATCHDOG_KEY" ] && [ -n "${DATA[${WATCHDOG_KEY}.status]:-}" ]; then
+        local STATUS="${DATA[${WATCHDOG_KEY}.status]}"
+        local MSG="${DATA[${WATCHDOG_KEY}.message]:-}"
+        local BKIND="INFO"
+        case "$STATUS" in
+            PASS) BKIND="PASS" ;;
+            WARN) BKIND="WARN" ;;
+            FAIL) BKIND="FAIL" ;;
+            *) BKIND="INFO" ;;
+        esac
+        printf '%s|%s|%s' "$BKIND" "$STATUS" "$MSG"
+    else
+        # Fallback: compute status directly from raw data
+        local BKIND="INFO"
+        local MSG=""
+        case "$KEYS" in
+            *os.cpu.load1*)
+                local LOAD1="${DATA[os.cpu.load1]:-0}"
+                local CORES="${DATA[os.cpu.count]:-1}"
+                LOAD1=$(echo "$LOAD1" | tr ',' '.' | sed 's/[^0-9.]//g')
+                [ -z "$LOAD1" ] && LOAD1="0"
+                if [[ "$CORES" =~ ^[0-9]+$ ]] && [[ "$CORES" -gt 0 ]]; then
+                    local PCT=$(awk -v l="$LOAD1" -v c="$CORES" 'BEGIN {printf "%.2f", (l/c)*100}')
+                    if (( $(echo "$PCT > 50" | bc -l 2>/dev/null) )); then
+                        BKIND="WARN"
+                        MSG="CPU load is ${PCT}% (threshold: 50%)"
+                    else
+                        BKIND="PASS"
+                        MSG="CPU load is ${PCT}% (OK)"
+                    fi
+                fi
+                ;;
+        esac
+        printf '%s|%s|%s' "$BKIND" "$BKIND" "$MSG"
+    fi
+}
 
 _CL_ITEMS='DNS & Mail Flow Verification~Check PTR~F~dns.ptr.exists~real reverse-DNS lookup for ${dns.ptr.ip} -> ${dns.ptr.result} | matches mail hostname: ${dns.ptr.matches_hostname}
 DNS & Mail Flow Verification~Check SPF~F~dns.spf.found~real TXT lookup for ${dns.spf.domain} | server IP covered: ${dns.spf.includes_server_ip} via ${dns.spf.ip_coverage_via}
@@ -346,7 +356,7 @@ _cl_bool_kind() {
         0|false|FALSE|False) echo "OFF:DISABLED" ;;
         *)
             if [[ "$V" =~ ^-?[0-9]+$ ]]; then
-                if [ "$V" -ne 0 ]; then echo "ON:ENABLED (level ${V})"; else echo "OFF:DISABLED"; fi
+                [ "$V" -ne 0 ] && echo "ON:ENABLED (level ${V})" || echo "OFF:DISABLED"
             else
                 echo "INFO:$V"
             fi
@@ -364,38 +374,30 @@ _cl_value_render() {
             SHORT="${K##*.}"
             PARTS+=("${SHORT}=${DATA[$K]:-?}")
         done
-        local JOINED
-        JOINED="$(IFS=', '; echo "${PARTS[*]}")"
+        local JOINED="$(IFS=', '; echo "${PARTS[*]}")"
         printf '%s' "$JOINED"
     else
         printf '%s' "${DATA[$KEYS]:-(empty)}"
     fi
 }
 
-# Health-status worst-of, for KIND=H rows that defer to lib/health.sh's
-# already-correct evaluation instead of re-deriving pass/fail here.
 _health_worst_of() {
     local KEYS="$1"
     local WORST="pass"
     local -a MSGS=()
-    local K RESULT
     IFS=',' read -ra _HKARR <<< "$KEYS"
     for K in "${_HKARR[@]}"; do
-        RESULT="${HEALTH[$K]:-skip}"
+        local RESULT="${HEALTH[$K]:-skip}"
         [ -n "${HEALTH_MSG[$K]:-}" ] && MSGS+=("${HEALTH_MSG[$K]}")
         case "$RESULT" in
             fail) WORST="fail" ;;
             warn) [ "$WORST" != "fail" ] && WORST="warn" ;;
         esac
     done
-    local JOINED_MSG
-    JOINED_MSG="$(IFS='; '; echo "${MSGS[*]}")"
+    local JOINED_MSG="$(IFS='; '; echo "${MSGS[*]}")"
     printf '%s|%s' "$WORST" "$JOINED_MSG"
 }
 
-# Substitutes ${data.key} placeholders in a note template with live values -
-# used by KIND=W (watchdog) to show per-protocol detail without a separate
-# value column.
 _render_note_template() {
     local TEMPLATE="$1"
     local RESULT="$TEMPLATE"
@@ -413,11 +415,6 @@ _render_checklist() {
     while IFS='~' read -r SECTION LABEL KIND KEYS NOTE; do
         [ -z "$SECTION" ] && continue
 
-        # Auto N/A: the "MySQL Server (Remote DB)" section only applies
-        # when there's an actually separate remote database server to
-        # report on - not for SQLite installs, and not for MySQL running
-        # locally on the same box (that's covered by the Database section
-        # above instead, using the same data already collected).
         if [[ "$SECTION" == "MySQL Server"* ]] && [ "${DATA[database.scope]:-}" != "remote" ]; then
             local NA_REASON="not applicable"
             case "${DATA[database.type]:-}" in
@@ -439,41 +436,54 @@ _render_checklist() {
             CUR_SECTION="$SECTION"
             _layout_row_index=0
         fi
+
+        # Special handling for Database Type
+        if [ "$LABEL" = "Database Type" ] && [ "${DATA[database.type]:-}" = "sqlite" ]; then
+            _layout_row "$LABEL" "sqlite" "WARN" "WARN" "SQLite is not recommended for production - use MySQL"
+            continue
+        fi
+
+        # Special handling for OS items with watchdog or fallback
+        if [ "$KIND" = "V" ] && [[ "$KEYS" == *"storage.root_fs.used_percent"* || "$KEYS" == *"os.cpu.load1"* || "$KEYS" == *"os.memory.total_kb"* || "$KEYS" == *"os.last_update_date"* ]]; then
+            local WD_INFO="$(_get_status_for_os_item "$KEYS")"
+            local WD_BKIND="${WD_INFO%%|*}"
+            local WD_STATUS="${WD_INFO#*|}"
+            local WD_MSG="${WD_INFO##*|}"
+            local WD_BTEXT="$WD_BKIND"
+            local VAL="$(_cl_value_render "$KEYS")"
+            local NOTE_FINAL="$NOTE"
+            [ -n "$WD_MSG" ] && [ "$WD_MSG" != "$VAL" ] && NOTE_FINAL="${NOTE_FINAL} | watchdog: ${WD_MSG}"
+            _layout_row "$LABEL" "$VAL" "$WD_BKIND" "$WD_BTEXT" "$NOTE_FINAL"
+            continue
+        fi
+
         case "$KIND" in
             B)
-                local RESULT
-                RESULT="$(_cl_bool_kind "${DATA[$KEYS]:-}")"
+                local RESULT="$(_cl_bool_kind "${DATA[$KEYS]:-}")"
                 _layout_row "$LABEL" "${RESULT#*:}" "${RESULT%%:*}" "${RESULT%%:*}" "$NOTE"
                 ;;
             V)
-                local VAL
-                VAL="$(_cl_value_render "$KEYS")"
+                local VAL="$(_cl_value_render "$KEYS")"
                 _layout_row "$LABEL" "$VAL" "INFO" "INFO" "$NOTE"
                 ;;
             X)
                 _layout_row "$LABEL" "not collected" "TBD" "TBD" "$NOTE"
                 ;;
             W)
-                # watchdog-style: bool on primary key, detail via templated note
-                local RESULT
-                RESULT="$(_cl_bool_kind "${DATA[$KEYS]:-}")"
-                local DETAIL
-                DETAIL="$(_render_note_template "$NOTE")"
+                local RESULT="$(_cl_bool_kind "${DATA[$KEYS]:-}")"
+                local DETAIL="$(_render_note_template "$NOTE")"
                 _layout_row "$LABEL" "${RESULT#*:}" "${RESULT%%:*}" "${RESULT%%:*}" "$DETAIL"
                 ;;
             H)
-                # defers to lib/health.sh's already-evaluated pass/warn/fail
-                local COMBINED WORST MSG
-                COMBINED="$(_health_worst_of "$KEYS")"
-                WORST="${COMBINED%%|*}"
-                MSG="${COMBINED#*|}"
+                local COMBINED="$(_health_worst_of "$KEYS")"
+                local WORST="${COMBINED%%|*}"
+                local MSG="${COMBINED#*|}"
                 local BKIND="PASS"
                 [ "$WORST" = "warn" ] && BKIND="WARN"
                 [ "$WORST" = "fail" ] && BKIND="FAIL"
                 _layout_row "$LABEL" "" "$BKIND" "$(echo "$WORST" | tr '[:lower:]' '[:upper:]')" "${MSG:-$NOTE}"
                 ;;
             G)
-                # true = good (green), false = bad (red) - e.g. "is this port actually blocked"
                 local RAW="${DATA[$KEYS]:-}"
                 case "$RAW" in
                     1|true|TRUE|True) _layout_row "$LABEL" "YES" "ON" "OK" "$NOTE" ;;
@@ -482,7 +492,6 @@ _render_checklist() {
                 esac
                 ;;
             R)
-                # true = bad (red), false = good (green) - e.g. "is our IP blacklisted"
                 local RAW="${DATA[$KEYS]:-}"
                 case "$RAW" in
                     1|true|TRUE|True) _layout_row "$LABEL" "YES" "FAIL" "BAD" "$NOTE" ;;
@@ -491,10 +500,6 @@ _render_checklist() {
                 esac
                 ;;
             L)
-                # MySQL-parallel OS stat: only meaningful when MySQL is
-                # genuinely running locally (same box as IceWarp) - mirrors
-                # the already-collected APP OS value in that case, N/A
-                # otherwise (sqlite, or a genuinely remote MySQL server).
                 if [ "${DATA[database.type]:-}" = "mysql" ] && [ "${DATA[database.scope]:-}" = "local" ]; then
                     _layout_row "$LABEL" "${DATA[$KEYS]:-(empty)}" "INFO" "INFO" "same host as IceWarp - mirrors the APP OS value"
                 else
@@ -502,9 +507,6 @@ _render_checklist() {
                 fi
                 ;;
             P)
-                # presence-is-bad: for items that should be OFF/empty - any
-                # real (non-empty, non-zero/false) value means the thing is
-                # active, which is the bad state here.
                 local RAW="${DATA[$KEYS]:-}"
                 case "$RAW" in
                     ""|0|false|FALSE|False) _layout_row "$LABEL" "off" "ON" "OK" "$NOTE" ;;
@@ -512,9 +514,6 @@ _render_checklist() {
                 esac
                 ;;
             Z)
-                # zero-value-warns: a numeric limit of 0 commonly means
-                # "unlimited" in IceWarp, which is worth flagging rather
-                # than showing as neutral info.
                 local RAW="${DATA[$KEYS]:-}"
                 if [ "$RAW" = "0" ]; then
                     _layout_row "$LABEL" "0 (= unlimited)" "WARN" "WARN" "${NOTE:-a limit of 0 means unlimited - consider setting a real value}"
@@ -525,16 +524,8 @@ _render_checklist() {
                 fi
                 ;;
             F)
-                # Found/Missing wording for real DNS record lookups and
-                # live protocol tests - "ENABLED/DISABLED" implies a config
-                # toggle, which is misleading for "did dig actually find
-                # this record" or "did a live STARTTLS handshake succeed".
-                # NOTE is passed through the template substitution so the
-                # row can show real enriched data (IP coverage, selector
-                # found, DMARC policy, etc) inline instead of a static note.
                 local RAW="${DATA[$KEYS]:-}"
-                local DETAIL
-                DETAIL="$(_render_note_template "$NOTE")"
+                local DETAIL="$(_render_note_template "$NOTE")"
                 case "$RAW" in
                     1|true|TRUE|True) _layout_row "$LABEL" "found (live query)" "ON" "FOUND" "$DETAIL" ;;
                     0|false|FALSE|False) _layout_row "$LABEL" "not found (live query)" "FAIL" "MISSING" "$DETAIL" ;;
@@ -542,10 +533,6 @@ _render_checklist() {
                 esac
                 ;;
             M)
-                # warn-if-true: a softer risk signal than R - true is worth
-                # a look (amber) but isn't necessarily an active problem by
-                # itself, e.g. "a migration was started at some point" vs
-                # R's "migration is currently active" (a harder fail).
                 local RAW="${DATA[$KEYS]:-}"
                 case "$RAW" in
                     1|true|TRUE|True) _layout_row "$LABEL" "YES" "WARN" "WARN" "$NOTE" ;;
@@ -560,7 +547,6 @@ _render_checklist() {
 _render_health_summary() {
     _layout_section_header "Health Summary"
     _layout_row_index=0
-    local K
     for K in $(printf '%s\n' "${!HEALTH[@]}" | sort); do
         local RESULT="${HEALTH[$K]}"
         local BKIND
@@ -574,10 +560,6 @@ _render_health_summary() {
     done
 }
 
-###############################################################################
-# Low-level PDF object writer (3 fonts: F1 regular, F2 bold, F3 oblique)
-###############################################################################
-
 _pdf_obj() {
     local NUM="$1"; shift
     PDF_OFFSETS[$NUM]="$(wc -c < "$PDF_OUT_FILE")"
@@ -587,11 +569,7 @@ _pdf_obj() {
 _pdf_write_file() {
     local OUT_PDF="$1"
     local P="${#_PDF_PAGES[@]}"
-
-    if [ "$P" -eq 0 ]; then
-        echo "[WARN] build_pdf: nothing to render, skipping PDF output" >&2
-        return 1
-    fi
+    [ "$P" -eq 0 ] && { echo "[WARN] build_pdf: nothing to render" >&2; return 1; }
 
     local F_REG=$((2 + 2*P + 1))
     local F_BOLD=$((2 + 2*P + 2))
@@ -607,9 +585,7 @@ _pdf_write_file() {
 endobj
 "
     local KIDS="" i
-    for ((i=1; i<=P; i++)); do
-        KIDS="${KIDS}$((2+i)) 0 R "
-    done
+    for ((i=1; i<=P; i++)); do KIDS="${KIDS}$((2+i)) 0 R "; done
     _pdf_obj 2 "2 0 obj
 << /Type /Pages /Kids [ ${KIDS}] /Count ${P} >>
 endobj
@@ -618,9 +594,7 @@ endobj
         local PAGE_NUM=$((2+i))
         local CONTENT_NUM=$((2+P+i))
         local STREAM="${_PDF_PAGES[$((i-1))]}"
-        local STREAM_LEN
-        STREAM_LEN="$(printf '%s' "$STREAM" | wc -c)"
-
+        local STREAM_LEN="$(printf '%s' "$STREAM" | wc -c)"
         _pdf_obj "$PAGE_NUM" "${PAGE_NUM} 0 obj
 << /Type /Page /Parent 2 0 R /Resources << /Font << /F1 ${F_REG} 0 R /F2 ${F_BOLD} 0 R /F3 ${F_OBL} 0 R >> >> /MediaBox [0 0 ${PDF_PAGE_W} ${PDF_PAGE_H}] /Contents ${CONTENT_NUM} 0 R >>
 endobj
@@ -647,38 +621,26 @@ endobj
 endobj
 "
 
-    local XREF_START
-    XREF_START="$(wc -c < "$OUT_PDF")"
+    local XREF_START="$(wc -c < "$OUT_PDF")"
     local TOTAL_OBJS=$((F_OBL + 1))
-
     {
         printf 'xref\n0 %d\n' "$TOTAL_OBJS"
         printf '0000000000 65535 f \n'
         local n
-        for ((n=1; n<=F_OBL; n++)); do
-            printf '%010d 00000 n \n' "${PDF_OFFSETS[$n]}"
-        done
+        for ((n=1; n<=F_OBL; n++)); do printf '%010d 00000 n \n' "${PDF_OFFSETS[$n]}"; done
         printf 'trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n' "$TOTAL_OBJS" "$XREF_START"
     } >> "$OUT_PDF"
-
     echo "[INFO] PDF report written: $OUT_PDF ($(wc -c < "$OUT_PDF") bytes, ${P} page(s))"
 }
 
-###############################################################################
-# Entry point
-###############################################################################
-
 build_pdf() {
     local OUT_PDF="${OUTPUT_PDF:-${PROJECT_ROOT}/output/report.pdf}"
-
     _PDF_PAGES=()
     _PDF_CUR=""
     _PDF_Y=$PDF_TOP_Y
 
     _layout_cover
-    if [ "${#HEALTH[@]}" -gt 0 ]; then
-        _render_health_summary
-    fi
+    [ "${#HEALTH[@]}" -gt 0 ] && _render_health_summary
     _layout_new_page
     _render_checklist
 
