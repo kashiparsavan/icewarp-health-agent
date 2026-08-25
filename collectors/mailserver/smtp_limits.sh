@@ -19,6 +19,5 @@ collector_run() {
 
     collector_set "smtp.enforce_tls_secondary_port" "$(iw_get "C_Mail_SMTP_Delivery_EnforceTlsOnSecondarySmtpPort" "" "" "")"
     collector_set "smtp.header_footer_active" "$(iw_get "C_Mail_SMTP_HeaderFooter_Enable" "" "" "")"
-    collector_set "fulltext.enabled" "$(iw_get "C_System_Services_Fulltext_Scanner_URL" "" "" "")"
 
 }

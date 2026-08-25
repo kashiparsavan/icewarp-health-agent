@@ -181,8 +181,8 @@ _layout_cover() {
     _PDF_Y=660
 
     local INFO_ROWS=(
-        "Company Name|_______________________"
-        "Technician|_______________________"
+        "Company Name|${DATA[general.company]:-Unknown Host}"
+        "Technician|${DATA[general.technician]:-Not Specified}"
         "IceWarp Version|${DATA[icewarp.version]:-unknown}"
         "Antispam Last Update|${DATA[icewarp.antispam.last_update]:-unknown}"
         "Antivirus Last Update|${DATA[icewarp.antivirus.last_update]:-unknown}"
@@ -232,13 +232,14 @@ _layout_cover() {
 # Checklist v1.12 definition (unchanged content, same as v1 - see notes)
 ###############################################################################
 
-_CL_ITEMS='DNS & Mail Flow Verification~Check PTR~B~dns.ptr.matches_hostname~was checking dns.ptr.checked (basically always true once resolved) instead of whether PTR actually matches
-DNS & Mail Flow Verification~Check SPF~B~dns.spf.found~
-DNS & Mail Flow Verification~Check DKIM~B~dns.dkim.found~
-DNS & Mail Flow Verification~Check DMARC~B~dns.dmarc.found~
-DNS & Mail Flow Verification~Check TLS and Start TLS~B~smtp.starttls_live_test~
-DNS & Mail Flow Verification~Check DNS Server~V~dns.configured_server~
-DNS & Mail Flow Verification~Test DNS Lookup~B~dns.lookup_test.ok~
+_CL_ITEMS='DNS & Mail Flow Verification~Check PTR~F~dns.ptr.exists~real reverse-DNS lookup for ${dns.ptr.ip} -> ${dns.ptr.result} | matches mail hostname: ${dns.ptr.matches_hostname}
+DNS & Mail Flow Verification~Check SPF~F~dns.spf.found~real TXT lookup for ${dns.spf.domain} | server IP covered: ${dns.spf.includes_server_ip} via ${dns.spf.ip_coverage_via}
+DNS & Mail Flow Verification~Check DKIM~F~dns.dkim.found~real TXT lookup, selector found: ${dns.dkim.selector_found} (tried: ${dns.dkim.selectors_tried})
+DNS & Mail Flow Verification~Check DMARC~F~dns.dmarc.found~real TXT lookup | policy: p=${dns.dmarc.policy}
+DNS & Mail Flow Verification~Check TLS and Start TLS~F~smtp.starttls_live_test~live STARTTLS handshake test on port 25, not a config check
+DNS & Mail Flow Verification~Check DNS Server~V~dns.configured_server~IceWarps configured forwarders - the OS resolver actually used by dig is a separate thing, see Test DNS Lookup / Resolver External Test
+DNS & Mail Flow Verification~Test DNS Lookup~F~dns.lookup_test.ok~real dig lookup for our own domain (${dns.lookup_test.host})
+DNS & Mail Flow Verification~Resolver External Test~F~dns.resolver.external_test_ok~real dig lookup for an external domain (${dns.resolver.external_test_host}) - confirms the resolver can reach arbitrary destination domains, not just our own
 Logging~Enable Logging - Authentication~B~logging.auth_log_level~
 Logging~Enable Logging - Maintenance~B~logging.maintenance_log_level~
 Logging~Enable MailFlow Log~B~logging.mailqueue.level~
@@ -248,21 +249,26 @@ Backup, Watchdog and Monitoring~Last Backup Date and Time~V~icewarp.backup.last_
 Backup, Watchdog and Monitoring~Enable Database Backup~B~icewarp.database_backup.enabled~verified via C_System_Tools_Backup_DB_Accounts
 Backup, Watchdog and Monitoring~Configure Archive Backup Settings~B~archive.backup.active~
 Backup, Watchdog and Monitoring~Enable System Watchdog~W~watchdog.control~smtp=${watchdog.smtp},pop3=${watchdog.pop3},im=${watchdog.im},gw=${watchdog.gw}
-Backup, Watchdog and Monitoring~Enable System Monitor (Mem/Disk/CPU)~H~memory,cpu,disk.overall~status pulled from Health Summary evaluation against these exact thresholds
+Backup, Watchdog and Monitoring~Remote Server Watchdog~W~watchdog.remoteserver.enable~down_after_min=${watchdog.remoteserver.down_after_minutes},report_email=${watchdog.remoteserver.report_email}
+Backup, Watchdog and Monitoring~Enable System Monitor (Mem/Disk/CPU)~B~monitor.enabled~checks whether monitoring itself is configured/active - current threshold pass/fail is a separate matter, see Health Summary section
+Migration Safety~Migration Active~R~icewarp.migration.active~must be disabled - an active migration left running by mistake has previously caused a full outage on this environment, verified via C_System_Tools_Migration_Active
+Migration Safety~Migration Source Server~V~icewarp.migration.server~informational - the configured source host, populated even when migration is inactive
+Migration Safety~Migration Ever Started~M~icewarp.migration.stat_started~a nonzero start timestamp exists (see icewarp.migration.stat_start_human) - a softer signal than Active, may just be historical
+Migration Safety~Migration Has Errors~R~icewarp.migration.has_errors~see icewarp.migration.stat_errors for the count, verified via C_System_Tools_Migration_Stat_Errors
 Storage, Certificates and Services~Check for Storage Locations~V~icewarp.path.mail~
 Storage, Certificates and Services~Check for Certificates~V~icewarp.ssl.expiration,icewarp.ssl.days_left~live-checked via openssl against the mail domain on port 443, not just a local file path
 Storage, Certificates and Services~RBL Valli Check (is our IP blacklisted)~R~security.rbl_self_check.listed~queries Spamhaus/SpamCop/SORBS/Barracuda directly against our own IP
-Storage, Certificates and Services~Enable Full Text Search Services~V~fulltext.enabled~value is the service endpoint URL when active, empty when off
+Storage, Certificates and Services~Enable Full Text Search Services~P~fulltext.enabled~this service is expected to be OFF - flagged if active
 Storage, Certificates and Services~Reject if SMTP AUTH Different from Sender~B~smtp.reject_auth_sender_mismatch~
 Storage, Certificates and Services~2FA~R~security.login.2fa_bypass_enabled~this is the BYPASS flag (true=bypass allowed=bad), not whether 2FA is required - needs correct property confirmed
 Storage, Certificates and Services~Archive Active~B~archive.active~
-Storage, Certificates and Services~Daily Send Email limit~V~domain.primary.daily_send_messages_limit~for the primary/first domain found - see appendix (domain.*.daily_send_messages_limit) for other domains if multiple exist
+Storage, Certificates and Services~Daily Send Email limit~Z~domain.primary.daily_send_messages_limit~for the primary/first domain found - 0 means unlimited, which is a real risk worth flagging
 SMTP Delivery Settings~Max Message Size (MB)~V~smtp.max_message_size.mb~
 SMTP Delivery Settings~Delivery Reports~B~smtp.delivery_reports_enabled~verified via C_Mail_SMTP_Other_Disable_DSN (inverted)
 SMTP Delivery Settings~Use TLS/SSL (Secured Delivery)~B~smtp.use_tls_ssl~
 SMTP Delivery Settings~Process Incoming Messages in MDA Queue~B~smtp.use_incoming_queue~
 SMTP Delivery Settings~Use MDA Queue for Internal Message Delivery~B~smtp.mda_internal_delivery~may be the same underlying setting as the item above, needs confirming
-SMTP Delivery Settings~Maximum Number of Simultaneous Threads~V~smtp.thread_cache~
+SMTP Delivery Settings~Maximum Number of Simultaneous Threads~V~smtp.incoming_queue_threads~was pointing at smtp.thread_cache (a different System>Services setting) - fixed to the actual Mail>General>Advanced property
 SMTP Delivery Settings~Hide IP Address from Received for All Messages~B~smtp.hide_ip~
 SMTP Delivery Settings~Hide Server Version~B~smtp.hide_server_version~
 SMTP Protocol Hardening~Require HELO/EHLO~B~smtp.require_helo_ehlo~
@@ -272,8 +278,8 @@ SMTP Protocol Hardening~Relay Only if Originators Domain is Local~B~smtp.relay.l
 SMTP Protocol Hardening~Process SMTP~B~security.intrusion.process_smtp~ambiguous, a separate watchdog-level flag may also apply - needs confirming
 SMTP Protocol Hardening~Process POP3/IMAP~B~security.intrusion.process_pop3_imap~ambiguous, see note above
 SMTP Protocol Hardening~Add rDNS Result to Received for All Messages~B~smtp.rdns_in_received~
-SMTP Protocol Hardening~Set Directory Cache Schedule~V~directory_cache.schedule_raw~format not decoded yet
-SMTP Protocol Hardening~Change Admin URL~V~admin.url~raw value only, not compared against the default
+SMTP Protocol Hardening~Set Directory Cache Schedule~B~directory_cache.scheduled~raw schedule format still not decoded (see appendix), but whether it is set at all is reliable
+SMTP Protocol Hardening~Change Admin URL~B~admin.url_changed_from_default~heuristic: compares the URL path against IceWarps default "/admin/" - no dedicated tool.sh boolean exists for this
 Intrusion Prevention - Block Rules~Block IP - Connections in 1 Minute~V~security.intrusion.block_connections_per_minute.value~
 Intrusion Prevention - Block Rules~Block IP - Unknown User Delivery Count~V~security.intrusion.block_unknown_user_count.value~
 Intrusion Prevention - Block Rules~Block IP - Denied for Relaying Too Often~V~security.intrusion.block_relay_denied_count.value~
@@ -292,7 +298,7 @@ Rejection Rules and Access~Use IP Reputation~B~security.ip_reputation.use~
 Rejection Rules and Access~Reject if Originators IP has no rDNS~B~security.reject_no_rdns~
 Rejection Rules and Access~Reject if Originators Domain Does Not Exist~B~security.reject_domain_no_mx~mapped to no-MX-record as a proxy, needs confirming
 Rejection Rules and Access~Reject if Originators Domain is Local and Not Authorized~B~smtp.relay.local_domain_only~likely a duplicate of Relay Only if Originators Domain is Local - same underlying property (C_Mail_Security_Protection_LocalDomain), no distinct property found
-Rejection Rules and Access~Set customers-stat@parsavan.com~X~~unclear if distinct from monitor.alert_email, needs correct property name
+Rejection Rules and Access~Set customers-stat@parsavan.com~V~monitor.alert_email~confirmed via WebAdmin (API Console): same property as "Set Admin Email" (C_System_Tools_Monitor_ReportAddress) - if the live value doesnt match the expected address, this field may need updating in WebAdmin, or it may support multiple semicolon-separated recipients where only one shows
 Rejection Rules and Access~Disable AntiSpam Live~R~security.antispam_live.enabled~verified via C_AS_Live_Enable (true=live enabled=bad, inverted)
 Rejection Rules and Access~Remove Old AntiSpam Folders~V~security.antispam_folders.old_count_90d~folders older than 90 days - agent is read-only, reports count for manual review, never deletes
 Rejection Rules and Access~Password Policy Min Length~V~security.password_policy.min_length~
@@ -479,8 +485,8 @@ _render_checklist() {
                 # true = bad (red), false = good (green) - e.g. "is our IP blacklisted"
                 local RAW="${DATA[$KEYS]:-}"
                 case "$RAW" in
-                    1|true|TRUE|True) _layout_row "$LABEL" "YES" "FAIL" "LISTED" "$NOTE" ;;
-                    0|false|FALSE|False) _layout_row "$LABEL" "NO" "ON" "CLEAN" "$NOTE" ;;
+                    1|true|TRUE|True) _layout_row "$LABEL" "YES" "FAIL" "BAD" "$NOTE" ;;
+                    0|false|FALSE|False) _layout_row "$LABEL" "NO" "ON" "OK" "$NOTE" ;;
                     *) _layout_row "$LABEL" "not collected" "TBD" "TBD" "$NOTE" ;;
                 esac
                 ;;
@@ -494,6 +500,58 @@ _render_checklist() {
                 else
                     _layout_row "$LABEL" "N/A" "OFF" "N/A" "not applicable - MySQL is not local (see Database / MySQL Server sections)"
                 fi
+                ;;
+            P)
+                # presence-is-bad: for items that should be OFF/empty - any
+                # real (non-empty, non-zero/false) value means the thing is
+                # active, which is the bad state here.
+                local RAW="${DATA[$KEYS]:-}"
+                case "$RAW" in
+                    ""|0|false|FALSE|False) _layout_row "$LABEL" "off" "ON" "OK" "$NOTE" ;;
+                    *) _layout_row "$LABEL" "$RAW" "FAIL" "ACTIVE" "$NOTE" ;;
+                esac
+                ;;
+            Z)
+                # zero-value-warns: a numeric limit of 0 commonly means
+                # "unlimited" in IceWarp, which is worth flagging rather
+                # than showing as neutral info.
+                local RAW="${DATA[$KEYS]:-}"
+                if [ "$RAW" = "0" ]; then
+                    _layout_row "$LABEL" "0 (= unlimited)" "WARN" "WARN" "${NOTE:-a limit of 0 means unlimited - consider setting a real value}"
+                elif [ -n "$RAW" ]; then
+                    _layout_row "$LABEL" "$RAW" "INFO" "INFO" "$NOTE"
+                else
+                    _layout_row "$LABEL" "not collected" "TBD" "TBD" "$NOTE"
+                fi
+                ;;
+            F)
+                # Found/Missing wording for real DNS record lookups and
+                # live protocol tests - "ENABLED/DISABLED" implies a config
+                # toggle, which is misleading for "did dig actually find
+                # this record" or "did a live STARTTLS handshake succeed".
+                # NOTE is passed through the template substitution so the
+                # row can show real enriched data (IP coverage, selector
+                # found, DMARC policy, etc) inline instead of a static note.
+                local RAW="${DATA[$KEYS]:-}"
+                local DETAIL
+                DETAIL="$(_render_note_template "$NOTE")"
+                case "$RAW" in
+                    1|true|TRUE|True) _layout_row "$LABEL" "found (live query)" "ON" "FOUND" "$DETAIL" ;;
+                    0|false|FALSE|False) _layout_row "$LABEL" "not found (live query)" "FAIL" "MISSING" "$DETAIL" ;;
+                    *) _layout_row "$LABEL" "not collected" "TBD" "TBD" "$DETAIL" ;;
+                esac
+                ;;
+            M)
+                # warn-if-true: a softer risk signal than R - true is worth
+                # a look (amber) but isn't necessarily an active problem by
+                # itself, e.g. "a migration was started at some point" vs
+                # R's "migration is currently active" (a harder fail).
+                local RAW="${DATA[$KEYS]:-}"
+                case "$RAW" in
+                    1|true|TRUE|True) _layout_row "$LABEL" "YES" "WARN" "WARN" "$NOTE" ;;
+                    0|false|FALSE|False) _layout_row "$LABEL" "NO" "ON" "OK" "$NOTE" ;;
+                    *) _layout_row "$LABEL" "not collected" "TBD" "TBD" "$NOTE" ;;
+                esac
                 ;;
         esac
     done <<< "$_CL_ITEMS"

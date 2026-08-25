@@ -20,7 +20,7 @@ agent_init() {
     STATUS_MSG=()
 
     DATA["agent.version"]="${AGENT_VERSION}"
-    DATA["agent.hostname"]="$(hostname -f 2>/dev/null || hostname)"
+    DATA["agent.hostname"]="$(hostname 2>/dev/null || echo unknown)"
     DATA["agent.time"]="$(date '+%F %T')"
 
     if [ -n "${COMPANY_NAME:-}" ]; then
@@ -79,7 +79,7 @@ resolve_public_ip() {
     fi
     local IP=""
     local SVC
-    for SVC in "https://ifconfig.me" "https://icanhazip.com" "https://api.ipify.org"; do
+    for SVC in "https://ifconfig.me" "https://icanhazip.com" "https://api.ipify.org" "https://ip.sb"; do
         IP="$(timeout 5 curl -s -4 --max-time 5 "$SVC" 2>/dev/null | tr -d '[:space:]')"
         [[ "$IP" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]] && break
         IP=""
@@ -90,6 +90,51 @@ resolve_public_ip() {
     fi
     _RESOLVED_PUBLIC_IP="$IP"
     printf '%s' "$IP"
+}
+
+###############################################################################
+# Resilient DNS lookup - if the OS default resolver (/etc/resolv.conf)
+# returns nothing, retries against known-good public resolvers before
+# giving up. Protects every DNS-based collector from a single misconfigured
+# or flaky default resolver silently producing "not found" everywhere.
+###############################################################################
+
+dig_resilient() {
+    local ARGS=("$@")
+    local RESULT
+    RESULT="$(timeout "$TOOL_TIMEOUT" dig +short "${ARGS[@]}" 2>/dev/null)"
+    if [ -n "$RESULT" ]; then
+        printf '%s' "$RESULT"
+        return
+    fi
+    local RESOLVER
+    for RESOLVER in 1.1.1.1 8.8.8.8; do
+        RESULT="$(timeout "$TOOL_TIMEOUT" dig +short "${ARGS[@]}" "@${RESOLVER}" 2>/dev/null)"
+        if [ -n "$RESULT" ]; then
+            printf '%s' "$RESULT"
+            return
+        fi
+    done
+    printf ''
+}
+
+# Properly concatenates a DNS TXT record's quoted chunks with no inserted
+# separator, per DNS TXT chunking rules - a TXT value longer than 255
+# bytes gets split into multiple quoted character-strings by the DNS
+# protocol itself, and they must be joined directly (not with a space) to
+# reconstruct the real value. Naive `tr -d '"'` on dig's +short output
+# leaves the space that sits between the closing and opening quotes,
+# silently corrupting anything that spans a chunk boundary (e.g. a DKIM
+# public key). Takes one line of `dig +short TXT` output.
+dns_txt_join() {
+    local LINE="$1"
+    local CHUNKS
+    CHUNKS="$(printf '%s' "$LINE" | grep -oP '"[^"]*"')"
+    if [ -n "$CHUNKS" ]; then
+        printf '%s' "$CHUNKS" | tr -d '"' | tr -d '\n'
+    else
+        printf '%s' "$LINE" | tr -d '"'
+    fi
 }
 
 ###############################################################################
@@ -236,6 +281,24 @@ iw_tool_get() {
     RAW="${RAW//$'\r'/}"
 
     printf '%s' "$RAW" | awk -F': ' '{print $2}' | head -n1
+
+}
+
+# Multi-line-safe variant - for properties whose value can legitimately
+# span multiple lines (e.g. C_License_XML). iw_tool_get() above discards
+# everything after the first line via `head -n1`, which is correct for
+# ordinary single-line properties but silently truncates XML/multi-line
+# ones down to just their opening tag. This strips only the "KEY: " prefix
+# from line 1 and keeps every subsequent line intact.
+iw_tool_get_multiline() {
+
+    local KEY="$1"
+    local RAW
+
+    RAW="$(timeout "$TOOL_TIMEOUT" "$IW_TOOL" display system "$KEY" 2>/dev/null)"
+    RAW="${RAW//$'\r'/}"
+
+    printf '%s' "$RAW" | sed '1s/^[^:]*:[[:space:]]*//'
 
 }
 

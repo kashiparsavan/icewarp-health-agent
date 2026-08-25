@@ -26,6 +26,19 @@ collector_run() {
     collector_set "admin.url" "$URL"
     collector_set "admin.port_raw" "$PORT"
 
+    # IceWarp's default WebAdmin path is "/admin/" - anything else means it
+    # was changed. No dedicated tool.sh boolean for this exists, so this is
+    # a path-comparison heuristic, not a direct property read.
+    if [ -n "$URL" ]; then
+        local URL_PATH
+        URL_PATH="$(echo "$URL" | sed -E 's#^[a-zA-Z]+://[^/]+##' | tr '[:upper:]' '[:lower:]')"
+        if [ "$URL_PATH" = "/admin/" ] || [ "$URL_PATH" = "/admin" ]; then
+            collector_set "admin.url_changed_from_default" "false"
+        else
+            collector_set "admin.url_changed_from_default" "true"
+        fi
+    fi
+
     if [ "$PORT" = "0" ] || [ -z "$PORT" ]; then
         collector_set "admin.port_changed_from_default" "false"
     else

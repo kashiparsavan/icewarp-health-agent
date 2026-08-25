@@ -15,11 +15,24 @@
 
 collector_run() {
 
-    local AS_DIR="${DATA[icewarp.home]:-}/antispam"
+    local CANDIDATES=(
+        "${DATA[icewarp.home]:-}/antispam"
+        "${DATA[icewarp.home]:-}/AntiSpam"
+        "${DATA[icewarp.home]:-}/spam"
+        "${DATA[icewarp.home]:-}/Spam"
+    )
 
-    if [ ! -d "$AS_DIR" ]; then
+    local AS_DIR="" C
+    for C in "${CANDIDATES[@]}"; do
+        if [ -n "$C" ] && [ -d "$C" ]; then
+            AS_DIR="$C"
+            break
+        fi
+    done
+
+    if [ -z "$AS_DIR" ]; then
         collector_set "security.antispam_folders.checked" "false"
-        collector_set "security.antispam_folders.reason" "antispam directory not found at ${AS_DIR}"
+        collector_set "security.antispam_folders.reason" "none of the checked paths exist: ${CANDIDATES[*]} - no confirmed tool.sh property for this location"
         return
     fi
 

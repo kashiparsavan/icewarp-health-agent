@@ -228,13 +228,14 @@ endobj
 # SECTION~LABEL~KIND~KEYS   (KIND: B=bool  H=health-ref  X=not collected)
 ###############################################################################
 
-_MR_ITEMS='DNS & Mail Flow Verification~Check PTR~B~dns.ptr.matches_hostname
-DNS & Mail Flow Verification~Check SPF~B~dns.spf.found
-DNS & Mail Flow Verification~Check DKIM~B~dns.dkim.found
-DNS & Mail Flow Verification~Check DMARC~B~dns.dmarc.found
-DNS & Mail Flow Verification~Check TLS and Start TLS~B~smtp.starttls_live_test
+_MR_ITEMS='DNS & Mail Flow Verification~Check PTR~F~dns.ptr.exists
+DNS & Mail Flow Verification~Check SPF~F~dns.spf.found
+DNS & Mail Flow Verification~Check DKIM~F~dns.dkim.found
+DNS & Mail Flow Verification~Check DMARC~F~dns.dmarc.found
+DNS & Mail Flow Verification~Check TLS and Start TLS~F~smtp.starttls_live_test
 DNS & Mail Flow Verification~Check DNS Server~V~dns.configured_server
-DNS & Mail Flow Verification~Test DNS Lookup~B~dns.lookup_test.ok
+DNS & Mail Flow Verification~Test DNS Lookup~F~dns.lookup_test.ok
+DNS & Mail Flow Verification~Resolver External Test~F~dns.resolver.external_test_ok
 Logging~Enable Logging - Authentication~B~logging.auth_log_level
 Logging~Enable Logging - Maintenance~B~logging.maintenance_log_level
 Logging~Enable MailFlow Log~B~logging.mailqueue.level
@@ -244,21 +245,26 @@ Backup, Watchdog and Monitoring~Last Backup Date and Time~V~icewarp.backup.last_
 Backup, Watchdog and Monitoring~Enable Database Backup~B~icewarp.database_backup.enabled
 Backup, Watchdog and Monitoring~Configure Archive Backup Settings~B~archive.backup.active
 Backup, Watchdog and Monitoring~Enable System Watchdog~B~watchdog.control
-Backup, Watchdog and Monitoring~Enable System Monitor (Mem/Disk/CPU)~H~memory,cpu,disk.overall
+Backup, Watchdog and Monitoring~Remote Server Watchdog~B~watchdog.remoteserver.enable
+Backup, Watchdog and Monitoring~Enable System Monitor (Mem/Disk/CPU)~B~monitor.enabled
+Migration Safety~Migration Active~R~icewarp.migration.active
+Migration Safety~Migration Source Server~V~icewarp.migration.server
+Migration Safety~Migration Ever Started~M~icewarp.migration.stat_started
+Migration Safety~Migration Has Errors~R~icewarp.migration.has_errors
 Storage, Certificates and Services~Check for Storage Locations~V~icewarp.path.mail
 Storage, Certificates and Services~Check for Certificates~V~icewarp.ssl.expiration
 Storage, Certificates and Services~RBL Valli Check (is our IP blacklisted)~R~security.rbl_self_check.listed
-Storage, Certificates and Services~Enable Full Text Search Services~V~fulltext.enabled
+Storage, Certificates and Services~Enable Full Text Search Services~P~fulltext.enabled
 Storage, Certificates and Services~Reject if SMTP AUTH Different from Sender~B~smtp.reject_auth_sender_mismatch
 Storage, Certificates and Services~2FA~R~security.login.2fa_bypass_enabled
 Storage, Certificates and Services~Archive Active~B~archive.active
-Storage, Certificates and Services~Daily Send Email limit~V~domain.primary.daily_send_messages_limit
+Storage, Certificates and Services~Daily Send Email limit~Z~domain.primary.daily_send_messages_limit
 SMTP Delivery Settings~Max Message Size (MB)~V~smtp.max_message_size.mb
 SMTP Delivery Settings~Delivery Reports~B~smtp.delivery_reports_enabled
 SMTP Delivery Settings~Use TLS/SSL (Secured Delivery)~B~smtp.use_tls_ssl
 SMTP Delivery Settings~Process Incoming Messages in MDA Queue~B~smtp.use_incoming_queue
 SMTP Delivery Settings~Use MDA Queue for Internal Message Delivery~B~smtp.mda_internal_delivery
-SMTP Delivery Settings~Maximum Number of Simultaneous Threads~V~smtp.thread_cache
+SMTP Delivery Settings~Maximum Number of Simultaneous Threads~V~smtp.incoming_queue_threads
 SMTP Delivery Settings~Hide IP Address from Received for All Messages~B~smtp.hide_ip
 SMTP Delivery Settings~Hide Server Version~B~smtp.hide_server_version
 SMTP Protocol Hardening~Require HELO/EHLO~B~smtp.require_helo_ehlo
@@ -268,8 +274,8 @@ SMTP Protocol Hardening~Relay Only if Originators Domain is Local~B~smtp.relay.l
 SMTP Protocol Hardening~Process SMTP~B~security.intrusion.process_smtp
 SMTP Protocol Hardening~Process POP3/IMAP~B~security.intrusion.process_pop3_imap
 SMTP Protocol Hardening~Add rDNS Result to Received for All Messages~B~smtp.rdns_in_received
-SMTP Protocol Hardening~Set Directory Cache Schedule~V~directory_cache.schedule_raw
-SMTP Protocol Hardening~Change Admin URL~V~admin.url
+SMTP Protocol Hardening~Set Directory Cache Schedule~B~directory_cache.scheduled
+SMTP Protocol Hardening~Change Admin URL~B~admin.url_changed_from_default
 Intrusion Prevention - Block Rules~Block IP - Connections in 1 Minute~V~security.intrusion.block_connections_per_minute.value
 Intrusion Prevention - Block Rules~Block IP - Unknown User Delivery Count~V~security.intrusion.block_unknown_user_count.value
 Intrusion Prevention - Block Rules~Block IP - Denied for Relaying Too Often~V~security.intrusion.block_relay_denied_count.value
@@ -288,7 +294,7 @@ Rejection Rules and Access~Use IP Reputation~B~security.ip_reputation.use
 Rejection Rules and Access~Reject if Originators IP has no rDNS~B~security.reject_no_rdns
 Rejection Rules and Access~Reject if Originators Domain Does Not Exist~B~security.reject_domain_no_mx
 Rejection Rules and Access~Reject if Originators Domain is Local and Not Authorized~B~smtp.relay.local_domain_only
-Rejection Rules and Access~Set customers-stat@parsavan.com~X~
+Rejection Rules and Access~Set customers-stat@parsavan.com~V~monitor.alert_email
 Rejection Rules and Access~Disable AntiSpam Live~R~security.antispam_live.enabled
 Rejection Rules and Access~Remove Old AntiSpam Folders~V~security.antispam_folders.old_count_90d
 Rejection Rules and Access~Password Policy Min Length~V~security.password_policy.min_length
@@ -372,6 +378,32 @@ _mr_render_checklist() {
                     _mr_grid_item "$LABEL" "NA"
                 fi
                 ;;
+            P)
+                local RAW="${DATA[$KEYS]:-}"
+                case "$RAW" in
+                    ""|0|false|FALSE|False) _mr_grid_item "$LABEL" "OK" ;;
+                    *) _mr_grid_item "$LABEL" "FAIL" ;;
+                esac
+                ;;
+            Z)
+                local RAW="${DATA[$KEYS]:-}"
+                if [ "$RAW" = "0" ]; then
+                    _mr_grid_item "$LABEL" "WARN"
+                elif [ -n "$RAW" ]; then
+                    _mr_grid_item "$LABEL" "INFO"
+                else
+                    _mr_grid_item "$LABEL" "NA"
+                fi
+                ;;
+            F) _mr_grid_item "$LABEL" "$(_mr_bool_status "${DATA[$KEYS]:-}")" ;;
+            M)
+                local RAW="${DATA[$KEYS]:-}"
+                case "$RAW" in
+                    1|true|TRUE|True) _mr_grid_item "$LABEL" "WARN" ;;
+                    0|false|FALSE|False) _mr_grid_item "$LABEL" "OK" ;;
+                    *) _mr_grid_item "$LABEL" "NA" ;;
+                esac
+                ;;
             H)
                 local WORST="OK" K RESULT
                 IFS=',' read -ra _HK <<< "$KEYS"
@@ -394,7 +426,8 @@ _mr_render_checklist() {
 _mr_cover_letter() {
     local HOST="${DATA[agent.hostname]:-unknown}"
     local GEN="${DATA[agent.time]:-unknown}"
-    local COMPANY="${DATA[general.company]:-Client}"
+    local COMPANY="${DATA[general.company]:-Unknown Host}"
+    local TECHNICIAN="${DATA[general.technician]:-Not Specified}"
     local OVERALL="${DATA[health.summary.overall]:-n/a}"
     local FAILED="${DATA[health.summary.failed]:-0}"
     local WARNINGS="${DATA[health.summary.warnings]:-0}"
@@ -405,6 +438,7 @@ _mr_cover_letter() {
     _mr_rect 0 692 "$MR_PAGE_W" 8 "$MR_C_AMBER"
     _mr_text "$MR_MARGIN" 750 "IceWarp Health Check Report" "F2" 21 "$MR_C_WHITE"
     _mr_text "$MR_MARGIN" 726 "Prepared for ${COMPANY}" "F3" 12 "$MR_C_WHITE"
+    _mr_text "$MR_MARGIN" 708 "Technician: ${TECHNICIAN}" "F1" 9.5 "$MR_C_WHITE"
 
     _MR_Y=650
     _mr_text "$MR_MARGIN" "$_MR_Y" "$(date -d "$GEN" '+%B %d, %Y' 2>/dev/null || echo "$GEN")" "F1" 10 "$MR_C_BROWN_SOFT"

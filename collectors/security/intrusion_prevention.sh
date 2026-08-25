@@ -32,7 +32,18 @@ collector_run() {
     collector_set "security.intrusion.block_rset_count.value" "$(iw_get "C_Mail_Security_Tarpit_RSETCount" "" "" "")"
 
     collector_set "security.intrusion.block_spam_score.enabled" "$(iw_get "C_Mail_Security_Tarpit_Spam" "" "" "")"
-    collector_set "security.intrusion.block_spam_score.value" "$(iw_get "C_Mail_Security_Tarpit_SpamScore" "" "" "")"
+    local RAW_SPAM_SCORE
+    RAW_SPAM_SCORE="$(iw_get "C_Mail_Security_Tarpit_SpamScore" "" "" "")"
+    collector_set "security.intrusion.block_spam_score.raw" "$RAW_SPAM_SCORE"
+    # tool.help documents this property as "Tarpit spam score (* 100)" but
+    # that comment is wrong - confirmed against a real WebAdmin screenshot:
+    # raw value 9216 corresponds to a displayed score of 9.00, which is
+    # raw/1024, not raw/100. Using the empirically-confirmed factor.
+    if [[ "$RAW_SPAM_SCORE" =~ ^[0-9]+$ ]]; then
+        collector_set "security.intrusion.block_spam_score.value" "$(awk -v v="$RAW_SPAM_SCORE" 'BEGIN{printf "%.2f", v/1024}')"
+    else
+        collector_set "security.intrusion.block_spam_score.value" "$RAW_SPAM_SCORE"
+    fi
 
     collector_set "security.intrusion.block_dnsbl_listed.enabled" "$(iw_get "C_Mail_Security_Tarpit_DNSBL" "" "" "")"
 

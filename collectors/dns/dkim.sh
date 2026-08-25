@@ -1,9 +1,11 @@
 #!/bin/bash
 
 # Checklist: "Check DKIM"
-# Auto-resolves the domain instead of requiring MAIL_HOSTNAME config. The
-# tool.sh domain-scoped D_DKIM_Active/D_DKIM_Selector syntax is still
-# unverified (see note below) - the DNS lookup half is reliable regardless.
+# Real DNS TXT lookup (not an IceWarp config check). DKIM selectors aren't
+# discoverable via DNS alone - the mail server admin picks the selector
+# name when generating the key. Tries IceWarp's own default ("default")
+# plus several other common selector names as best-effort, since we can't
+# know the real one without it being configured somewhere we can read.
 
 collector_run() {
 
@@ -16,20 +18,39 @@ collector_run() {
         return
     fi
 
-    # best-effort, unverified domain-scoped tool.sh syntax
+    # cross-check: IceWarp's own config, if the domain-scoped property works
     local DKIM_ACTIVE
     if [ -x "$IW_TOOL" ]; then
-        DKIM_ACTIVE="$(timeout "$TOOL_TIMEOUT" "$IW_TOOL" display domain "$DOMAIN" D_DKIM_Active 2>/dev/null | awk -F': ' '{print $2}')"
+        DKIM_ACTIVE="$(timeout "$TOOL_TIMEOUT" "$IW_TOOL" display domain "$DOMAIN" D_DKIM_Active 2>/dev/null | tr -d '\r' | awk -F': ' '{print $2}' | head -n1)"
     fi
     collector_set "icewarp.dkim.active_flag" "$DKIM_ACTIVE"
 
-    local TXT
-    TXT="$(timeout "$TOOL_TIMEOUT" dig +short TXT "default._domainkey.${DOMAIN}" 2>/dev/null | grep -i 'v=DKIM1' | head -n1 | tr -d '"')"
-
     collector_set "dns.dkim.checked" "true"
     collector_set "dns.dkim.domain" "$DOMAIN"
-    collector_set "dns.dkim.selector_tried" "default"
-    collector_set "dns.dkim.found" "$([ -n "$TXT" ] && echo true || echo false)"
-    collector_set "dns.dkim.record" "$TXT"
+
+    local SELECTORS=("default" "dkim" "mail" "selector1" "selector2" "k1" "s1" "google")
+    local SEL TXT FOUND_SELECTOR=""
+    for SEL in "${SELECTORS[@]}"; do
+        local TXT_LINE
+        TXT_LINE="$(dig_resilient TXT "${SEL}._domainkey.${DOMAIN}" | grep -i 'v=DKIM1' | head -n1)"
+        TXT="$(dns_txt_join "$TXT_LINE")"
+        if [ -n "$TXT" ]; then
+            FOUND_SELECTOR="$SEL"
+            break
+        fi
+    done
+
+    collector_set "dns.dkim.selectors_tried" "$(IFS=,; echo "${SELECTORS[*]}")"
+
+    if [ -n "$FOUND_SELECTOR" ]; then
+        collector_set "dns.dkim.found" "true"
+        collector_set "dns.dkim.selector_found" "$FOUND_SELECTOR"
+        collector_set "dns.dkim.record" "$TXT"
+    else
+        collector_set "dns.dkim.found" "false"
+        collector_set "dns.dkim.selector_found" ""
+        collector_set "dns.dkim.record" ""
+        collector_set "dns.dkim.note" "none of the common selectors matched - if IceWarp uses a custom selector name, this will show a false negative. Check WebAdmin > Domain > DKIM for the real selector."
+    fi
 
 }

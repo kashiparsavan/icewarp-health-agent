@@ -23,6 +23,7 @@ collector_run() {
     collector_set "dns.ptr.checked" "true"
     collector_set "dns.ptr.ip" "$(resolve_public_ip)"
     collector_set "dns.ptr.result" "$PTR"
+    collector_set "dns.ptr.exists" "$([ -n "$PTR" ] && echo true || echo false)"
     collector_set "dns.ptr.matches_hostname" "$([ -n "$PTR" ] && [ "$PTR" = "$HOSTNAME_NOW" ] && echo true || echo false)"
 
 }
