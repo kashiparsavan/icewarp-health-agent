@@ -1,0 +1,109 @@
+DNS & Mail Flow Verification~Check PTR~F~dns.ptr.exists~real reverse-DNS lookup for ${dns.ptr.ip} -> ${dns.ptr.result} | matches mail hostname: ${dns.ptr.matches_hostname}
+DNS & Mail Flow Verification~Check SPF~F~dns.spf.found~real TXT lookup for ${dns.spf.domain} | server IP covered: ${dns.spf.includes_server_ip} via ${dns.spf.ip_coverage_via}
+DNS & Mail Flow Verification~Check DKIM~F~dns.dkim.found~real TXT lookup, selector found: ${dns.dkim.selector_found} (tried: ${dns.dkim.selectors_tried})
+DNS & Mail Flow Verification~Check DMARC~F~dns.dmarc.found~real TXT lookup | policy: p=${dns.dmarc.policy}
+DNS & Mail Flow Verification~Check TLS and Start TLS~F~smtp.starttls_live_test~live STARTTLS handshake test on port 25, not a config check
+DNS & Mail Flow Verification~Check DNS Server~V~dns.configured_server~IceWarps configured forwarders
+DNS & Mail Flow Verification~Test DNS Lookup~F~dns.lookup_test.ok~real dig lookup for our own domain (${dns.lookup_test.host})
+DNS & Mail Flow Verification~Resolver External Test (google.com)~F~dns.resolver.external_test_ok_google_com~real dig lookup for google.com
+DNS & Mail Flow Verification~Resolver External Test (icewarp.com)~F~dns.resolver.external_test_ok_icewarp_com~real dig lookup for icewarp.com
+DNS & Mail Flow Verification~Resolver External Test (parsavan.com)~F~dns.resolver.external_test_ok_parsavan_com~real dig lookup for parsavan.com
+Logging~Enable Logging - Authentication~L~logging.auth_log_level~
+Logging~Enable Logging - Maintenance~L~logging.maintenance_log_level~
+Logging~Enable MailFlow Log~L~logging.mailqueue.level~
+Logging~Enable SQL Failed Logs~L~logging.sql_log_type~
+Backup, Watchdog and Monitoring~Enable Mail Backup~B~icewarp.backup.auto_enabled~
+Backup, Watchdog and Monitoring~Last Backup Date and Time~V~icewarp.backup.last_time~
+Backup, Watchdog and Monitoring~Enable Database Backup~B~icewarp.database_backup.enabled~verified via C_System_Tools_Backup_DB_Accounts
+Backup, Watchdog and Monitoring~Configure Archive Backup Settings~B~archive.backup.active~
+Backup, Watchdog and Monitoring~Enable System Watchdog~W~watchdog.control~smtp=${watchdog.smtp},pop3=${watchdog.pop3},im=${watchdog.im},gw=${watchdog.gw}
+Backup, Watchdog and Monitoring~Remote Server Watchdog~W~watchdog.remoteserver.enable~down_after_min=${watchdog.remoteserver.down_after_minutes},report_email=${watchdog.remoteserver.report_email}
+Backup, Watchdog and Monitoring~Enable System Monitor (Mem/Disk/CPU)~B~monitor.enabled~checks whether monitoring itself is configured/active
+Migration Safety~Migration Active~R~icewarp.migration.active~must be disabled
+Migration Safety~Migration Source Server~V~icewarp.migration.server~informational
+Migration Safety~Migration Ever Started~M~icewarp.migration.stat_started~a nonzero start timestamp exists
+Migration Safety~Migration Has Errors~R~icewarp.migration.has_errors~see icewarp.migration.stat_errors for the count
+Storage, Certificates and Services~Check for Storage Locations~V~icewarp.path.mail~
+Storage, Certificates and Services~Check for Certificates~V~icewarp.ssl.expiration,icewarp.ssl.days_left~live-checked via openssl against the mail domain on port 443
+Storage, Certificates and Services~RBL Valli Check (is our IP blacklisted)~R~security.rbl_self_check.listed~queries Spamhaus/SpamCop/SORBS/Barracuda directly against our own IP
+Storage, Certificates and Services~Enable Full Text Search Services~P~fulltext.enabled~this service is expected to be OFF - flagged if active
+Storage, Certificates and Services~Reject if SMTP AUTH Different from Sender~B~smtp.reject_auth_sender_mismatch~
+Storage, Certificates and Services~2FA~B~security.login.2fa_bypass_enabled~this is the BYPASS flag (true=bypass allowed=bad)
+Storage, Certificates and Services~Archive Active~B~archive.active~
+Storage, Certificates and Services~Daily Send Email limit~Z~domain.primary.daily_send_messages_limit~0 means unlimited, which is a risk worth flagging
+SMTP Delivery Settings~Max Message Size (MB)~V~smtp.max_message_size.mb~
+SMTP Delivery Settings~Delivery Reports~B~smtp.delivery_reports_enabled~verified via C_Mail_SMTP_Other_Disable_DSN (inverted)
+SMTP Delivery Settings~Use TLS/SSL (Secured Delivery)~B~smtp.use_tls_ssl~
+SMTP Delivery Settings~Process Incoming Messages in MDA Queue~B~smtp.use_incoming_queue~
+SMTP Delivery Settings~Use MDA Queue for Internal Message Delivery~B~smtp.mda_internal_delivery~may be the same underlying setting as the item above, needs confirming
+SMTP Delivery Settings~Maximum Number of Simultaneous Threads~V~smtp.incoming_queue_threads~
+SMTP Delivery Settings~Hide IP Address from Received for All Messages~B~smtp.hide_ip~
+SMTP Delivery Settings~Hide Server Version~B~smtp.hide_server_version~should be ENABLED
+SMTP Protocol Hardening~Require HELO/EHLO~B~smtp.require_helo_ehlo~
+SMTP Protocol Hardening~Add Return-Path to All Messages~B~smtp.add_return_path~
+SMTP Protocol Hardening~Dedupe Email Messages~B~smtp.dedupe~
+SMTP Protocol Hardening~Relay Only if Originators Domain is Local~B~smtp.relay.local_domain_only~
+SMTP Protocol Hardening~Process SMTP~B~security.intrusion.process_smtp~
+SMTP Protocol Hardening~Process POP3~B~security.intrusion.process_pop3~
+SMTP Protocol Hardening~Process IMAP~B~security.intrusion.process_imap~
+SMTP Protocol Hardening~Add rDNS Result to Received for All Messages~B~smtp.rdns_in_received~
+SMTP Protocol Hardening~Set Directory Cache Schedule~B~directory_cache.scheduled~raw schedule format still not decoded (see appendix)
+SMTP Protocol Hardening~Change Admin URL~B~admin.url_changed_from_default~heuristic: compares the URL path against IceWarps default "/admin/"
+Intrusion Prevention - Block Rules~Block IP - Connections in 1 Minute~V~security.intrusion.block_connections_per_minute.value~
+Intrusion Prevention - Block Rules~Block IP - Unknown User Delivery Count~V~security.intrusion.block_unknown_user_count.value~
+Intrusion Prevention - Block Rules~Block IP - Denied for Relaying Too Often~V~security.intrusion.block_relay_denied_count.value~
+Intrusion Prevention - Block Rules~Block IP - Exceeds RSET Session Count~V~security.intrusion.block_rset_count.value~
+Intrusion Prevention - Block Rules~Block IP - Message Spam Score~V~security.intrusion.block_spam_score.value~
+Intrusion Prevention - Block Rules~Block IP - Listed on DNSBL~B~security.intrusion.block_dnsbl_listed.enabled~
+Intrusion Prevention - Block Rules~Block IP - Exceeds Failed Login Attempts~V~security.intrusion.block_failed_logins.value~
+Intrusion Prevention - Block Rules~Amount of Time IP is Blocked (minutes)~V~security.intrusion.block_duration_minutes~
+Intrusion Prevention - Block Rules~Refuse Blocked IP Address~B~security.intrusion.refuse_blocked_ip~
+Intrusion Prevention - Block Rules~Close Blocked Connection~B~security.intrusion.close_blocked_connection~
+Intrusion Prevention - Block Rules~Close All Other Connections from Blocked IP~B~security.intrusion.close_all_other_connections~
+Intrusion Prevention - Block Rules~Cross Session Processing~B~security.intrusion.cross_session_processing~
+Rejection Rules and Access~Use DNSBL~B~security.dnsbl.use~
+Rejection Rules and Access~Close Connections for DNSBL Sessions~B~security.dnsbl.close_sessions~
+Rejection Rules and Access~Use IP Reputation~B~security.ip_reputation.use~
+Rejection Rules and Access~Reject if Originators IP has no rDNS~B~security.reject_no_rdns~
+Rejection Rules and Access~Reject if Originators Domain Does Not Exist~B~security.reject_domain_no_mx~mapped to no-MX-record as a proxy, needs confirming
+Rejection Rules and Access~Reject if Originators Domain is Local and Not Authorized~B~smtp.relay.local_domain_only~likely a duplicate of Relay Only if Originators Domain is Local
+Rejection Rules and Access~Set customers-stat@parsavan.com~V~monitor.alert_email~confirmed via WebAdmin (API Console): same property as "Set Admin Email"
+Rejection Rules and Access~Disable AntiSpam Live~D~security.antispam_live.enabled~0=disabled YES OK, 1=enabled NO WARN
+Rejection Rules and Access~Remove Old AntiSpam Folders~V~security.cyren_folder.status~${security.cyren_folder.message}
+Rejection Rules and Access~Password Policy Min Length~V~security.password_policy.min_length~
+Rejection Rules and Access~Set Admin Email~V~monitor.alert_email~
+Rejection Rules and Access~Change Admin Port~B~admin.port_changed_from_default~
+Rejection Rules and Access~Block Outgoing Port 9001~B~security.port_9001_egress.blocked~checked via firewalld/iptables directly
+Archive Settings~Archive to Directory~V~icewarp.archive.default~
+Archive Settings~Number of Used Seats / License Max Users~V~icewarp.license.max_users_raw~best-effort from C_License_XML
+Archive Settings~Integrate Archive with IMAP Folder~B~archive.integrate_with_imap~
+Archive Settings~Do Not Archive Spam~B~archive.do_not_archive_spam~
+Archive Settings~Enable Daytime Clock Synchronization~V~icewarp.daytime_clock_sync.enabled~
+Protocol and Access Hardening~Disable VRFY~V~smtp.deny_vrfy~
+Protocol and Access Hardening~Disable DIGEST-MD5~V~security.digest_md5.enabled~true means DIGEST-MD5 is still enabled, which is bad - inverted polarity
+Protocol and Access Hardening~Session Timeout~V~icewarp.session_timeout_minutes~verified via C_System_Adv_Protocols_SessionTimeOut
+Protocol and Access Hardening~Enable SSL/TLS~B~smtp.use_tls_ssl~may be a broader admin/IMAP/POP3 toggle distinct from the SMTP item above, needs confirming
+Protocol and Access Hardening~Disable Cloud Features~R~icewarp.cloud_api.autoconfigure~true=cloud autoconfig active=bad, inverted
+Protocol and Access Hardening~Disable IMAP~V~service.imap.active~IMAP service status
+Protocol and Access Hardening~Disable POP3~V~service.pop3.active~POP3 service status
+APP OS / Infrastructure~APP OS Version~V~general.os.pretty~
+APP OS / Infrastructure~Disk (Total GB / Used %)~V~storage.root_fs.total_gb,storage.root_fs.used_percent~
+APP OS / Infrastructure~CPU Usage~V~os.cpu.load1~1-min load average collected, not literal CPU percent - needs confirming if acceptable
+APP OS / Infrastructure~RAM (Total KB / Available KB)~V~os.memory.total_kb,os.memory.available_kb~
+APP OS / Infrastructure~APP OS Last Update~V~os.last_update_date~from dnf/yum/apt history
+APP OS / Infrastructure~Repository Access~B~os.repository_access~live repo reachability check via dnf/yum/apt
+APP OS / Infrastructure~Time Sync (OS-level NTP)~B~os.time_sync.synced~via timedatectl/chronyc - distinct from IceWarps own daytime sync
+Database~Database Type~V~database.type~
+Database~Database Scope~V~database.scope~local = same server as IceWarp, remote = separate database server
+Database~MySQL Service Active~V~mysql.service_active~only populated when database is MySQL and running locally
+Database~MySQL Version~V~mysql.version_raw~only populated when database is MySQL and running locally
+Database~MySQL OS version~L~general.os.pretty~
+Database~MySQL Disk (Total GB / Used %)~L~storage.root_fs.total_gb~
+Database~MySQL CPU Usage~L~os.cpu.load1~1-min load average, not literal CPU percent
+Database~MySQL RAM (Total KB / Available KB)~L~os.memory.total_kb~
+Database~MySQL OS Last Update~L~os.last_update_date~
+Database~MySQL Repository Access~L~os.repository_access~
+Database~MySQL Time Sync~L~os.time_sync.synced~
+MySQL Server (Remote DB)~MySQL Host~V~mysql.host~
+MySQL Server (Remote DB)~MySQL Reachable (port 3306)~B~mysql.reachable~TCP reachability only - no query access without credentials
+MySQL Server (Remote DB)~OS-level Stats~V~mysql.os_note~this agent has no access to the remote box - needs a second agent run there, or SSH access
