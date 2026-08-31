@@ -295,8 +295,8 @@ Rejection Rules and Access~Reject if Originators IP has no rDNS~B~security.rejec
 Rejection Rules and Access~Reject if Originators Domain Does Not Exist~B~security.reject_domain_no_mx
 Rejection Rules and Access~Reject if Originators Domain is Local and Not Authorized~B~smtp.relay.local_domain_only
 Rejection Rules and Access~Set customers-stat@parsavan.com~V~monitor.alert_email
-Rejection Rules and Access~Disable AntiSpam Live~R~security.antispam_live.enabled
-Rejection Rules and Access~Remove Old AntiSpam Folders~V~security.antispam_folders.old_count_90d
+Rejection Rules and Access~Disable AntiSpam Live~D~security.antispam_live.enabled
+Rejection Rules and Access~Remove Old AntiSpam Folders~V~security.cyren_folder.status
 Rejection Rules and Access~Password Policy Min Length~V~security.password_policy.min_length
 Rejection Rules and Access~Set Admin Email~V~monitor.alert_email
 Rejection Rules and Access~Change Admin Port~B~admin.port_changed_from_default
@@ -369,8 +369,30 @@ _mr_render_checklist() {
                     *) _mr_grid_item "$LABEL" "NA" ;;
                 esac
                 ;;
+            D)
+                # Inverted logic for Disable AntiSpam Live
+                local RAW="${DATA[$KEYS]:-}"
+                case "$RAW" in
+                    0|false|FALSE|False) _mr_grid_item "$LABEL" "OK" ;;
+                    1|true|TRUE|True) _mr_grid_item "$LABEL" "WARN" ;;
+                    *) _mr_grid_item "$LABEL" "NA" ;;
+                esac
+                ;;
             X) _mr_grid_item "$LABEL" "NA" ;;
-            V) _mr_grid_item "$LABEL" "$([ -n "${DATA[$KEYS]:-}" ] && echo "INFO" || echo "NA")" ;;
+            V)
+                # Special handling for Remove Old AntiSpam Folders (cyren_folder)
+                if [ "$KEYS" = "security.cyren_folder.status" ]; then
+                    local STATUS="${DATA[security.cyren_folder.status]:-INFO}"
+                    local MSG="${DATA[security.cyren_folder.message]:-}"
+                    case "$STATUS" in
+                        OK) _mr_grid_item "$LABEL" "OK" ;;
+                        WARN) _mr_grid_item "$LABEL" "WARN" ;;
+                        *) _mr_grid_item "$LABEL" "INFO" ;;
+                    esac
+                else
+                    _mr_grid_item "$LABEL" "$([ -n "${DATA[$KEYS]:-}" ] && echo "INFO" || echo "NA")"
+                fi
+                ;;
             L)
                 if [ "${DATA[database.type]:-}" = "mysql" ] && [ "${DATA[database.scope]:-}" = "local" ]; then
                     _mr_grid_item "$LABEL" "$([ -n "${DATA[$KEYS]:-}" ] && echo "INFO" || echo "NA")"

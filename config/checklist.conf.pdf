@@ -24,7 +24,7 @@ Migration Safety~Migration Source Server~V~icewarp.migration.server~informationa
 Migration Safety~Migration Ever Started~M~icewarp.migration.stat_started~a nonzero start timestamp exists
 Migration Safety~Migration Has Errors~R~icewarp.migration.has_errors~see icewarp.migration.stat_errors for the count
 Storage, Certificates and Services~Check for Storage Locations~V~icewarp.path.mail~
-Storage, Certificates and Services~Check for Certificates~V~icewarp.ssl.expiration,icewarp.ssl.days_left~live-checked via openssl against the mail domain on port 443
+Storage, Certificates and Services~Check for Certificates~V~icewarp.ssl.expiration~live-checked via openssl against the mail domain on port 443
 Storage, Certificates and Services~RBL Valli Check (is our IP blacklisted)~R~security.rbl_self_check.listed~queries Spamhaus/SpamCop/SORBS/Barracuda directly against our own IP
 Storage, Certificates and Services~Enable Full Text Search Services~P~fulltext.enabled~this service is expected to be OFF - flagged if active
 Storage, Certificates and Services~Reject if SMTP AUTH Different from Sender~B~smtp.reject_auth_sender_mismatch~
@@ -67,7 +67,7 @@ Rejection Rules and Access~Use IP Reputation~B~security.ip_reputation.use~
 Rejection Rules and Access~Reject if Originators IP has no rDNS~B~security.reject_no_rdns~
 Rejection Rules and Access~Reject if Originators Domain Does Not Exist~B~security.reject_domain_no_mx~mapped to no-MX-record as a proxy, needs confirming
 Rejection Rules and Access~Reject if Originators Domain is Local and Not Authorized~B~smtp.relay.local_domain_only~likely a duplicate of Relay Only if Originators Domain is Local
-Rejection Rules and Access~Set customers-stat@parsavan.com~V~monitor.alert_email~confirmed via WebAdmin (API Console): same property as "Set Admin Email"
+Rejection Rules and Access~Set customers-stat@parsavan.com~V~monitor.alert_email~confirmed via WebAdmin
 Rejection Rules and Access~Disable AntiSpam Live~D~security.antispam_live.enabled~0=disabled YES OK, 1=enabled NO WARN
 Rejection Rules and Access~Remove Old AntiSpam Folders~V~security.cyren_folder.status~${security.cyren_folder.message}
 Rejection Rules and Access~Password Policy Min Length~V~security.password_policy.min_length~
@@ -97,13 +97,13 @@ Database~Database Type~V~database.type~
 Database~Database Scope~V~database.scope~local = same server as IceWarp, remote = separate database server
 Database~MySQL Service Active~V~mysql.service_active~only populated when database is MySQL and running locally
 Database~MySQL Version~V~mysql.version_raw~only populated when database is MySQL and running locally
-Database~MySQL OS version~L~general.os.pretty~
-Database~MySQL Disk (Total GB / Used %)~L~storage.root_fs.total_gb~
-Database~MySQL CPU Usage~L~os.cpu.load1~1-min load average, not literal CPU percent
-Database~MySQL RAM (Total KB / Available KB)~L~os.memory.total_kb~
-Database~MySQL OS Last Update~L~os.last_update_date~
-Database~MySQL Repository Access~L~os.repository_access~
-Database~MySQL Time Sync~L~os.time_sync.synced~
+Database~MySQL OS version~V~general.os.pretty~same host as IceWarp - mirrors the APP OS value
+Database~MySQL Disk (Total GB / Used %)~V~storage.root_fs.total_gb~same host as IceWarp - mirrors the APP OS value
+Database~MySQL CPU Usage~V~os.cpu.load1~same host as IceWarp - mirrors the APP OS value
+Database~MySQL RAM (Total KB / Available KB)~V~os.memory.total_kb~same host as IceWarp - mirrors the APP OS value
+Database~MySQL OS Last Update~V~os.last_update_date~same host as IceWarp - mirrors the APP OS value
+Database~MySQL Repository Access~V~os.repository_access~same host as IceWarp - mirrors the APP OS value
+Database~MySQL Time Sync~V~os.time_sync.synced~same host as IceWarp - mirrors the APP OS value
 MySQL Server (Remote DB)~MySQL Host~V~mysql.host~
 MySQL Server (Remote DB)~MySQL Reachable (port 3306)~B~mysql.reachable~TCP reachability only - no query access without credentials
 MySQL Server (Remote DB)~OS-level Stats~V~mysql.os_note~this agent has no access to the remote box - needs a second agent run there, or SSH access

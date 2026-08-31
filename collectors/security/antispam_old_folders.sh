@@ -1,55 +1,32 @@
 #!/bin/bash
-
-# Checklist: "Remove Old AntiSpam Folders"
-#
-# This is fundamentally a cleanup ACTION, not a config check - and this
-# agent is read-only by design (reports state, never modifies the server).
-# So instead of a yes/no, this reports real diagnostic numbers: how many
-# antispam-related subfolders exist under IceWarp's antispam directory and
-# how old the oldest ones are, so a technician can decide whether cleanup
-# is actually needed - without the agent silently deleting anything.
-#
-# Path is derived from icewarp.home (already collected) + "antispam", the
-# standard IceWarp layout - not from a dedicated tool.sh property (none
-# found for this specific path).
+# collectors/security/antispam_old_folders.sh
+# Now checks /opt/icewarp/cyren/ folder instead of antispam folders.
+# OK: folder does not exist OR exists and is empty
+# WARN: folder exists and contains files/directories
 
 collector_run() {
 
-    local CANDIDATES=(
-        "${DATA[icewarp.home]:-}/antispam"
-        "${DATA[icewarp.home]:-}/AntiSpam"
-        "${DATA[icewarp.home]:-}/spam"
-        "${DATA[icewarp.home]:-}/Spam"
-    )
+    local CYREN_DIR="/opt/icewarp/cyren"
 
-    local AS_DIR="" C
-    for C in "${CANDIDATES[@]}"; do
-        if [ -n "$C" ] && [ -d "$C" ]; then
-            AS_DIR="$C"
-            break
-        fi
-    done
+    collector_set "security.cyren_folder.checked" "true"
 
-    if [ -z "$AS_DIR" ]; then
-        collector_set "security.antispam_folders.checked" "false"
-        collector_set "security.antispam_folders.reason" "none of the checked paths exist: ${CANDIDATES[*]} - no confirmed tool.sh property for this location"
+    # Check if directory exists
+    if [ ! -d "$CYREN_DIR" ]; then
+        collector_set "security.cyren_folder.status" "OK"
+        collector_set "security.cyren_folder.message" "Folder $CYREN_DIR does not exist (OK)"
         return
     fi
 
-    collector_set "security.antispam_folders.checked" "true"
-    collector_set "security.antispam_folders.path" "$AS_DIR"
+    # Directory exists, check if it's empty
+    local CONTENT_COUNT
+    CONTENT_COUNT="$(find "$CYREN_DIR" -mindepth 1 2>/dev/null | head -1 | wc -l)"
 
-    local TOTAL_COUNT
-    TOTAL_COUNT="$(find "$AS_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)"
-    collector_set "security.antispam_folders.total_count" "$TOTAL_COUNT"
-
-    # folders not modified in 90+ days - reasonable "stale, safe to review" threshold
-    local OLD_COUNT
-    OLD_COUNT="$(find "$AS_DIR" -mindepth 1 -maxdepth 1 -type d -mtime +90 2>/dev/null | wc -l)"
-    collector_set "security.antispam_folders.old_count_90d" "$OLD_COUNT"
-
-    local TOTAL_SIZE
-    TOTAL_SIZE="$(timeout "$TOOL_TIMEOUT" du -sh "$AS_DIR" 2>/dev/null | awk '{print $1}')"
-    collector_set "security.antispam_folders.total_size" "$TOTAL_SIZE"
+    if [ "$CONTENT_COUNT" -eq 0 ]; then
+        collector_set "security.cyren_folder.status" "OK"
+        collector_set "security.cyren_folder.message" "Folder $CYREN_DIR exists but is empty (OK)"
+    else
+        collector_set "security.cyren_folder.status" "WARN"
+        collector_set "security.cyren_folder.message" "Folder $CYREN_DIR exists and contains files/directories (needs cleanup)"
+    fi
 
 }

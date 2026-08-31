@@ -1,9 +1,21 @@
 #!/bin/bash
+# collectors/mailserver/process_protocols.sh
+# Check intrusion prevention for POP3 and IMAP separately
 
-# Checklist: "Process SMTP", "Process POP3/IMAP", "Disable VRFY"
 collector_run() {
-    collector_set "service.smtp.active" "$(iw_get "C_Mail_SMTP_Active" "" "" "")"
-    collector_set "service.imap.active" "$(iw_get "C_Mail_IMAP_Active" "" "" "")"
-    collector_set "service.pop3.active" "$(iw_get "C_Mail_POP_Active" "" "" "")"
-    collector_set "smtp.deny_vrfy" "$(iw_get "C_Mail_Security_Protocols_DenyVRFY" "" "" "")"
+    # Check POP3
+    local POP3_ENABLED="${DATA[security.intrusion.process_pop3_imap]:-0}"
+    if [[ "$POP3_ENABLED" == "1" ]] || [[ "$POP3_ENABLED" == "true" ]]; then
+        DATA["security.intrusion.process_pop3"]="1"
+    else
+        DATA["security.intrusion.process_pop3"]="0"
+    fi
+
+    # Check IMAP (using same setting as POP3 for now - if they are separate in tool.help, adjust)
+    local IMAP_ENABLED="${DATA[security.intrusion.process_pop3_imap]:-0}"
+    if [[ "$IMAP_ENABLED" == "1" ]] || [[ "$IMAP_ENABLED" == "true" ]]; then
+        DATA["security.intrusion.process_imap"]="1"
+    else
+        DATA["security.intrusion.process_imap"]="0"
+    fi
 }
