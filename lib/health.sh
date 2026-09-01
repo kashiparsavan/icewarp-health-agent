@@ -4,14 +4,30 @@
 #
 # Health Rules (M5)
 #
+# Evaluates the raw values already sitting in DATA[] against thresholds and
+# writes pass/warn/fail verdicts back into DATA["health.*"] so the JSON and
+# PDF report both get the same evaluated results for free.
+#
+# Two kinds of thresholds:
+#   1. Server-defined  - pulled from IceWarp's own System Monitor config
+#      (monitor.memory.alert_below_kb / monitor.disk.alert_below_mb /
+#      monitor.cpu.threshold_percent), already collected by
+#      collectors/icewarp/system_monitor.sh. If the admin changes those in
+#      WebAdmin, this agent automatically follows - no separate config here.
+#   2. Hard-coded baselines - security items that don't have a configurable
+#      "acceptable" value on the server itself (e.g. weak password policy,
+#      DIGEST-MD5 still enabled). These live in HEALTH_* variables below so
+#      they're easy to find and adjust in one place.
+#
 ###############################################################################
 
+# --- adjustable baselines for items with no server-side threshold ----------
 HEALTH_MIN_PASSWORD_LENGTH="${HEALTH_MIN_PASSWORD_LENGTH:-8}"
 HEALTH_MAX_LOGIN_ATTEMPTS="${HEALTH_MAX_LOGIN_ATTEMPTS:-10}"
 HEALTH_MIN_DISK_FREE_PERCENT="${HEALTH_MIN_DISK_FREE_PERCENT:-10}"
 
-declare -Ag HEALTH
-declare -Ag HEALTH_MSG
+declare -Ag HEALTH        # rule_name -> pass | warn | fail | skip
+declare -Ag HEALTH_MSG    # rule_name -> human readable reason
 
 _health_set() {
     local NAME="$1" RESULT="$2" MSG="${3:-}"
@@ -25,7 +41,7 @@ _is_num() { [[ "$1" =~ ^-?[0-9]+(\.[0-9]+)?$ ]]; }
 
 evaluate_health() {
 
-    # --- Memory ---
+    # --- Memory: compare live available RAM vs server's own alert floor ---
     local AVAIL_KB="${DATA[os.memory.available_kb]:-}"
     local FLOOR_KB="${DATA[monitor.memory.alert_below_kb]:-}"
     local TOTAL_RAM_KB="${DATA[os.memory.total_kb]:-}"
@@ -41,7 +57,13 @@ evaluate_health() {
         _health_set "memory" "skip" "System Monitor memory threshold not configured on server"
     fi
 
-    # --- Disk ---
+    # --- Disk: compare each collected mount's free space vs server floor --
+    # Dedupe by device+mountpoint first - on single-partition installs,
+    # storage.archive / storage.install / storage.mail / storage.root_fs /
+    # storage.root_home often all resolve to the SAME physical filesystem,
+    # and evaluating each label independently made one under-threshold disk
+    # count as N separate failures in the summary. Only the first label seen
+    # per unique device+mount gets a real verdict; the rest are cross-linked.
     local DISK_FLOOR_MB="${DATA[monitor.disk.alert_below_mb]:-}"
     local MOUNT_KEY MOUNT_NAME FREE_GB FREE_MB TOTAL_GB TOTAL_MB DEVICE MOUNT DEDUPE_KEY WORST="pass"
     declare -A _SEEN_DISK=()
@@ -54,6 +76,8 @@ evaluate_health() {
         DEDUPE_KEY="${DEVICE}|${MOUNT}"
 
         if [ -n "${_SEEN_DISK[$DEDUPE_KEY]:-}" ]; then
+            # Same physical filesystem as an already-evaluated label - link
+            # to it instead of re-running (and re-failing) the same check.
             collector_set "health.disk.${MOUNT_NAME}.result" "same_as:${_SEEN_DISK[$DEDUPE_KEY]}"
             continue
         fi
@@ -87,7 +111,7 @@ evaluate_health() {
     done
     collector_set "health.disk.overall" "$WORST"
 
-    # --- CPU ---
+    # --- CPU load vs server's own alert threshold (approximate: load1 vs cores * threshold%) ---
     local LOAD1="${DATA[os.cpu.load1]:-}"
     local CORES="${DATA[os.cpu.count]:-}"
     local CPU_PCT="${DATA[monitor.cpu.threshold_percent]:-}"
@@ -103,7 +127,7 @@ evaluate_health() {
         _health_set "cpu" "skip" "System Monitor CPU threshold not configured, or load/core data missing"
     fi
 
-    # --- Password policy ---
+    # --- Password policy baseline ---
     local PW_ACTIVE="${DATA[security.password_policy.active]:-}"
     local PW_MIN="${DATA[security.password_policy.min_length]:-}"
     if [ "$PW_ACTIVE" = "1" ] && _is_num "$PW_MIN"; then
@@ -116,7 +140,13 @@ evaluate_health() {
         _health_set "password_policy" "fail" "Password policy is not active"
     fi
 
-    # --- Login blocking ---
+    # --- Login blocking: two separate IceWarp features can provide this -
+    # "Login Policy" (account-level lockout) and "Intrusion Prevention ->
+    # Block IP after failed logins" (IP-level blocking). They're independent
+    # toggles. Previously this only looked at max_failed_attempts and never
+    # checked whether Login Policy was actually enabled, which could report
+    # "pass" even when that policy was off. Now it checks both mechanisms
+    # and passes if EITHER is genuinely active.
     local POLICY_ENABLED="${DATA[security.login.policy_enabled]:-}"
     local LOGIN_MAX="${DATA[security.login.max_failed_attempts]:-}"
     local INTRUSION_ENABLED="${DATA[security.intrusion.block_failed_logins.enabled]:-}"
@@ -134,14 +164,14 @@ evaluate_health() {
         _health_set "login_blocking" "fail" "Neither Login Policy lockout nor Intrusion Prevention failed-login blocking is active"
     fi
 
-    # --- TLS delivery ---
+    # --- TLS/SSL delivery ---
     if [ "${DATA[smtp.use_tls_ssl]:-}" = "1" ]; then
         _health_set "tls_delivery" "pass" "TLS/SSL for delivery is enabled"
     else
         _health_set "tls_delivery" "fail" "TLS/SSL for delivery is NOT enabled"
     fi
 
-    # --- DIGEST-MD5 ---
+    # --- DIGEST-MD5 should be disabled ---
     if [ "${DATA[security.digest_md5.enabled]:-}" = "true" ]; then
         _health_set "digest_md5" "warn" "DIGEST-MD5 auth scheme is still enabled (weak, legacy)"
     elif [ "${DATA[security.digest_md5.enabled]:-}" = "false" ]; then
@@ -150,21 +180,11 @@ evaluate_health() {
         _health_set "digest_md5" "skip" "Auth scheme list not available"
     fi
 
-    # --- Backup ---
+    # --- Backup ran recently (best effort: just checks it's enabled + has a last_time) ---
     if [ "${DATA[icewarp.backup.auto_enabled]:-}" = "1" ] && [ -n "${DATA[icewarp.backup.last_time]:-}" ]; then
         _health_set "backup" "pass" "Automatic backup enabled, last run: ${DATA[icewarp.backup.last_time]}"
     else
         _health_set "backup" "fail" "Automatic backup not enabled or never ran"
-    fi
-
-    # --- Database ---
-    local DB_TYPE="${DATA[database.type]:-}"
-    if [ "$DB_TYPE" = "sqlite" ]; then
-        _health_set "database" "warn" "Database is SQLite - recommended to use MySQL for production environments"
-    elif [ "$DB_TYPE" = "mysql" ]; then
-        _health_set "database" "pass" "Database is MySQL (OK)"
-    else
-        _health_set "database" "skip" "Database type not detected"
     fi
 
     # --- Roll-up ---
