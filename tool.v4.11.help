@@ -1,0 +1,1134 @@
+Name                            Type        Access      Description
+====================================================================================================
+e_failure                       int                     Function failure
+e_license                       int                     Insufficient license
+e_params                        int                     Size of parameters too short
+e_path                          int                     Settings file does not exist
+e_config                        int                     Configuration not found
+e_password                      int                     Password policy
+e_conflict                      int                     Item already exists
+e_invalid                       int                     Invalid mailbox / alias characters
+e_passwordchars                 int                     Invalid password characters
+e_migration_in_progress         int                     User migration in progress
+e_login_blocked                 int                     Login blocked
+e_plan_exceeded                 int                     Plan exceeded
+e_smartattach_noerr             int                     base error number for smartattachments errors
+e_smartattach_virus             int                     virus found in the message
+e_smartattach_gwerror           int                     general groupware problem
+e_smartattach_webdav            int                     webdav disabled
+e_smartattach_signed            int                     message was signed
+e_smartattach_noattachments     int                     no attachments found in the message
+e_smartattach_noattachmentsstripped int                 all found attachments are excluded from smart attaching
+e_smartattach_sizequota         int                     size quota exceeded
+c_accounts_authlog              enum                    0 - none; Auth logging level
+c_accounts_deliveryreports      bool                    Delivery reports
+c_accounts_deliveryreportsdeleteolder int               Delete delivery report files older then given number of days
+c_accounts_dircache_pdo         string                  sqlite:/opt/icewarp/config/directorycache.db; Directory cache PDO connection string
+c_accounts_directorycacheconnectionstring string        /opt/icewarp/config/directorycache.db;;;;7;3; Connection string to directory cache database
+c_accounts_directorycacheconnectionstring_real string   r/o /opt/icewarp/config/directorycache.db;;;;7;3; Connection string to directory cache database (calculated value based on env variable IW_DB_DIRCACHE and API settings)
+c_accounts_directorycacheexclusivelocking bool          If set to true, the only one query against the directory cache is done at a time (changing requires restart of all services)
+c_accounts_directorycacheschedule int                   Schedule data for directorycache
+c_accounts_directorycachewavesafecount int              number of items to process before waiting, default = 0, which means automated sophisticated choice
+c_accounts_directorycachewavesleep int                  number of milliseconds to wait after wave processes WaveSafecount items, default = 0, which means automated sophisticated choice
+c_accounts_directorycache_refreshnow bool      Write only; if anything is written there, full refresh of the directorycache is scheduled
+c_accounts_directorycache_wavestopped bool              If set to true, wave mode processing is interrupted and no new wave is started unless this variable is set to false again
+c_accounts_disablecache          bool                    Disables account caching
+c_accounts_disable_account_change_journal bool          Disables database journal tracking changes in accounts , the journal is used for faster update of account cache - only changed accounts are updated
+c_accounts_maintenancelog        enum                    2 - summary; Maintenance logging level
+c_accounts_usedefaults           bool                    Use Account defaults
+c_accounts_userstat              bool                    Enable User statistics
+c_distributed_accounts_cacheexpire int                  3600; cache expiration in seconds
+c_distributed_accounts_cache_enabled bool               enables distributed domains accounts caching
+c_distributed_accounts_cache_max int                    Maximal Number of cached items
+c_clientid_allowedlist           string                  Line separated list of allowed client types and IDs
+c_clientid_enforceverification   bool                    If set to true, client ID is enforced for all authentication requests
+c_encryptionkeyconfigured        bool                    Can be used to reset the EncryptionKey if set to false, in such case a new key will be recreated
+c_accounts_cluster_allowslavelogin bool                 If enabled, users can login into domain cluster also with their true email (from slave domain)
+c_auth_defaultexternalsynclibrary string                If synchronization library is not set on specific place ,this library will be used instead
+c_auth_disableplain             bool                    Disable plain authentication in all services
+c_auth_dontcacheexternalpasswords bool                  If enabled, IceWarp will not locally cache passwords of accounts authenticated externally (LDAP, or dll authentication). This will cause malfunction of all challenge based authentications
+c_auth_schemes                  string                  PLAIN LOGIN DIGEST-MD5 CRAM-MD5; Allowed authentication SASL schemes
+c_auth_tomailfrom               bool                    Make authenticated user the actual sender
+c_enableglobaladmin             bool                    Enables GlobalAdmin account
+c_globaladminpassword           string          r/o     02e99841480ba87d7c88843efece2ee0f58dafdf; Password database encryption
+c_login_attempts                int                     5; Number of failed logins
+c_login_authwisiddisable        bool                    Obsolete
+c_login_block                   enum                    0 - do not block but delay authentication; Login policy mode
+c_login_blockperiod             int                     10; Block user login for (Min)
+c_login_bypass_2f               bool                    If set, for hosts defined in config/twofactorbypass.dat will not be required 2F authentication
+c_login_convertchars            bool                    Convert chars %/ to @ in username
+c_login_disabledomainiplogin    bool                    Disable logging with domain IP, domain name has to be used
+c_login_enable                  bool                    Enable Login policy
+c_login_iprestriction           bool                    Enables account IP restriction
+c_login_loginsettings           bool                    values=(0 - login with username, 1 - login with full email address) Login settings mode
+c_pass_alpha                    int                     1; Number of alpha characters
+c_pass_digits                   int                     1; Number of numeric chars in password
+c_pass_disableaccesstoallifdisabled bool                Disable access to all services if password is expired (except WebClient, WebAdmin and icewarpapi)
+c_pass_enable                   bool                    Enable Password policy
+c_pass_encrypt                  bool                    Password database encryption
+c_pass_expiration               bool                    Enable password expiration
+c_pass_expireafter              int                     Expire after (Days)
+c_pass_minlength                int                     6; Min password length
+c_pass_nonalphanum              int                     Number of non alphanumeric characters
+c_pass_notification             bool                    Enable Notification of expiration
+c_pass_notifybefore             int                     Notify before (Days)
+c_pass_upperalpha               int                     Number of uppercase alpha characters
+c_pass_useralias                bool                    Check password against username/alias
+c_regenerateglobaladminpassword bool            Write only; Regenerate admin password
+c_serverid                      string          r/o     d1ee7b4e9475ea7a1d83602abccee40033efb7c9f881fa80f377d4734d4720ba; Unique Server Id
+c_superuser                     bool                    Enable super user login
+c_superuserpassword             string          r/o     042781933fab025f26b9fc1d4affe039c7fbb228; Super user password
+c_accounts_global_activedirectorysyncinterval int      5; Minutes interval
+c_accounts_global_spacereplacechar string              _; One char only, a default character replacing spaces in alias
+c_account_delete_external_mailbox bool                 when not set (default), external mailboxes are not deleted when account is deleted
+c_deleteexpireddomain_keepmailboxdata bool             When set, automated deletion of expired domain will keep its mailbox data
+c_dkim_rsabits                  int                     2048; Size of key generated by D_DKIM_GeneratePrivateKey
+c_domainadmin_rights            string                  Provides R/W access to contents of global domain.dat file
+c_domain_cannot_be_deleted      bool                    if turned on domains cannot be deleted in any way - if turned off domains can be deleted as usual
+c_domain_cannot_be_renamed      bool                    if turned on domains cannot be renamed in any way - if turned off domains can be renamed as usual
+c_system_abqstatus              string          r/o     A; status of ABQ
+c_system_adsyncdisablevcardsync bool                    If set, AD sync will not fill in user's Card with information from AD server
+c_system_adsyncignoresearcherror bool                   If AD synchronization search returns error, but still some data were returned, Synchronization performs no delete operation by default. Setting this to true enables delete operations for this cases.
+c_system_adsynclogtype          enum                    0 - none; AD synchronization logging level
+c_system_adsyncmaxdeletethreshold int                   If set to value greater than 0, AD sync performs no delete if it should delete more accounts than this value
+c_system_adsyncpagesize         int                     Size of page when getting data from server (-1 = no paging, 0 = default (500), other = page size)
+c_system_adv_exit_on_signal     bool                    Linux only - if set, SIGSEGV and others will terminate affected service instead of throwing exception
+c_system_adv_notification_active bool                   Notification messages active
+c_system_adv_notification_host  string                  Notification messages host
+c_system_adv_plan_gal_resync    bool            Write only; Sends signal to GW services to process the GAL synchronization
+c_system_adv_process_new_day    bool            Write only; Sends signal to all services to process the new day procedures
+c_system_adv_rename_default_folders string     Write only; Renames default folders, accepts URL-encoded, UTF-8 list of form where=value1&events=value2&contacts=value3&tasks=value4&notes=value5&journals=value6&files=value7&drafts=value8&trash=value9&sent=value10 use e.g. tool set system C_System_Adv_Rename_Default_Folders "where=*&sent=Odeslan"
+c_system_adv_rules_for_gw_messages bool                 If enabled, GW generated messages (particularly reminders, agendas, invitation) runs through content filters and rules (global, domain, user)
+c_system_debug_disablestartserverservices bool          Disables startserver services (CommTouch, LDAP and others)
+c_system_directoryiteratorthreshold int                 Directory cache iterator threshold - this number specifies the number of files in single batch without waiting (wait will be performed each time server iterates this number of files)
+c_system_directoryiteratorwait int                      Directory cache iterator wait - this number specifies how long will server wait after processing C_System_DirectoryIteratorThreshold files count
+c_system_filename_ends_with_serverid bool               If enabled - ServerId (see Load Balancing) will appear at the end of generated filenames and not at the beginning
+c_system_kerberoslogtype        enum                    0 - none; Kerberos Authentication logging level
+c_system_mysqldefaultcharset    string                  utf8; MySQL default charset Default charset for direct mysql client library - older icewarps (version 5 and older) used to be set to latin1 for Mysql connection. On IceWarp 10 it uses utf8 by default. If your DB is in latin 1, in a fresh install you need to set this to latin1 or convert your DB to utf8
+c_system_oauth_access_token_expiration int              1440; Expiration timeout for OAuth access tokens in minutes(default 1440 minutes => 1 day)
+c_system_oauth_refresh_token_expiration int             144000; Expiration timeout for OAuth refresh tokens in minutes(default 144000 minutes => 100 days)
+c_system_pop3_locking           bool                    POP3 does not allow multiple login of one account
+c_system_server_aclcacheexpiration int                 Maximal lifetime of cached ACL in seconds. 0 means default value. Usually the cache item is invalidated immediately after the corresponding change of the settings
+c_system_server_directorycachedontusetransactions bool  Disable transaction usage in directorycache processing
+c_system_server_groupmembershipcacheexpiration int     Maximal lifetime of cached group membership in seconds. 0 means default value. Usually the cache item is invalidated immediately after the corresponding change of the settings
+c_system_server_language        string                  two character code of the language, server language is used for localization of general messages, like conference info
+c_system_server_useraccessdontusetransactions bool     Disable transaction usage in Useraccess processing
+c_system_services_bindipaddress string                 IP addresses to bind services to
+c_system_services_firewall      bool                    Restrict access to all services
+c_system_services_imap_debugindexhistory bool          Enable IMAP storage history debug logging, when enabled and file imapindex.savehistory is present in mailbox, imapindex.bin backup will be created before each change
+c_system_services_imap_indexstorage enum               0 - textual storage(imapindex.dat); list of selected accounts must be placed in config/imapbinary.dat
+c_system_services_imap_locktype enum                   0 - directory; Lock used for locking mailboxes among services and load balanced nodes
+c_system_services_imap_memoryefficientindex bool       Enable IMAP memory efficient mode, when enabled, imap storage uses direct access to small files cache
+c_system_services_imap_redlock_lockexpiration_sec int  3; Expiration time of lock in seconds - when the log is not refreshed in time, becomes unlocked.
+c_system_services_imap_redlock_lockrefreshperiod_ms int 100; How often the lock is refreshed in milliseconds.
+c_system_services_imap_redlock_servers string          Semicolon separated list of redis servers to be used for inter-LB-nodes locking, when empty, filesystem storage flock is used instead
+c_system_services_minger_enabled bool                  Enable Minger server
+c_system_services_minger_logging enum                  0 - none; Minger log level
+c_system_services_minger_port   int                     4069; Basic Minger port (UDP)
+c_system_services_minger_sslport int                   4070; Minger SSL port (TCP)
+c_system_services_smallfilescache_cleaner_expiration int 1440; Cached files will released from cache if they are oldest some time in minutes.
+c_system_services_smallfilescache_cleaner_void_percent int 10; Cache keep some percent empty space by releasing old records
+c_system_services_smallfilescache_debug_logging int    Set SFC logging scope mask (0 - None, 0x1 - classic verbose logs, 0x2 - exclusive access feature logs, 0x4 - not cached files logs)
+c_system_services_smallfilescache_delaywrite bool      If set to true, cache write operations are not directly done on filesystem, but are processed in background thread - temporarily switched off (i.e. this setting has no effect now)
+c_system_services_smallfilescache_maxfilesize int      3145728; Maximal size (in bytes) of file, which will be cached in cache for small files, (imapindex.dat, flags.dat...)
+c_system_services_smallfilescache_size string           524288000; Maximal size (in bytes) of cache for small files, (imapindex.dat, flags.dat...), Set 0 to disable, make sure that UDP traffic is enabled between IceWarp nodes on LB scenarios and path.dat is properly configured
+c_system_sessions_disablehistory bool                   Disable session history
+c_system_sqllogtype             enum                    1 - log all sql queries; Type of SQL logging
+c_system_storage_mailbox_checkavailability bool         if turned on and provisioned.dat doesn't exist services are not turned on
+c_system_vds                    string                  Virtual Device Status
+c_addspamsubject                bool                    Add C_AS_AddSpamSubjectString text to Subject of spam message
+c_addspamsubjectstring          string                  [Spam]; Text to be added to subject of spam messages
+c_alwaysprocessblacklistandwhitelist bool               Process BL and WL even if AS has been bypassed
+c_antivirusconfirmedaction      int                     Zero-Hour Anti-Virus Confirmed virus message action (actions: Add spam score = 0, Delete = 1, Reject = 2)
+c_antivirussuspectedaction      int                     Zero-Hour Anti-Virus Suspected virus message action (actions: Add spam score = 0, Delete = 1, Reject = 2)
+c_bitdefender_server            string                  http://127.0.0.1:1344; bdam server address
+c_blacklistaction               int                     1; // 0 = Mark As Spam, 1= Delete, 2= Reject
+c_blockkeywords                 string                  Semicolon separated list of keywords marking message as spam
+c_blockkeywordscore             string                  10.00; Score to add to messages containing any of C_AS_BlockKeywords
+c_blockkeywordswholewords       bool                    Blacklist keywords are matched as whole words
+c_bypassdistributeddomain       bool                    If enabled, Anti-Spam is skipped for non local recipients in distributed domain
+c_bypasskeywords                string                  Semicolon separated list of keywords marking message as genuine
+c_bypasskeywordswholewords      bool                    Whitelist keywords are matched as whole words
+c_bypasslocaldomains            bool                    Whitelist local domain senders
+c_bypasslocalips                bool                    Whitelist trusted IPs and authenticated sessions
+c_challenge_connectionstring    string                  spam/antispam.db;;;;7;3; Anti spam DB ConnectionString
+c_challenge_connectionstring_real string       r/o      spam/antispam.db;;;;7;3; Anti spam DB ConnectionString (calculated value based on env variable IW_DB_AS and API settings)
+c_challenge_processinggroup     string                  Policy group
+c_challenge_reportsschedule     int
+c_charsetspam                   bool                    Score messages with forbidden charsets (specified with C_AS_SkipCharsets)
+c_charsetspamscore              string                  2.00; Score for messages with charset listed in c_as_skipcharsets
+c_commtouch                     bool                    Enable Anti-Spam live
+c_commtouchforce                bool                    Override all limits and always perform Anti-Spam live
+c_commtouchhighestscore         string                  10.00; Anti-Spam live score for confirmed spam and virus messages
+c_commtouchhighscore            string                  7.00; Anti-Spam live score for bulk and highly suspected virus messages
+c_commtouchinfoscore            string          r/o     AS live engine is applied only if score is below this value
+c_commtouchlowscore             string                  0.00; Anti-Spam live score for non spam messages
+c_commtouchserver               string                  127.0.0.1:8088; Server for inbound Anti-Spam live evaluation
+c_commtouchserveroutbound       string                  127.0.0.1:8089; Server for outbound Anti-Spam live evaluation
+c_deletescore                   string                  10.00; Score threshold for deleting message
+c_deletespammailolder           int                     7; Delete spam messages from spam folders when older than (Days)
+c_general_antispammode          enum                    1 - user; Antispam mode
+c_general_enable                bool                    Enable Spam Engine
+c_general_processinggroup       string                  Policy group
+c_ignorefileslarger             int                     512; Maximum message size to process with antispam, in kB
+c_info_engineversion            string          r/o     Engine version
+c_info_updatedate               string          r/o     Update date
+c_info_updatesize               int             r/o     Last updates size in bytes
+c_info_updateversion            string          r/o     Update version
+c_ipreputationgreylistaccept    bool                    Accept when IP reputation greylists am IP
+c_ipreputationserver            string                  127.0.0.1:8080; hostname:port where ctipd server runs
+c_ipreputationuse               bool                    Use IP reputation
+c_live_bitdefender              bool                    Anti-spam live engine Bitdefender is in use
+c_live_cyren                    bool                    Anti-spam live engine Cyren is in use
+c_live_enable                   bool                    Enable Anti-Spam live (alias of old C_AS_Commtouch)
+c_live_force                    bool                    Override all limits and always perform Anti-Spam live (alias of old C_AS_CommTouchForce)
+c_live_ignorefileslarger        int                     25600; Greater mails will not be checked by AS Live (value in KB)
+c_live_sophos                   bool                    Anti-spam live engine Sophos is in use
+c_mailinglist_antispam_disable  bool                    Disable processing mailing list spam folders
+c_mailinglist_quarantine_disable bool                   Disable processing mailing list quarantines
+c_missingcharset                bool                    Score messages with missing charsets and non us-ascii characters
+c_missingcharsetscore           string                  2.00; Score for messages with missing charset
+c_outgoingblockuser             bool                    Block sender when outgoing mail spam score is greater than C_AS_OutgoingBlockUserScore
+c_outgoingblockuserscore        string                  10.00; Score threshold for blocking outgoing mail sender
+c_outgoingnotifyadminonblocked  bool                    Notify administrator when account is blocked because of sent virus or bulk message sending
+c_outgoingrefuse                bool                    Enable action on mails, which spam score is greater than C_AS_OutgoingRefuseScore
+c_outgoingrefuseaction          enum
+c_outgoingrefusescore           string                  6.00; Spam score which triggers C_AS_OutgoingRefuseAction
+c_pdo                           string                  sqlite:spam/antispam.db; Anti spam PDO connection string
+c_quarantinescore               string                  2.40; Score threshold for quarantining message
+c_skipcharsets                  string                  gb2312;big5; List of charsets with greater spam probability (related to C_AS_CharsetSpam)
+c_skipcharsetsspam              bool                    Obsolete
+c_sophos_lased_log_level        enum                    Sophos AntiSpam daemon log level to be set after daemon is started
+c_sophos_log_reasons            bool                    Log Sophos engine detected spam reasons
+c_sophos_manager_api_url        string                  http://127.0.0.1:25300; SAS-Manager helper service API URL
+c_sophos_server                 string                  http://127.0.0.1:25315; Sophos SASI lased server address
+c_sophos_updater_api_url        string                  http://127.0.0.1:25302; SAS-Updater helper service API URL
+c_spamaddoutgoing               bool                    Auto whitelist trusted email recipients to database
+c_spamapplyunknown              bool                    Obsolete
+c_spamassassindelete            bool                    Allow deleting messages when score is over C_AS_DeleteScore
+c_spamassassinenabled           bool                    Enable SpamAssassin
+c_spamassassinmarked            bool                    Force running SA even if score is below C_AS_SpamAssassinScoreValue threshold
+c_spamassassinmaxscore          int                     1000; Maximum SA score in promiles, 1000 by definition
+c_spamassassinnocustom          bool                    Disable loading rules from custom subdirectory
+c_spamassassinpath              string                  Path to spam assassin rules, if not set, default spam/rules is used
+c_spamassassinquarantine        bool                    Allow quarantining messages when score is over C_AS_QuarantineScore
+c_spamassassinreporting         bool                    Enable spam assassin reporting functions
+c_spamassassinrulesstats        string                  Daily SpamAssassin statistics log file
+c_spamassassinscore             bool                    Allow classifying messages as spam when score is over C_AS_SpamAssassinScoreValue
+c_spamassassinscorevalue        string                  3.00; Score threshold for classifying message as spam
+c_spamassassinthreadregex       bool                    Enable processing of SA rules in parallel
+c_spambdelete                   bool                    Obsolete, only for backward compatibility, use C_AS_BlacklistAction instead
+c_spamblankmail                 bool                    Score messages containing blank subject and blank body
+c_spamblankmailscore            string                  1.00; Score for messages with blank subject and body
+c_spamblist                     bool                    Enable blacklist
+c_spambypassgroupware           bool                    Whitelist senders in groupware address books
+c_spambypassimroster            bool                    Whitelist senders in instant messaging server rosters
+c_spambypassnonusers            bool                    Process unknown accounts
+c_spamchallenge                 bool                    Quarantine active
+c_spamchallengeexpires          int                     7; Remove pending messages after (Days)
+c_spamchallengefont             string                  Font used when generating challenge
+c_spamchallengefontsize         int                     22; Font size used when generating challenge
+c_spamchallengegenuine          int                     30; Obsolete
+c_spamchallengelocaldomains     enum                    0 - do not quarantine / whitelist / blacklist local users; Quarantine mode for local domains
+c_spamchallengemailfrom         string                  Challenge Response <>; Obsolete - spam report uses C_AS_SpamReportMailFrom
+c_spamchallengemailsender       string                  <>; Obsolete - spam report uses C_AS_SpamReportMailSender
+c_spamchallengemanual           bool                    Send challenge response email for messages to be quarantined
+c_spamchallengemarked           bool                    Obsolete
+c_spamchallengemovetospam       bool                    Deliver quarantine expired messages to mailbox as spam
+c_spamchallengeoldcompatibility bool                    Obsolete
+c_spamchallengeperc             bool                    Obsolete
+c_spamchallengesagenuine        string                  2.00; Obsolete
+c_spamchallengesaperc           bool                    Obsolete
+c_spamchallengesaspam           string                  10.00; Obsolete
+c_spamchallengesendonce         bool                    Send report only once
+c_spamchallengespam             int                     90; Obsolete
+c_spamchallengeunmarked         bool                    Obsolete
+c_spamchallengeurl              string                  https://icemail.designhost.ir/reports/; Spam reports URL
+c_spamfoldername                string                  Spam; IMAP spam folder name when AS is integrated with IMAP
+c_spamfreports                  bool                    Enable spam folder reports by default
+c_spamglactive                  bool                    Enable greylisting
+c_spamgladaptive                bool                    Turns on special adaptive mode for greylisting. Sender is greylisted after first message classified as spam is received from him
+c_spamglallow                   int                     120; Allow new session authorization after how many seconds
+c_spamglauthorized              int                     30; Delete authorized sessions after how many days
+c_spamgldisconnect              bool                    Disconnect client when greylisting
+c_spamglmode                    enum                    1 - sender; Greylisting mode
+c_spamglownermode               enum                    0 - email; Greylisting owner mode
+c_spamglpending                 int                     24; Expire pending sessions after how many hours
+c_spamglresponse                string                  Custom SMTP response when greylisting
+c_spamhashactive                bool                    Enable spam hash evaluation
+c_spamhashexpire                int                     360; Hash expiration time in minutes - whole file
+c_spamhashmode                  enum                    0 - subject + from; Hash calculation mode
+c_spamhashscore                 string                  3.00; Score to add when spamhash triggers
+c_spamhashthreshold             int                     10; Count of messages with same hash per C_AS_SpamHashThresholdExpire minutes causing message to be classified as spam
+c_spamhashthresholdexpire       int                     10; Hash expiration time in minutes
+c_spamheloip                    bool                    Enable scoring of messages where HELO host does not resolve to remote IP
+c_spamheloipscore               string                  1.50; Score messages where HELO host does not resolve to remote IP
+c_spamhtmlequal                 bool                    Score HTML messages with different html and text parts
+c_spamhtmlequalscore            string                  1.50; Score for messages with different html and text part
+c_spamhtmlexternalurl           bool                    Score HTML messages with external images
+c_spamhtmlexternalurlscore      string                  1.50; Score for messages with external URLs (images)
+c_spamhtmlnotext                bool                    Score HTML messages with no text content
+c_spamhtmlnotextscore           string                  1.50; Score for messages with no text content
+c_spamhtmlotherfilters          string                  Broken - set this to anything to add C_AS_SpamHTMLOtherFiltersScore to each message
+c_spamhtmlotherfiltersscore     string                  1.50; Broken - score for messages filtered by HTMLOtherFilters
+c_spamhtmlscript                bool                    Score HTML messages containing scripts
+c_spamhtmlscriptscore           string                  1.50; Score for messages containing scripts
+c_spamlang                      string                  Spam reports language
+c_spammaxtextbytes              int                     4096; Limit the text of message body to given number of bytes
+c_spammaxthreads                int                     8; Size of thread pool for antispam processing
+c_spamnosenderdomain            bool                    Enable scoring of messages where originator's domain does not exist
+c_spamnosenderdomainscore       string                  1.50; Score for messages where originator's domain does not exist
+c_spamoutgoingrules             enum                    1 - process with antispam live only; Outgoing messages antispam mode
+c_spamqreports                  bool                    Enable quarantine reports by default
+c_spamqreportsmode              enum                    0 - new items; Spam reports mode
+c_spamreceivedheader            bool                    Score messages delivered with no intermediary server
+c_spamreceivedheaderscore       string                  1.00; Score for messages delivered with no intermediary server
+c_spamrefuse                    enum                    0 - delete; Refused messages action mode
+c_spamrefusepath                string                  Archive refused messages to account
+c_spamremotesmtp                bool                    Enable scoring of messages where SMTP callback verification fails
+c_spamremotesmtpconnecttimeout  int                     3000; SMTP verification connection timeout
+c_spamremotesmtpscore           string                  1.50; Score for messages where SMTP callback verification fails
+c_spamreportmailfrom            string                  Spam Report <>; Spam reports mail from header
+c_spamreportmailsender          string                  <>; Spam reports mail sender
+c_spamreportsdateformat         string                  Spam reports date format ( PHP date format )
+c_spamreportsdbconn             string                  sqlite:/opt/icewarp/spam/reports/reports.db; PDO-like connection string for spam reports database, if empty, default sqlite database will be used
+c_spamreportsdbpass             string                  Password for non default Spam Reports database
+c_spamreportsdbuser             string                  Username for non default Spam Reports database
+c_spamreportsdebuglevel         int             r/o     OBSOLETE
+c_spamreportsenabled            bool                    Global switch for disabling spam reports processing
+c_spamreportsloglevel           enum                    0 - none; Spam reports log level
+c_spamreportsskin               string                  Spam reports skin
+c_spamreportstimeformat         string                  Spam reports time format ( PHP time format )
+c_spamreset                     int             r/o     Obsolete
+c_spamskipbypasslocaluntrusted  bool                    Process local untrusted users
+c_spamupdate                    bool                    Enable regular spam updates
+c_spamupdatedays                int                     Bitmask when spam db will be updated $01 - Sunday $02 - Monday $04 - Tuesday $08 - Wednesday $10 - Thursday $20 - Friday $40 - Saturday
+c_spamupdateproxy               string                  Proxy settings needed for contacting C_AS_SpamUpdateURL
+c_spamupdatetime                int                     10800; Number of seconds from midnight
+c_spamupdateurl                 string                  http://www.icewarp.com/update/spam.xml; Spam db update service URL
+c_spamusecustomdb               bool                    Use custom bayesian database
+c_spamuseimap                   bool                    Integrate spam folder with IMAP folder
+c_spamwlist                     bool                    Enable whitelist
+c_usespamfolder                 bool                    Enable AS integration with IMAP
+c_spampath                      string                  /opt/icewarp/spam/; Path to spam folder
+c_action_cleaninfected          bool                    Clean infected messages if possible
+c_action_ftpenabled             bool                    Enables AV for FTP
+c_action_ftpextensions          bool                    Apply extension filters for FTP
+c_action_ftpextensionsinarchives bool                   Apply extension filters for FTP in Archives
+c_action_ftpxternal             bool                    Apply external filters for FTP
+c_action_gwenabled              bool                    Enables AV for Groupware
+c_action_gwextensions           bool                    Apply extension filters for Groupware
+c_action_gwextensionsinarchives bool                    Apply extension filters for Groupware in Archives
+c_action_gwexternal             bool                    Apply external filters for Groupware
+c_action_heuristiclevel         int                     (0 - shallow, 1- medium, 2- detailed), valid only for Kaspersky engine so far
+c_action_infotoadmin            bool                    Notification to Admin
+c_action_infotorecipient        bool                    Notification to Recipient
+c_action_infotosender           bool                    Notification to Sender
+c_action_mailenabled            bool                    Enables AV for mails
+c_action_mailimapenabled        bool                    Enables AV for IMAP APPEND
+c_action_mode                   enum                    1 - reject; AV Action mode
+c_action_quarantineaddress      string                  Quarantine address/path
+c_action_quarantinemode         bool                    values=(0 - Quarantine whole infected messages, 1 - Quarantine only infected attachments) Virus Quarantine mode
+c_action_usequarantine          bool                    Quarantine infected messages
+c_avast                         bool                    Avast Antivirus usage
+c_avg                           bool                    AVG Antivirus usage
+c_filters_blockfiles            bool                    Block files with following extensions
+c_filters_blockfilesinarchives  bool                    Block archives with file with blocked extensions
+c_general_activeaddress         string                  Active update email trigger
+c_general_activeupdate          bool                    Enable Active Update
+c_general_everyhour             int                     Check for update every (Hours)
+c_general_integratedav          bool                    Enable Integrated AV scanner
+c_general_processinggroup       string                  Policy group
+c_general_proxy_url             string                  Proxy URL for connecting to update server, user:pass@server:port
+c_general_updatenotweekdays     int                     List of days when server does not check for update bit 1 - Monday ... bit 7 - Sunday
+c_general_updatetime            int                     768; Update time hours - upper byte minutes - lower byte
+c_general_updatetype            enum                    1 - once at; Update Schedule
+c_info_updatedate               string          r/o     Update date
+c_info_updatesize               int             r/o     Update size
+c_info_updateversion            string          r/o     Update version
+c_iwa_enabled                   bool                    Use IWA (IceWarp Antivirus)
+c_iwa_leaderurl                 string                  URL to IWA leader
+c_iwa_private                   bool                    In public mode, files are sent for analysis, in private, only hashes are shared
+c_iwa_transfermode              enum                    0 - network - send scanned file in request; IWA scanned file transfer mode
+c_maxfile                       int                     1024; Max message size in kB
+c_maxthreads                    int                     8; Max number of concurrent threads
+c_misc_applyaslast              bool                    Apply antivirus as the last filter
+c_misc_disableexternalav        bool                    Disable External AV
+c_misc_disableinternal          bool                    Disable internal AV
+c_misc_outgoing                 bool                    Apply antivirus to outgoing messages
+c_misc_rejectpassprotected      bool                    Reject password protected files
+c_sentinelone                   bool                    SentinelOne Antivirus
+c_sentinelone_timeout           int                     10; SentinelOne scan timeout value in seconds, Linux only. Setting to 0 will disable timeout.
+c_sophos                        bool                    Sophos Antivirus
+c_sophos_server                 string                  127.0.0.1; Sophos Antivirus - Scanning server IP address
+c_sophos_server_port            int                     4010; Sophos Antivirus - Scanning server port
+c_symantec                      bool                    Symantec Antivirus usage
+c_blocksenderofoutgoingvirusmessage bool                Block user account which tried to send a message with virus
+c_db_eas_pdo                    string                  sqlite:/opt/icewarp/calendar/activesync/db/sync.db; EAS db PDO connection string
+c_db_eas_real                   string          r/o     /opt/icewarp/calendar/activesync/db/sync.db;;;;7;3; EAS db connection string (calculated value based on env variable IW_DB_EAS and API settings)
+c_db_reports_pdo                string                  sqlite:/opt/icewarp/spam/reports/reports.db; AS reports db PDO connection string
+c_db_reports_real               string          r/o     /opt/icewarp/spam/reports/reports.db;;;;7;3; AS reports db connection string (calculated value based on env variable IW_DB_REPORTS and API settings)
+c_db_wc_pdo                     string                  sqlite:%WMUSERPATH%cache.db; WC db PDO connection string
+c_db_wc_real                    string          r/o     %WMUSERPATH%cache.db;;;;7;3; WC db connection string (calculated value based on env variable IW_DB_WC and API settings)
+c_process_recall_messages       bool                    Enable IceWarp Recall-Message-ID
+c_collaboration_api_url         string                  https://icemail.designhost.ir/collaboration/; Collaboration API URL accessible from local and external networks
+c_conference_api_url            string                  https://icemail.designhost.ir/conference/; Conference API URL accessible from local and external networks
+c_dashboard_url                 string                  https://webui.icewarp.com/v1/; Dashboard URL IM
+c_active                        bool                    Enable Meeting services
+c_deletenonrecurrentolderdays   int                     7; Delete conference after (Days)
+c_forcerecording                bool                    Automatically enable recording on meetings where organizer has u_recordingsupport available
+c_jitsi_url                     string                  https://jwt.ttc.cz.icewarp.com; Meeting Jitsi conferencing URL
+c_number                        string                  Meeting PSTN number
+c_placenotebeforedescription    bool                    When enabled, note in conference meeting is placed before connection instructions
+c_processinggroup               string                  Policy group
+c_provider                      string                  jitsi; Meeting provider name
+c_sip                           string                  conference@designhost.ir; Meeting SIP number
+c_recording_processinggroup     string                  Policy group
+c_system_libreofficebinary      string                  Linux - LibreOffice 5.0 and above path - when set, this libreoffice will be used for image conversion
+c_teamchat_active               bool                    Enable TeamChat service
+c_teamchat_api_url              string                  https://icemail.designhost.ir/teamchatapi/; TeamChat API URL accessible from local and external networks
+c_teamchat_enable_notification_mails bool               Enable notifications Mails in Teamchat (Daily, immediate) - Digest
+c_teamchat_guest_default_invite bool                   Enable guest account invite for new accounts in TeamChat
+c_teamchat_processinggroup      string                  Policy group
+c_webdocuments_processinggroup  string                  Policy group
+c_dialondemandexceed            int                     Connect if number of msgs exceeds
+c_dialondemandheader            bool                    Connect if message with this header
+c_globalschedule                int                     Global schedule
+c_proxy                         string                  Proxy for downloading files via HTTP
+c_schedule                      int                     Connection schedule
+c_type                          enum                    0 - network connection; Connection mode
+c_uphangupafter                 int                     Hang up after (sec)
+c_upname                        string                  Connection name
+c_upolderthan                   int                     Connect if msg waits for more than (Min)
+c_uppassword                    string                  Password
+c_upusername                    string                  Username
+c_domains_domainkeys            bool                    Enable DomainKeys support
+c_domains_hostname              bool                    Use domain hostnames for outgoing msgs
+c_domains_ipaddress             bool                    Use domain IP address for outgoing msgs
+c_domains_literals              bool                    Enable Domain literals
+c_domains_overrideglobal        bool                    Override global limits
+c_domains_usediskquota          bool                    Use Domain disk quota
+c_domains_usedomainlimits       bool                    Use Domain limits
+c_domains_useexpiration         bool                    Use Domain expiration
+c_domains_useraccountdisabledreceive bool               False for Disabled(Login) or True for Disabled(Login, Receive)
+c_domains_userquotawrnmsgrepeat int                     Repeat period of warning message user mailbox size quota exceeded in hours (0 means no repeat)
+c_domains_useuserlimits         bool                    Use Domain account limits
+c_domains_warndomainsize        int                     Warn when domain size exceeds (%)
+c_domains_warnmailboxusage      int                     Warn when mailbox size exceeds (%)
+c_domains_welcomemsgs           bool                    Use Welcome messages
+c_ftp_accessmode                bool                    values=(0 - Deny, 1 - Grant) Service Policy
+c_ftp_bandwidth                 int                     Max transfer bandwidth (kB/s)
+c_ftp_iplist                    longstring              List of Granted / Denied IPs
+c_ftp_maxinconn                 int                     256; Max number of Incoming connections
+c_ftp_maxoutconn                int                     Max number of Outgoing connections
+c_ftp_monitorconn               int                     Monitor number of increased connections
+c_ftp_monitordata               int                     Monitor increased traffic
+c_ftp_port                      int                     21; FTP service port
+c_ftp_sslport                   int                     990; FTP service SSL port
+c_ftp_threadcache               int                     40; Service thread cache
+c_ftp_traffic                   bool                    Enable FTP traffic logs
+c_backup                        longstring              Server settings backup string
+c_calendarpath                  string                  Path to calendar folder
+c_cisco_processinggroup         string                  Policy group
+c_cloudapi_autoconfigure        bool                    Auto configure Cloud API using MSR service
+c_cloudapi_hostname             string                  Cloud API hostname
+c_cloudapi_msr_url              string                  MSR service URL
+c_configpath                    string                  /opt/icewarp/config/; Path to Config folder
+c_createdefaultcertificates     string                  Creates default SSL certificates (Self signed and Lets Encrypt), value has to be cert's FQDN - for example "domain.com".
+c_date                          string          r/o     2026-08-26; Server release date
+c_defaultconfig                 bool                    Default config was loaded instead of custom one
+c_evalexpirationtime            int             r/o     1791145800; Unix timestamp of evaluation expiration
+c_freebusy_domainonly           bool                    GW GetServerVFreeBusy will return results only for the same domain as the owner
+c_freebusy_url                  string                  https://icemail.designhost.ir/freebusy/; FreeBusy URL
+c_ftpservice_active             bool                    Activate FTP service
+c_ftpservice_processinggroup    string                  Policy group
+c_ftpservice_processingmode     enum                    0 - all messages; FTP processing mode
+c_ftp_globalsettings            longstring              Global level of FTP settings
+c_installpath                   string                  /opt/icewarp/; Mail server installation path
+c_install_url                   string                  https://icemail.designhost.ir/install/; IceWarp binaries (OSync, IWDC) download URL
+c_internetcalendar_url          string                  https://icemail.designhost.ir/calendar/; Calendar URL
+c_license                       longstring              Server license (read/export and add new license)
+c_licenseproxy_disable          bool                    When set True /license-api requests are not forwarded to master license server
+c_licensestatus                 int             r/o     License status (lsSuccess, lsEvaluation, lsReferenceMismatch, lsRevalidation, lsExpired, lsNone, lsBuildDate, lsVersionMismatch, lsLicenseAndServerVersionsMismatch)
+c_license_expired_for_upgrade   bool            r/o     Returns true when license forbids upgrading the server
+c_license_ismultitenant         bool            r/o     Returns true if is license multitenant
+c_license_manage_url            string          r/o     Generate URL to manage your license
+c_license_minimal_required_version int           r/o     13; Returns minimal license release version requested by server, user must confirm the upgrade
+c_license_modules_report_email  string                  Generate detailed XML report about "used seats" and send it to this email
+c_license_required_version      int             r/o     15; Returns license release version requested by server, upgraded automatically
+c_license_trialexpire           string          r/o     Contains license expiration date if server has trial license, empty otherwise
+c_license_type                  string          r/o     onpremise; Returns server license type, values can be following - onpremise, cloud, saas
+c_license_xml                   longstring      r/o     XML decrypted license
+c_niceversion                   string          r/o     Epos Update 3 build 11; Server nice version
+c_norecordingbanner             bool                    Recording banner presence status
+c_obtaintriallicense            string                  Registers trial license, value have to be "Name;Email;Company;Address;ZIP;CountryCode;Phone"
+c_onlinelicense                 string                  Retrieve online license using Order ID
+c_os                            bool            r/o     values=(0 - Windows, 1 - Linux) Server OS version
+c_pathserviceid                 string                  Load balancing server ID
+c_reference                     string          r/o     54BD3182-4B50BA3E-9800767C-80953A14-NX; Server reference key
+c_refreshextralicenses          bool            Write only; if anything is written there, Commtouch licenses will be reapplied to them
+c_settingstime                  int             r/o     1788553800; Unix timestamp of settings creation
+c_settingsversion               string          r/o     14.3.0.11; Settings version
+c_smartattach_key               string                  4b9cce0a07f6d0dc53f8d5d1db7bde43b9362f4d; SmartAttach key
+c_smartattach_urlshortenerfortickets bool               Enable URL shortener for tickets
+c_suitetype                     enum            r/o     1 - pro; Mail server license type
+c_timezone                      int             r/o     12600; Time zone in seconds
+c_version                       string          r/o     14.3.0.11; Server version
+c_version_id                    string          r/o     05901539c3433016fb537878f706294e; Server version ID
+c_webadmin_url                  string                  https://icemail.designhost.ir/admin/; WebAdmin URL
+c_webmail_active                int             r/o     1; WebClient service active
+c_webmail_dbconnection          string                  Webclient DB PDO connection
+c_webmail_httpsecurecookie      string                  Webclient(pda,tablet) usage of cookies. If true, allows cookies only over secure connection
+c_webmail_licensed              bool            r/o     WebClient licensing status
+c_webmail_logs                  int                     WebClient log level
+c_webmail_sessioncookie         string                  Webclient(pda,tablet) usage of cookies. If true, stores the session id in browser cookie
+c_webmail_tempdeleteolder       int                     7; Days, after which webClient temporary directory is cleaned
+c_webmail_url                   string                  https://icemail.designhost.ir/webmail/; WebClient service URL
+c_webpath                       string                  /opt/icewarp/html/; Path to HTML folder
+c_webservice_appmaxthreads      int                     8; Number of web service application threads
+c_webservice_customhttpincludetext longstring          Custom text to be filled in the HttpIncludeText (HttpIncludeText will be "Server: + CustomHttpIncludeText + cCRLF + 'Date: %s' + cCRLF")
+c_webservice_security_enable_hsts bool                 Enable HTTP Strict Transport Security protocol
+c__aclnotifications             bool                    Enable ACL notifications
+c__alwaysembeddedattachments    bool                    Always attachments embedded
+c__attachments                  string                  attachments; Root directory for attachments (relative or absolute)
+c__attachmentsmailboxpath       bool                    If true, store attachments in user $mailboxes, otherwise use central storage
+c__cachecount                   int                     64; SQL Query cache count
+c__connectionstring             string                  calendar/groupwarev2.db;;;;7;3; Connection string to GW database
+c__connectionstring_real        string          r/o     calendar/groupwarev2.db;;;;7;3; Connection string to GW database (calculated value based on env variable IW_DB_GW and API settings)
+c__databaseversion              string          r/o     Current Groupware database version
+c__deleteexpireduploads         int                     Automatically move unused files from Upload folder to Trash (days), set 0 to disable
+c__disablemasterupdate          bool                    If set to true, changes of attendee status will not be immediately updated in the organizer's event (the changes will be updated once the organizer reads the email about acceptance)
+c__docpreview_engine_url        string                  Remote document preview engine URL
+c__docpreview_mode              enum                    0 - integrated; Document preview engine
+c__docpreview_queue_size        int                     Number of waiting documents for preview generation
+c__documentpdfconversion        bool                    Office documents will have PDF thumbnail converted
+c__enforceutf8versit            bool                    Enable replacing of wrong UTF8 codes with space
+c__freebusyurl                  string                  https://icemail.designhost.ir/freebusy/; Free/Busy HTTP link used in vCard
+c__from                         string                  Notification From (email)
+c__gal_disableuserediting       bool                    Disable users to edit their GAL records
+c__gal_donotforceprimaryemail   bool                    If set to true, the primary email will not be inserted to Email1 nor Email3 nor Email2, instead, it is stored in metadata
+c__general_disable              bool                    Disable GW service
+c__isavailable                  bool            r/o     Returns if GW is running and ready to accept commands
+c__keepdeleteditems             bool                    Move deleted items to @@TRASH@@ folder
+c__keepdeleteditemsexpiration   int                     30; Move deleted items expiration
+c__keepdeleteditemsforceexpiration bool                 Deleted items cannot be removed from @@TRASH@@ folder by user action but only after expiration is reached
+c__ldapactive                   bool                    Enable Groupware LDAP
+c__ldapbase                     string                  Groupware LDAP base
+c__ldaphost                     string                  Groupware LDAP host address
+c__ldappass                     string                  Groupware LDAP password
+c__ldapuser                     string                  Groupware LDAP user
+c__maxphotosize                 int                     131072; Maximum photo size that is allowed, larger photos will be optimized automatically
+c__pdfimageconversion           bool                    PDF documents will have jpeg thumbnail converted
+c__pdo                          string                  sqlite:calendar/groupwarev2.db; GW PDO connection string
+c__processinggroup              string                  Policy group
+c__resources                    string                  Resources; Default resource folder name
+c__resourcesdisablecalendarfolders bool                 Disables resources calendar subfolders
+c__resourcesdisablenamingbydescription bool             If set to true, name of calendar folder of group account will not be replaced with resource description
+c__sender                       string                  Notification Sender (name)
+c__sharedaccountprefix          string                  ~; Shared account folder name prefix
+c__superpass                    string                  7f42256d9f211cce6c8c13b1362dbdb70ee4bfba; Super user password
+c__superuser                    string                  gwsuperuser; Super user name
+c__upgradestatus                string          r/o     2; Status of GW DB upgrade - first line contains 0 or 1 (1 means running), next lines forms progress log snippet, which was not yet read.
+c__versioncontrol               int                     Enable version control for folder types (1 - files, 2 - calendar, 4 - tasks, 8 - journal, 16 - contacts, 32 - notes) GW_AL_Files = $01; GW_AL_Calendar = $02; GW_AL_Tasks = $04; GW_AL_Journal = $08; GW_AL_Contacts = $10; GW_AL_Notes = $20;
+c__webdavurl                    string                  https://icemail.designhost.ir/webdav/; WebDAV HTTP link prefix
+c__wmigrateobsoleteattpath      bool                    Enable the migration of old obsolete groupware attachment path
+c_pushserver_active             bool                    Enable ActiveSync push
+c_pushserver_heartbeat          int                     ActiveSync connection check interval in minutes (60..120)
+c_pushserver_port               int                     32002; ActiveSync push port
+c_gw_accessmode                 bool                    values=(0 - Deny, 1 - Grant) Service Policy
+c_gw_bandwidth                  int                     Max transfer bandwidth (kB/s)
+c_gw_iplist                     string                  List of Denied/Granted IPs
+c_gw_maxinconn                  int                     1000; Max number of Incoming connections
+c_gw_monitorconn                int                     Monitor number of increased connections
+c_gw_monitordata                int                     Monitor increased traffic
+c_gw_port                       int                     5229; GW service port
+c_gw_startup                    int                     (ssAutomatic, ssManual)
+c_gw_threadcache                int                     40; GW service Thread cache
+c_gw_traffic                    bool                    Enable GW traffic logs
+c_console_accountdescription    int                     1; Account display mode
+c_console_accountsposition      int                     Database account display start position
+c_console_domaindescription     enum                    0 - domain; Domain list display mode
+c_console_showaccounts          int                     1000; Number of shown accounts in a domain
+c_gui_requireauth               bool                    Require Authentication to access Admin console
+c_gui_safeconfirm               bool                    Use Safe confirmation
+c_gui_showsortingstring         bool                    If set to true, it is possible to edit sorting string on tab with user vcard
+c__policy                       int                     Bitmask $01 - Disable file manager $02 - Disable DNS tool $04 - Disable API console $08 - Disable SQL manager
+c_general_disable               bool                    Disable IM service
+c_processinggroup               string                  Policy group
+c_socksserverip                 string                  IM socks server IP
+c_socksserverjid                string          r/o     IM socks server JID
+c_im_accessmode                 bool                    values=(0 - Deny, 1 - Grant) Service Policy
+c_im_altport                    int                     5269; IM service alternative port
+c_im_bandwidth                  int                     Max transfer bandwidth (kB/s)
+c_im_iplist                     string                  List of Granted / Denied IPs
+c_im_maxinconn                  int                     1000; Max number of Incoming connections
+c_im_monitorconn                int                     Monitor number of increased connections
+c_im_monitordata                int                     Monitor increased traffic
+c_im_port                       int                     5222; IM service port
+c_im_sslport                    int                     5223; IM service SSL port
+c_im_startup                    int                     (ssAutomatic, ssManual)
+c_im_threadcache                int                     40; Service thread cache
+c_im_traffic                    bool                    Enable IM traffic logs
+c_uselocalxmppbridge            bool                    Use and manage the local XMPPBridge service
+c_base                          string                  LDAP user synchronization base DN
+c_host                          string                  LDAP user synchronization host
+c_pass                          string                  LDAP user synchronization password
+c_passchangedisable             bool                    Disable password changing in LDAP
+c_synchronize                   bool                    LDAP user synchronization enable
+c_syncprimaryaliasonly          bool                    If enabled, only primary alias is synced to the LDAP server
+c_usentlmauth                   bool                    use NTLM instead of plain auth, requires C_Accounts_Global_LDAP_UseWindowsDLL to be enabled
+c_user                          string                  LDAP user synchronization user DN
+c_usewindowsdll                 bool                    [NO EFFECT] windows ldap library is always used on windows
+c_ldap_bandwidth                int                     Max transfer bandwidth (kB/s)
+c_ldap_enable                   bool                    Enable LDAP service
+c_ldap_maxinconn                int                     256; Max number of Incoming connections
+c_ldap_port                     int                     389; LDAP service port
+c_ldap_sslport                  int                     636; LDAP service SSL port
+c_system_collect_logs           int                     Defines time in minutes to collect all logs on maximum loglevel. After time elapses, logs from period are extracted and stored in single archive. Setting to 0 finalizes collection immediately, value higher than remaining time can be used to prolong collection. Negative value can be used to collect existing logs.
+c_system_logging_general_appendfiles bool               Append logs to files
+c_system_logging_general_archive bool                  Enable deleted logs archiving
+c_system_logging_general_archiveto string              Deleted log archive target
+c_system_logging_general_deleteolder int               7; Delete logs after (Days)
+c_system_logging_general_enableodbclog bool            Enable DB logging
+c_system_logging_general_enablestacktrace bool         Enables more detailed logging of system exceptions, if enabled, whole stacktrace is logged
+c_system_logging_general_experimentalfastlogging bool  Enables experimental file logging mode - everything is sent to control service using pipe connection, from background thread
+c_system_logging_general_logcache int                  Logging cache size (B)
+c_system_logging_general_logrotation int               Size of the log file to rotate (kB)
+c_system_logging_general_logs_pdo string               Logs PDO connection
+c_system_logging_general_logtimeformat enum            0 - sltftime; Log time format
+c_system_logging_general_odbclogconn string            DB logging connection
+c_system_logging_general_odbclogconn_real string       DB logging connection (calculated value based on env variable IW_DB_LOGS and API settings)
+c_system_logging_general_systemlogfunction bool        Send logs to system log function
+c_system_logging_maintenance_identity string           control.exe/System/API/kashi@designhost.ir/192.168.75.20; Thread variable - will be used in maintenance logs as "WHO"
+c_system_logging_syslog_active bool                    Send logs to server
+c_system_logging_syslog_facility int                   7; Syslog server index of LOCAL facility used for logging, allowed values 0-7
+c_system_logging_syslog_format enum                    0 - slflegacy; syslog format
+c_system_logging_syslog_include_hostname bool          Include hostname in logging records via syslog
+c_system_logging_syslog_server string                  Syslog server name
+c_api                           enum                    0 - none; API logging level
+c_dns                           bool                    Debug DNS logging - internal usage only
+c_includesubjectinsmtplog       bool                    Enable Subject logging in the SMTP logs
+c_mailqueue                     enum                    0 - none; Mail processing logging level
+c_maxlogsize                    int                     512000; Maximum single log size in bytes - 0 means unlimited
+c_performance                   int                     Debug performance - actions exceeding time in seconds
+c_performance_callstack_threshold int                   10; Debug performance - log also callstack when action exceeds this time in seconds
+c_performance_level             int                     Debug performance - level of importance 0 - basic, 10 - brutal
+c_services_activesync           enum                    0 - none; ActiveSync logging level
+c_services_as                   enum                    0 - none; AS logging level
+c_services_av                   enum                    2 - summary; AV logging level
+c_services_cisco                enum                    0 - none; Cisco Sync logging level
+c_services_control              enum                    0 - none; Control service logging level
+c_services_directorycache       enum                    0 - none; Directory Cache logging level
+c_services_ftp                  enum                    0 - none; FTP service logging level
+c_services_gw                   enum                    0 - none; GW service logging level
+c_services_im                   enum                    0 - none; IM service logging level
+c_services_imap                 enum                    0 - none; IMAP service logging level
+c_services_ldap                 enum                    0 - none; LDAP service logging level
+c_services_meeting              enum                    0 - none
+c_services_pop3                 enum                    2 - summary; POP3 service logging level
+c_services_sip                  enum                    0 - none; SIP logging level
+c_services_sms                  enum                    0 - none; SMS service logging level
+c_services_smtp                 enum                    3 - debug & summary; SMTP service logging level
+c_services_socks                enum                    0 - none; Socks logging level
+c_services_syncml               enum                    / Enum Obsolete
+c_services_syncpush             enum                    0 - none; Push service logging level
+c_services_teamchat             enum                    0 - none; TeamChat logging level
+c_services_teamchat_gwlog       bool                    Enable extra TeamChat logging for the GW protocol
+c_services_teamchat_json_format bool                    False - None, True - Format
+c_services_wcs                  enum                    0 - none; WS / WCS logging level
+c_services_webdav               enum                    0 - none
+c_services_webdocuments         enum                    0 - none; WebDocuments logging level
+c_system_sentryerrorreporting   bool                    Online error reporting via Sentry
+c_system_sentryerrorreportingsendall bool               Online error reporting via Sentry - Report also additional errors/exceptions logged
+c_system_sentryerrorreportingtag string                 Online error reporting via Sentry - custom tag to be added to report
+c_control_active                bool                    Enable control services (Web, SOCKS, SNMP...)
+c_control_disableweb            bool                    Disable Web server
+c_donot_tarpit_ips              bool                    Do not tarpit IP addresses
+c_etrn_active                   bool                    Enable ETRN download
+c_etrn_schedule                 int                     ETRN Schedule
+c_filter_bw_enable              bool                    Enable Rules
+c_filter_content_enable         bool                    Enable Content filters
+c_filter_maxthreads             int                     Number of filter threads
+c_filter_rulescontentxml        longstring              Global rules file content in content filter format
+c_filter_rulessieve             longstring              Global rules Sieve filter
+c_imap_active                   bool                    Enable IMAP
+c_imap_idledisable              bool                    Disable IMAP IDLE
+c_pop_active                    bool                    Enable POP3
+c_security_dmarc_dkiminvalid    enum                    1 - dnsamarkasspam
+c_security_dmarc_dmarcquarantine enum                   0 - dsamarkasspam
+c_security_dmarc_dmarcreject    enum                    1 - dsarefuse
+c_security_dmarc_dmarcsendreports bool                 Send DMARC reports
+c_security_dmarc_spfhardfail    enum                    1 - dnsamarkasspam
+c_security_dmarc_spfsoftfail    enum                    0 - dnsanone
+c_security_dmarc_usedkim        bool                    Enable DKIM
+c_security_dmarc_usedmarc       bool                    Enable DMARC
+c_security_dmarc_usespf         bool                    Enable SPF
+c_security_protection_closednsblconn bool               Close connection for DNSBL sessions
+c_security_protection_closerejectmxconn bool            Close connection for sessions rejected due missing MX
+c_security_protection_closerejectrdnsconn bool          Close connection rejected because sender's IP has no rDNS
+c_security_protection_dnsbl     bool                    Enable DNSBL
+c_security_protection_dnsbl_temporary_error bool        DNSBL returns temporary error
+c_security_protection_domainipshield bool               Use Domain IP shielding
+c_security_protection_earlycheck bool                   Do early check against filter and bypass
+c_security_protection_heloehlo  bool                    Require HELO/EHLO
+c_security_protection_ignoreblankhelohost bool          Ignore Blank Helo Host
+c_security_protection_localdomain bool                  Relay only if orig's domain's local
+c_security_protection_rejectmx  bool                    Reject if orig's domain has no MX rec
+c_security_protection_rejectrdns bool                   Reject if sender's IP has no rDNS
+c_security_protection_rejectsmtpauthsender bool         Reject if SMTP AUTH different from sender
+c_security_protection_smtpwait  int                     Wait before processing a new conn
+c_security_protocols_allowsmtpauth bool                 Allow SMTP Auth
+c_security_protocols_denyesmtp  bool                    Deny ESMTP protocol
+c_security_protocols_denyexpn   bool                    Deny EXPN command
+c_security_protocols_denytelnet bool                    Deny Telnet access
+c_security_protocols_denyvrfy   bool                    Deny VRFY command
+c_security_relay_iplist         string                  127.0.0.1; List of relayed IP addresses
+c_security_relay_popsmtp        bool                    Enable POP before SMTP
+c_security_relay_popsmtpglobal  bool                    Enable POP before SMTP global mode
+c_security_relay_popsmtpint     int                     45; POP before SMTP interval (Min)
+c_security_relay_rejectlocalunauth bool                 Reject if orig's domain is local&unauth
+c_security_relay_relaymode      enum                    1 - close relay; Relay mode
+c_security_tarpit_blockip       bool                    Block IPs that establish more than BlockIPValue connections within a minute
+c_security_tarpit_blockipvalue  int                     Number of limited of connections
+c_security_tarpit_closeallconnections bool              Immediately close all other connections from the tarpitted IP (within the same service)
+c_security_tarpit_closeconnection bool                  Close tarpitted connections
+c_security_tarpit_count         int                     5; Number of attempts
+c_security_tarpit_crosssession  bool                    Cross session processing
+c_security_tarpit_dnsbl         bool                    Tarpit DNSBL
+c_security_tarpit_enable        bool                    Enable tarpitting
+c_security_tarpit_enableimappop3 bool                   Enable POP3/IMAP tarpitting
+c_security_tarpit_enablesmtp    bool                    Enable SMTP tarpitting (synonym for C_Mail_Security_Tarpit_Enable)
+c_security_tarpit_login         bool                    Block IPs that blocked an account by exceeding number of failed login attempts
+c_security_tarpit_logincount    int                     Count for C_Mail_Security_Tarpit_Login Protocols
+c_security_tarpit_msg_enabled   bool                    Tarpit message size
+c_security_tarpit_msg_value     int                     Tarpit message size value
+c_security_tarpit_period        int                     30; Tarpitting interval
+c_security_tarpit_recipient     bool                    Tarpit IP that exceeds unknown users delivery count
+c_security_tarpit_recipientcount int                    5; Synonym for C_Mail_Security_Tarpit_Count
+c_security_tarpit_relaytarpit   bool                    Tarpit relay rejected IPs
+c_security_tarpit_relaytarpitcount int                  5; Count for C_Mail_Security_Tarpit_RelayTarpit
+c_security_tarpit_rset          bool                    Tarpit RSET
+c_security_tarpit_rsetcount     int                     5; Tarpit RSET count
+c_security_tarpit_spam          bool                    Tarpit spam
+c_security_tarpit_spamscore     int                     10; Tarpit spam score (* 100)
+c_security_usearc               bool                    Use ARC along with DKIM signatures on domains
+c_smtp_accept_invalid_recipients bool                   If this is enabled and catch all account on primary email is enabled, all invalid recipients are rewritten to catch all account
+c_smtp_active                   bool                    Enable SMTP
+c_smtp_delivery_badmail         string                  Bad mail address
+c_smtp_delivery_daemonalias     string                  MAILER-DAEMON; Mailer Daemon report alias
+c_smtp_delivery_daemonname      string                  Mail Delivery Subsystem; Mailer Daemon report name
+c_smtp_delivery_donotruncate    bool                    Do not truncate mailer daemon's msgs
+c_smtp_delivery_enforcetlsonsecondarysmtpport bool      Server rejects non encrypted connection on submission port
+c_smtp_delivery_hideip          bool                    Hide IP from received header
+c_smtp_delivery_hideserverversion bool                  Hide IceWarp server version from received header
+c_smtp_delivery_imipautoprocess bool                    Server processes IMIP mails automatically
+c_smtp_delivery_incomingqueuepersonalized bool          If enabled, separate message will be put into the incoming queue for each recipient
+c_smtp_delivery_incomingqueuesize int                   5; Size of the queue (# threads)
+c_smtp_delivery_infotoadmin     bool                    Send info to admin
+c_smtp_delivery_limitmsgsize    bool                    Enable Max message size
+c_smtp_delivery_maxmsgsize      int                     20971520; Max message size (B)
+c_smtp_delivery_mdainternal     bool                    Use MDA queue for internal delivery
+c_smtp_delivery_messagesubmission bool                  Message submission should be checked as in RFC4409 (first port is MTA and second port is MSA)
+c_smtp_delivery_mxreconnectfailure bool                 Deliver message via relay server when direct delivery fails
+c_smtp_delivery_rdnslookup      bool                    Add rDNS result to Received: header for all messages
+c_smtp_delivery_retrysmtp       bool                    Retry with SMTP when ESMTP failed
+c_smtp_delivery_returnpath      bool                    Add return-path
+c_smtp_delivery_undelivafter    int                     2880; Undeliverable after (Minutes)
+c_smtp_delivery_undelivwarning  int                     240; Undeliverable warning (Minutes)
+c_smtp_delivery_useincomingqueue bool                   Use incoming mail queue
+c_smtp_delivery_usetlsssl       bool                    Use TLS/SSL
+c_smtp_general_deliverymode     bool                    values=(0 - Use SMTP relay server, 1 - Use DNS lookup) SMTP service delivery mode
+c_smtp_general_dnsserver        string                  8.8.8.8;4.2.2.4;1.1.1.1;; DNS servers
+c_smtp_general_hostname         string                  icemail.designhost.ir; Mailserver hostname
+c_smtp_general_parallelipconnectionslimit int           Global limit of maximal allowed parallel connections from one IP
+c_smtp_general_relaymailserver  string                  SMTP relay server
+c_smtp_general_temppath         string                  Temp path to be used by SMTP. When empty (default), C_System_Storage_Dir_TempPath/SMTP is used.
+c_smtp_general_verifydane       bool                    Use SMTP DANE
+c_smtp_headerfooter_enable      bool                    Enable Header/Footer
+c_smtp_other_bouncebackmode     int                     Bounce back mode
+c_smtp_other_dedupe             bool                    Dedupe email messages
+c_smtp_other_disable_dsn        bool                    Disable DSN
+c_smtp_other_extensions         string                  List of SMTP extensions to alter or disable via "!", separate with semi-colon
+c_smtp_other_externaldelivery   bool                    Deliver all messages externally, can by bypassed using externalbypass.dat
+c_smtp_other_fullmailboxpermanenterror bool             Treat full mailbox error as permanent (522 response)
+c_smtp_other_headerfunctions    bool                    Activate message header functions
+c_smtp_other_incomingmessagelimits bool                 Should size of incoming mails also be checked
+c_smtp_other_localdelivery      bool                    Enable remote delivery from local server
+c_smtp_other_mailboxseparator   string                  :; Mailbox separator / extension separator (eg: alias:extension@domain)
+c_smtp_other_maxhopcount        int                     20; Max SMTP hop count
+c_smtp_other_maxmail            int                     Max allowed RSET count (NOOP is also counted as RSET)
+c_smtp_other_maxmtarecipients   int                     100; Max SMTP client recipients
+c_smtp_other_maxrecipients      int                     32768; Max SMTP server recipients
+c_smtp_other_noretryqueue       bool                    Do not queue messages
+c_smtp_other_searchinlocaldomains bool                  Search for alias in other local domains
+c_smtp_other_smtppipelining     bool                    Enable SMTP pipelining
+c_smtp_other_spfsrs             bool                    Enable SRS
+c_smtp_other_spfsrskey          string                  SRS secret key
+c_smtp_other_spfsrsndrverify    bool                    Use SRS NDR (Non-Delivery Report) Validation
+c_smtp_other_usereturnpathinndr bool                    Include Returnpath in NDR (if exists) instead of "From:"
+c_activesync_active             bool                    ActiveSync active
+c_activesync_dbconnection       string                  sqlite:/opt/icewarp/calendar/activesync/db/sync.db; ActiveSync DB DSN
+c_activesync_dbpass             string                  ActiveSync DB password
+c_activesync_dbuser             string                  ActiveSync DB user
+c_activesync_processinggroup    string                  Policy group
+c_activesync_processingmode     enum                    0 - all messages; ActiveSync processing mode
+c_activesync_url                string                  https://icemail.designhost.ir/Microsoft-Server-ActiveSync; ActiveSync service URL
+c_syncml_active                 bool                    Obsolete
+c_syncml_authtype               int                     3; Obsolete
+c_syncml_processinggroup        string                  Obsolete
+c_syncml_processingmode         enum                    / Enum Obsolete
+c_syncml_url                    string                  https://icemail.designhost.ir/syncml/; Obsolete
+c_ext_changepassserver          bool                    Enable Change password server
+c_ext_daytimeport               int                     13; Daytime port
+c_ext_daytimeserver             bool                    Enable Daytime server
+c_ext_disablemulticpu           bool                    Disable Multiple CPU
+c_ext_disablessltls             bool                    Disable SSL/TLS
+c_ext_enableipv6                bool                    Enable IPv6 Protocol
+c_ext_letsencryptbits           int                     0 = use hard coded default value, otherwise use the specified value when creating LetsEncrypt CSR
+c_ext_letsencryptusetestserver  bool                    If set to true, testing let's encrypt server will be used (without rate limits)
+c_ext_letsencryptvalidity       int                     0 = use hard coded default value, otherwise use the specified value when creating LetsEncrypt CSR
+c_ext_pipes_logging             enum                    0 - none; Interprocess pipes communication logging level
+c_ext_rabbitmq_pipes_prefetch_count int                 AMQP prefetch to use on pipe client side
+c_ext_rabbitmq_pipes_url        string                  AMQP URL to RabbitMQ for interservice communication
+c_ext_servicemodules_mode       enum                    0 - monolith; How service modules will communicate with each other
+c_ext_snmpport                  int                     161; SNMP port
+c_ext_snmpserver                bool                    Enable SNMP server
+c_ext_sslcipherlist             string                  ECDH+AESGCM:ECDH+CHACHA20:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:RSA+AESGCM:RSA+AES:!aNULL:!MD5:!DSS:!AESCCM:-PSK; List of supported ciphers according to (http://www.openssl.org/docs/apps/ciphers.html#)
+c_ext_sslclientmethod           enum                    0 - default (currently the same as 6; but will be increased in future according to the actual security trends); 7 - Same as 6 but TLS1.3 will be disabled
+c_ext_sslhonorcipherorder       bool                    When choosing a cipher, use the server's preferences instead of the client preferences (SSL_OP_CIPHER_SERVER_PREFERENCE in https://www.openssl.org/docs/ssl/SSL_CTX_set_options.html)
+c_ext_sslselfkillcontrolondecrypterror bool             Kill control when SSL decrypt error is reported by client side - thus SSL will be reinitialized (Linux only)
+c_ext_sslservermethod           enum                    0 - default (currently the same as 6; but will be increased in future according to the actual security trends)
+c_ext_useextrasslerrorlogging   bool                    Enables extra SSL error logging
+c_protocols_backlog             int                     5000; Listen back logs
+c_protocols_dnscache            bool                    Use DNS smart cache
+c_protocols_dnscachelimit       int                     128; DNS cache items limit
+c_protocols_dnsretry            int                     1; DNS retries
+c_protocols_dnssec              bool                    Use DNSSEC
+c_protocols_dnstimeout          int                     3; DNS Timeout
+c_protocols_httptimeout         int                     300; HTTP timeout
+c_protocols_imaptimeout         int                     1800; IMAP timeout
+c_protocols_maxbadcommands      int                     8; Max number of bad commands
+c_protocols_responsedelay       int                     Protocol response delay
+c_protocols_sessiontimeout      int                     300; Session timeout
+c_protocols_smtpclienttimeout   int                     300; timeout for SMTP client sessions
+c_protocols_xmpptimeout         int                     300; XMPP timeout
+c_system_wc_indexingservice_enabled bool               Enable the WC indexing service
+c_system_wc_indexingservice_pool int                   8; WC indexing service pool
+c__active                       bool                    Enable Proxy
+c__antivirus                    bool                    Check files going through proxy with antivirus
+c__antivirusbypass              string                  .gif;.jpg;.png; Bypass extension types
+c__antiviruspercentage          int                     50; Percentage of data size to send in large file mode
+c__antivirussize                int                     8192; Size of data to hold in memory before using large file mode in bytes
+c__authenticate                 bool                    Require user authentication
+c__commonlog                    bool                    values=(False - Standard, True - W3C extended) Log format
+c__daylogging                   bool                    values=(False - Standard logging, True - Day logging) Logging type
+c__deletelogs                   int                     Delete logs older than day
+c__filter                       string                  Proxy filter file name
+c__logging                      bool                    Enable proxy logs
+c__loggings                     string                  Logging path
+c__parent                       string                  Parent proxy
+c__tunnelfilter                 string                  Proxy tunnel filter file name
+c__users                        string                  Proxy users file contents
+c_socks_enabled                 bool                    Enable Socks server
+c_socks_ipgrant                 bool                    Access type, false - deny, true - grant
+c_socks_iplist                  string                  List of Denied/Granted IPs
+c_socks_maxinconn               int                     256; SOCKS - Maximum number of incoming connections
+c_socks_port                    int                     1080; Socks port
+c_webdocuments_connection       string                  SSL Connection to external OnlyOffice online service, (e.g. 192.168.6.5 , or 192.168.6.5:9098 , or https://192.168.6.5/ )
+c_webdocuments_enabled          bool                    Enables OnlyOffice Online - requires external service to be available and configured via C_OnlyOffice_Online_Connection
+c_webdocuments_testconnection   bool                    Test of WebdocumentServer.
+c_webdocuments_version          string          r/o     OnlyOffice version (e.g. 4.3.1.4), 0 if error
+c_smartdiscover_activesync_url  string                  https://icemail.designhost.ir/Microsoft-Server-ActiveSync; SmartDiscover ActiveSync URL
+c_smartdiscover_collaboration_api_url string             https://icemail.designhost.ir/collaboration/; SmartDiscover Collaboration API URL
+c_smartdiscover_conference_api_url string               https://icemail.designhost.ir/conference/; SmartDiscover Conference API URL
+c_smartdiscover_freebusy_url    string                  https://icemail.designhost.ir/freebusy/; SmartDiscover FreeBusy URL
+c_smartdiscover_general_hostname string                 icemail.designhost.ir; Mailserver hostname
+c_smartdiscover_imap            string                  icemail.designhost.ir; SmartDiscover IMAP setting
+c_smartdiscover_imaptype        enum                    0 - standard; SmartDiscover IMAP type
+c_smartdiscover_install_url     string                  https://icemail.designhost.ir/install/; SmartDiscover Install URL
+c_smartdiscover_internetcalendar_url string             https://icemail.designhost.ir/calendar/; SmartDiscover Internet Calendar URL
+c_smartdiscover_pop3            string                  icemail.designhost.ir; SmartDiscover POP3 setting
+c_smartdiscover_pop3type        enum                    0 - standard; SmartDiscover POP3 type
+c_smartdiscover_sip             string                  icemail.designhost.ir; SmartDiscover SIP setting
+c_smartdiscover_siptype         bool                    values=(0 - Standard, 1 - SSL) SmartDiscover SIP type
+c_smartdiscover_smsservice_url  string                  https://icemail.designhost.ir/sms/; SmartDiscover SMS Service URL
+c_smartdiscover_smtp            string                  icemail.designhost.ir; SmartDiscover SMTP setting
+c_smartdiscover_smtptype        enum                    0 - standard; SmartDiscover SMTP type
+c_smartdiscover_spamchallenge_url string                https://icemail.designhost.ir/reports/; SmartDiscover Spam reports URL
+c_smartdiscover_teamchat_api_url string                 https://icemail.designhost.ir/teamchatapi/; SmartDiscover TeamChat API URL
+c_smartdiscover_webadmin_url    string                  https://icemail.designhost.ir/admin/; SmartDiscover WebAdmin URL
+c_smartdiscover_webdav_url      string                  https://icemail.designhost.ir/webdav/; SmartDiscover WebDAV URL
+c_smartdiscover_webmail_url     string                  https://icemail.designhost.ir/webmail/; SmartDiscover Webmail URL
+c_smartdiscover_xmpp            string                  icemail.designhost.ir; SmartDiscover XMPP setting
+c_smartdiscover_xmpptype        enum                    0 - standard; SmartDiscover XMPP type
+c_imap                          string                  icemail.designhost.ir; SmartDiscover IMAP setting
+c_imaptype                      enum                    0 - standard; SmartDiscover IMAP type
+c_pop3                          string                  icemail.designhost.ir; SmartDiscover POP3 setting
+c_pop3type                      enum                    0 - standard; SmartDiscover POP3 type
+c_sip                           string                  icemail.designhost.ir; SmartDiscover SIP setting
+c_siptype                       bool                    values=(0 - Standard, 1 - SSL) SmartDiscover SIP type
+c_smtp                          string                  icemail.designhost.ir; SmartDiscover SMTP setting
+c_smtptype                      enum                    0 - standard; SmartDiscover SMTP type
+c_xmpp                          string                  icemail.designhost.ir; SmartDiscover XMPP setting
+c_xmpptype                      enum                    0 - standard; SmartDiscover XMPP type
+c_smsservice_active             bool                    Enable SMS service
+c_smsservice_delivercontent     bool                    Incoming SMS - deliver according to #email# in received messages
+c_smsservice_expiremins         int                     7200; Give up sending a message after minutes
+c_smsservice_localnumberlen     int                     9; Maximum phone number length, longer will be cut
+c_smsservice_processinggroup    string                  Policy group
+c_smsservice_processingmode     enum                    0 - all messages; SMS processing mode
+c_smsservice_replymessage       bool                    Incoming SMS - deliver to original sender of received reply message (keep a list of sent messages
+c_smsservice_requireauth        bool                    SMS requires authentication
+c_smsservice_senderreplyconflict bool                   Enable sending C_SMSService_SenderReplyConflictText when recipient conflict occurs
+c_smsservice_senderreplyconflicttext string             Cannot deliver message, more potential recipients, use #email# in your reply.; Conflict message sent back to sender when more than one recipient record exists
+c_smsservice_senderreplyexpiration int                  21600; Keep records of sent messages for C_SMSService_ReplyMessage in seconds
+c_smsservice_subjectprefix      string                  SMS: ; SMS subject prefix
+c_smsservice_url                string                  https://icemail.designhost.ir/sms/; SMS service URL
+c_globalsettings                longstring              Global level of SMS settings
+c_adamgpt_url                   string                  URL of AdamGPT service
+c_fulltext_archive_scanning_enabled bool                Enable fulltext indexing of archive directory
+c_fulltext_database_path        string                  Path to fulltext database root
+c_fulltext_database_status      string          r/o     Read only - get status of fulltext search database service
+c_fulltext_database_url         string                  Set fulltext search database service URL, possible values - http(s)://server:port/
+c_fulltext_docconv_url          string                  Set documents conversion service URL, possible values - http(s)://server:port/
+c_fulltext_donotindexdisabledaccounts bool              Do not index accounts which are disabled for login
+c_fulltext_enabled              bool                    Enable fulltext search services and functionality
+c_fulltext_force                bool                    When set, do not check if account data are indexed and always query fulltext search database
+c_fulltext_gw_scanning_enabled  bool                    Enable fulltext indexing of GW attachments
+c_fulltext_logging              enum                    Fulltext search services communication logging level
+c_fulltext_mail_scanning_enabled bool                   Enable fulltext indexing of mail directory
+c_fulltext_managelocalservices  bool                    When set, fulltext services will be started or stopped by IceWarp when they have configured local listening addresses
+c_fulltext_scanner_queues       string          r/o     Read only - get contents of fulltext search scanner service queues
+c_fulltext_scanner_status       string          r/o     Read only - get status of fulltext search scanner service
+c_fulltext_scanner_url          string                  Set fulltext search scanner service URL, possible values - http(s)://server:port/
+c_fulltext_serverid             string                  9f2aa8c723664065; Unique server ID used when communicating with fulltext search services, autogenerated when empty
+c_imapsearchcache_expiration    int                     300; Sec, Expiration time of results in cache. 0 - caching disabled
+c_imapsearchcache_maxcount      int                     10000; Number of cached IMAP SEARCH query result strings. 0 - unlimited.
+c_imapsearchcache_maxsize       int                     1024; kB, Maximum size of IMAP SEARCH query cache. 0 - limit does not apply
+c_imapsearchcache_reset         string          Write only; Clean IMAP search cache.
+c_imapsearch_maxresults         int                     Maximal number of IMAP search returned results, 0 - unlimited
+c_imapsearch_pagesize           int                     2500; How many results are processed by IMAP search at once.
+c_imap_accessmode               bool                    Service Policy
+c_imap_allowbinaryappend        bool                    Allow binary zeros in IMAP APPEND
+c_imap_bandwidth                int                     Max transfer bandwidth (kB/s)
+c_imap_copybwfunction           bool                    Copy/Move from Inbox to Spam indexes e-mail to Blacklist, Copy/Move from Spam to Inbox indexes e-mail to WhiteList
+c_imap_filenameflags            bool                    Use IMAP flags encoded in mail filename
+c_imap_forcefullsync            bool                    Obsolete, only for backward compatibility
+c_imap_freememoryonidle         bool                    When IDLE is performed, information about all items are freed from memory and reloaded only after changes are detected or when idle is terminated
+c_imap_fullsyncinterval         int                     24; (hours) Determines how often is IMAP going to sync contents of imapindex.dat with filesystem. When the time for next sync is evaluated, random number between 0 and this value is added to this value. The full item sync should be needed only if some files were added directly on filesystem.
+c_imap_iplist                   string                  List of Denied/Granted IPs
+c_imap_maxappendsperminute      int                     Number of IMAP APPEND commands performed at full speed, additional commands are delayed, 0 - unlimited
+c_imap_maxinconn                int                     1000; Max number of Incoming connections
+c_imap_maxoutconn               int                     5; Max number of Outgoing connections
+c_imap_monitorconn              int                     Monitor number of increased connections
+c_imap_monitordata              int                     Monitor increased traffic
+c_imap_port                     int                     143; IMAP service port
+c_imap_rssinterval              int                     5; Integrate IMAP search with indexing service
+c_imap_sslport                  int                     993; IMAP service SSL port
+c_imap_threadcache              int                     40; IMAP service thread cache
+c_imap_traffic                  bool                    Enable IMAP traffic logs
+c_pop3_accessmode               bool                    values=(0 - Deny, 1 - Grant) Service Policy
+c_pop3_bandwidth                int                     Max transfer bandwidth (kb/s)
+c_pop3_iplist                   string                  List of Denied/Granted IPs
+c_pop3_maxinconn                int                     1000; Max number of Incoming connections
+c_pop3_maxoutconn               int                     5; Max number of Outgoing connections
+c_pop3_monitorconn              int                     Monitor number of increased connections
+c_pop3_monitordata              int                     Monitor increased traffic
+c_pop3_port                     int                     110; POP3 service port
+c_pop3_sslport                  int                     995; POP3 service SSL port
+c_pop3_startup                  int                     (ssAutomatic, ssManual)
+c_pop3_threadcache              int                     40; POP3 service thread cache
+c_pop3_traffic                  bool                    Enable SMTP traffic logs
+c_smtp_accessmode               bool                    values=(0 - Deny, 1 - Grant) Service Policy
+c_smtp_altport                  int                     587; SMTP service alternative port
+c_smtp_bandwidth                int                     Max transfer bandwidth (kB/s)
+c_smtp_iplist                   string                  List of Denied/Granted IPs
+c_smtp_maxinconn                int                     256; Max number of Incoming connections
+c_smtp_maxoutconn               int                     256; Max number of Outgoing connections
+c_smtp_maxoutgoinglimitperdomainenabled bool            enables limiting of number of outgoing connections to the same domain per minute
+c_smtp_maxoutgoinglimitperdomainvalue int               for C_System_Services_SMTP_MaxOutgoingLimitPerDomainEnabled
+c_smtp_maxsenderlimitperdomainenabled bool              enables limiting of number of outgoing connections from the same domain per minute
+c_smtp_maxsenderlimitperdomainvalue int                 Value for C_System_Services_SMTP_MaxSenderLimitPerDomainEnabled
+c_smtp_monitorconn              int                     Monitor number of increased connections
+c_smtp_monitordata              int                     Monitor increased traffic
+c_smtp_port                     int                     25; SMTP service port
+c_smtp_rewrite_backup_recipients bool                   if set to false, sending to aliases of backup and distributed domains does not rewrite recipients domain with the domain where the alias points to
+c_smtp_sendingstopped           bool                    Experimental - Never set this to true
+c_smtp_softquota                bool                    When enabled, user can receive messages even if his mailbox is full, but he can not send any message instead
+c_smtp_sslport                  int                     465; SMTP service SSL port
+c_smtp_startup                  int                     (ssAutomatic, ssManual)
+c_smtp_tarpitting_morerestrictive bool                  If set to true, presence of the session IP in Intrusion prevention list will be performed more often and not only at the beginning of the session
+c_smtp_threadcache              int                     40; SMTP service Thread cache
+c_smtp_traffic                  bool                    Enable SMTP traffic logs
+c_accounts_dbcachecount         int                     64; DB query cache size
+c_accounts_odbcconnstring       string                  config/accounts.db;;;;7;3; Accounts DB connection string
+c_accounts_odbcconnstring_real  string          r/o     config/accounts.db;;;;7;3; Accounts DB connection string (calculated value based on env variable IW_DB_STORAGE and API settings)
+c_accounts_odbcmaxthreads       int                     20; Max number of parallel connections to DB
+c_accounts_odbcmultithread      bool                    Use Multithreaded DB
+c_accounts_pdo                  string                  sqlite:config/accounts.db; Accounts PDO connection string
+c_accounts_promodecache         int                     10; Professional file system memory cache
+c_dir_logpath                   string                  /opt/icewarp/logs/; Path to log folder
+c_dir_mailpath                  string                  /opt/icewarp/mail/; Path to mail folder
+c_dir_sharedtemppath            string                  /opt/icewarp/mail/_temp/; Path to temp dir accessible from all services and LB nodes
+c_dir_shutdown_timeout          int                     10; Timeout in seconds to check accessibility of provisioned.dat file in storage path. If check fails, all services are shut down. Set value to 0 to disable.
+c_dir_temppath                  string                  /opt/icewarp/temp/; Path to temp folder
+c_lb_autocheckconfig            bool                    Periodically check if settings have been changed and auto reload
+c_lb_serverid                   string                  Server ID
+c_mailbox_groupedprefix         int                     Number of grouped characters in path prefix
+c_mailbox_prefixlen             int                     Number of characters from alias in path prefix
+c_mailbox_usesorting            bool                    Enables mailbox path alphabetical sorting
+c_atomicclocksync_enable        bool                    Enable Atomic clock sync
+c_autoarchive_backup_active     bool                    Backup archive
+c_autoarchive_backup_deleteolder int                    Delete old archive backups
+c_autoarchive_backup_file       string                  Archive backup file
+c_autoarchive_backup_password   string                  Password
+c_autoarchive_deleteolder       int                     60; Delete archive older than (Days)
+c_autoarchive_donotspam         bool                    Do not archive spam messages
+c_autoarchive_enable            bool                    Enable Auto archive
+c_autoarchive_forwardarchive    string                  Forward archived messages to
+c_autoarchive_groupaccess       string                  Optional group specifying users with access to archive
+c_autoarchive_imaparchive       bool                    Enable integration of archive with IMAP
+c_autoarchive_imaparchiveinbox  string                  Inbox; Archive Inbox IMAP folder name
+c_autoarchive_imaparchivename   string                  Archive; Archive IMAP folder name
+c_autoarchive_imaparchivesent   string                  Sent; Archive Sent IMAP folder name
+c_autoarchive_outgoing          int                     (ammAll, ammInbox, ammAllRoot, ammInboxRoot, ammDeleted)
+c_autoarchive_path              string                  /opt/icewarp/archive/; Auto archive path
+c_autoarchive_rss               bool                    Enable RSS archive
+c_autoarchive_trailerpath       string                  "yyyy-mm"; Archive directory trailer path
+c_autoarchive_unknownusers      bool                    Archive mail for unknown users
+c_autobackup_backupto           string                  backup/"yyyy-mm-dd-HHnn".zip; Path to backup file
+c_autobackup_deleteafter        int                     5; Delete backup file after (Days)
+c_autobackup_enable             bool                    Enable Auto backup
+c_autobackup_password           string                  Password
+c_autobackup_schedule           int                     Auto backup Schedule
+c_backup_db_accounts            string                  /opt/icewarp/backup/accounts.db;;;;7;3; Accounts database backup target DSN
+c_backup_db_accountsenabled     bool                    Backup account database
+c_backup_db_as                  string                  /opt/icewarp/backup/antispam.db;;;;7;3; Anti-Spam database backup target DSN
+c_backup_db_asenabled           bool                    Backup Anti-Spam database
+c_backup_db_directorycache      string                  /opt/icewarp/backup/directorycache.db;;;;7;3; Directory cache database backup target DSN
+c_backup_db_directorycacheenabled bool                  Backup directory cache database
+c_backup_db_gw                  string                  /opt/icewarp/backup/groupware.db;;;;7;3; Groupware database backup target DSN
+c_backup_db_gwenabled           bool                    Backup groupware database
+c_backup_dirs                   string                  Additional directories to backup
+c_backup_emails                 bool                    Backup emails
+c_backup_gwattach               bool                    Backup groupware attachments
+c_backup_logs                   bool                    Backup logs
+c_backup_skiplarger             int                     Skip emails larger (MB)
+c_backup_skipolder              int                     Skip emails older (Days)
+c_dbmigration_fixutf8           bool                    DB migration - repair UTF-8 character set when migrating
+c_excludelicense                bool                    Do not include license to backup file
+c_includemaildir                bool                    Include mail folder settings to backup
+c_migration_active              bool                    Enable Migration
+c_migration_autopopulatewcdb    bool                    Set this to true if WC cache should be autopopulate after messages are migrated or migration is finished
+c_migration_disableexistencechecking bool               Disables check of existence before remote validation
+c_migration_impersonification_password string           Admin password used for impersonification for IMAP migration (remote server must support it)
+c_migration_impersonification_user string               Admin username used for impersonification for IMAP migration (remote server must support it)
+c_migration_infoaccount         string                  Migration account
+c_migration_logfile             string                  Path to log file
+c_migration_messageprocesstype  enum                    2 - username; Policy
+c_migration_migrateservice      enum                    0 - both; Migration service
+c_migration_movefrominbox       bool                    Set this to true if the remote server stores everything under INBOX and you want to move that structure into root
+c_migration_multidomain         bool                    Multidomain migration
+c_migration_noreceived          bool                    Do not process received header
+c_migration_noxenvelopeto       bool                    Do not use X-Envelope-To header
+c_migration_passwordsonly       bool                    Only passwords are migrated (users already exists)
+c_migration_postmigratescript   string                  Path to executable to be called after user was created
+c_migration_server              string                  Migration source host
+c_migration_sslmode             enum                    0 - detect tls/ssl; Migration service
+c_migration_stat_aliases        int             r/o     Number of migrated aliases
+c_migration_stat_errors         int             r/o     Number of migration errors
+c_migration_stat_last           int             r/o     Unix time of last migrated mailbox
+c_migration_stat_messages       int             r/o     Number of messages migrated
+c_migration_stat_start          int             r/o     Unix time of start
+c_migration_stat_totalusers     int             r/o     Total number of migrated mailboxes
+c_migration_stat_users          int             r/o     Number of migrated mailboxes
+c_monitor_cpuusageperc          int                     CPU utilization threshold (%)
+c_monitor_cpuusageperiod        int                     Alert if CPU usage exceeds threshold for (Min)
+c_monitor_disksize              int                     Alert if free disk space drops below (MB)
+c_monitor_enable                bool                    Enable System monitor
+c_monitor_freemem               int                     Alert if free memory drops below (kB)
+c_monitor_reportaddress         string                  Disk monitor report address
+c_monitor_webthreadpoolthreshold int                    Alert if Maximal waiting time on web threadpools in last 5 minutes exceeds threshold (s)
+c_remoteserver_email            string                  Report Email address
+c_remoteserver_enable           bool                    Enable Remote server watchdog
+c_remoteserver_morethan         int                     Server is down if unreachable for (Min)
+c_remoteserver_notifyagain      bool                    Notify when server is back online
+c_remoteserver_schedule         int                     Remote Server Watchdog Schedule
+c_tunnel_enable                 bool                    Enable TCP/IP tunnel
+c_watchdog_check_iplist         string                  Semicolon separated list of IP's on which will be checked protocols, all must success, not applicable on services with specific IP binding
+c_watchdog_check_protocols      bool                    Should Watchdog connect on Service Port
+c_watchdog_control              bool                    Enable Watchdog for Control
+c_watchdog_gw                   bool                    Enable Watchdog for GW
+c_watchdog_im                   bool                    Enable Watchdog for IM
+c_watchdog_int                  int                     Watchdog Interval
+c_watchdog_pop3                 bool                    Enable Watchdog for POP3
+c_watchdog_smtp                 bool                    Enable Watchdog for SMTP
+c_wcstatistics_connectionstring string                  Connection string to override default sqlite storage
+c_wcstatistics_enabled          bool                    Switch to disable/enable collection of user statistics
+c_wcstatistics_exporttoxml      longstring     Write only; causes export of the collected statistic to the file given as parameter
+c_wcstatistics_reportingdisabled bool                   Switch to disable reporting to collector server
+c_wcstatistics_reportingmidnight bool                   If Enabled, collected statistics are reported only in new day procedure
+c_wcstatistics_reportingurl     string                  Url to override default IceWarp collector server
+c_sip_accessgroup               string                  Policy group
+c_sip_basicauth                 bool                    Allow basic authentication mechanism for SIP
+c_sip_calleralias               string                  calldialer; Call dialer agent alias
+c_sip_callername                string                  "Call Dialer"; Call dialer agent name
+c_sip_calls                     bool                    Enable SIP calls log
+c_sip_callsfile                 string                  SIP user calls filename
+c_sip_contactexpires            int                     60; SIP contact expiration (seconds)
+c_sip_debugfile                 string                  SIP debug log filename
+c_sip_disableanonymousaccess    bool                    Disable anonymous access for SIP
+c_sip_disableregistrar          bool                    Disable registration of all SIP clients
+c_sip_disablesymmetricresponserouting bool               Disable via received routing
+c_sip_dnsenabled                bool                    Enable extended DNS lookup (NAPTR and SRV)
+c_sip_enable                    bool                    Enable SIP service
+c_sip_enum                      bool                    Enable Telephone/E164 Number Mapping (ENUM)
+c_sip_getexternalipfailed       bool                    When False then external IP is tried to be obtained for SIP_RemoteAccessHost, it causes to try it only once to prevent cycling
+c_sip_grant                     bool                    SIP Firewall access type
+c_sip_jitterbuffer_detectsilence bool                   Enables silence detection, algorithm can be tuned through C_System_Services_SIP_JitterBuffer_ExpertSettings
+c_sip_jitterbuffer_expertsettings string                Special params for volume normalization and silence detection, URL-like string, for experts only
+c_sip_jitterbuffer_normalizevolume bool                 Enables volume normalization, algorithm can be tuned through C_System_Services_SIP_JitterBuffer_ExpertSettings
+c_sip_list                      string                  SIP Firewall list
+c_sip_localaccesshost           string                  192.168.75.50; SIP local access host address
+c_sip_localhostdomain           string                  localhost.localhost; Localhost name, by default localhost.localhost
+c_sip_localnet                  string                  127.0.0.1;192.168.*.*;10.*.*.*;172.16-31.*.*; SIP local net IPs
+c_sip_maxcalls                  int                     Max number of simultaneous SIP calls
+c_sip_mediaproxydebug           bool                    Enable SIP media proxy debugging (sipmp.log)
+c_sip_mediaproxyenabled         bool                    Enable proxy processing SRTP/SIP packets (needed for WebRTC)
+c_sip_mediaproxysdpcorrectionaddmissingresponsestreams bool Add missing streams for SDP response (response with missing video stream from INVITE)
+c_sip_mediaproxysdpcorrectionrequireknownvideocodec bool Remove video stream from SDP if no known codec (VP8, VP9, H264)
+c_sip_mediaproxytrafficdebug    bool                    Log encoding and decoding of SRTP packets to SIP media proxy log
+c_sip_mode                      int                     Service Policy
+c_sip_norecordroute             bool                    Disable SIP Record-Route header value
+c_sip_otherproxy                string                  SIP proxy server address
+c_sip_port                      int                     5060; SIP server port
+c_sip_remoteaccesshost          string                  46.100.12.79; SIP remote access host address
+c_sip_rtpmax                    int                     256; Local RTP port range to
+c_sip_rtpproxy                  bool                    Enable RTP NAT Traversal proxy and streaming server
+c_sip_rtpstart                  int                     10000; Local RTP port range from
+c_sip_rules                     string          r/o     Returns SIP rules XML
+c_sip_rule_item_propertyvalue   string          Write only; set a specific rule property value in the format of urlencoded: ,,
+c_sip_sdpproxy                  bool                    Enable SDP proxy
+c_sip_sdpremoteaccesshost       string                  SIP SDP remote access host
+c_sip_services                  bool                    Deactivated property - out of use
+c_sip_sslport                   int                     5061; SIP SSL port
+c_sip_useotherproxy             bool                    Enable using of proxy for SIP
+c_sip_usercalls                 bool                    Enable SIP user calls to file(s)
+c_sip_websocketsuseproxyserver  bool                    Enable Mail4Cisco media proxy mode
+c_active                        bool                    WebDAV service active
+c_processinggroup               string                  Policy group
+c_processingmode                enum                    0 - all messages
+c_url                           string                  https://icemail.designhost.ir/webdav/; WebDAV URL
+c_usegalforsearch               bool                    enable use of GAL for contact suggestion in WebDAV
+c_system_remoteconsoleprotocol_port int                 0 = RCP administration is available on webserver HTTP/HTTPS ports, otherwise defines port where is RCP available instead of usual webserver ports. This alternate port is SSL only.
+c_control_accessmode            bool                    values=(0 - Deny, 1 - Grant) Service Policy
+c_control_bandwidth             int                     Max transfer bandwidth (kB/s)
+c_control_iplist                string                  List of Denied/Granted IPs
+c_control_maxinconn             int                     1000; Max number of Incoming connections
+c_control_monitorconn           int                     Monitor number of increased connections
+c_control_monitordata           int                     Monitor increased traffic
+c_control_port                  int                     80; Control service port
+c_control_sslport               int                     443; Control service SSL port
+c_control_startup               int                     (ssAutomatic, ssManual)
+c_control_threadcache           int                     40; Control service Thread cache
+c_control_traffic               bool                    Enable Control traffic logs

@@ -2,9 +2,7 @@
 
 ###############################################################################
 #
-# PDF Report Writer (M5) - FINAL VERSION
-# Reads checklist from config/checklist.conf.pdf
-# All special cases handled properly.
+# PDF Report Writer (M5) - FINAL WITH VALIDATION
 #
 ###############################################################################
 
@@ -195,6 +193,57 @@ _cl_value_render() {
     fi
 }
 
+# ---------- Validation for Intrusion Prevention ----------
+_validate_intrusion_value() {
+    local KEY="$1"
+    local VALUE="$2"
+    local LABEL="$3"
+    local EXPECTED=""
+    local BKIND="INFO"
+    local BTEXT="INFO"
+    local NOTE=""
+
+    case "$KEY" in
+        "security.intrusion.block_connections_per_minute.value")
+            EXPECTED="10"
+            ;;
+        "security.intrusion.block_unknown_user_count.value")
+            EXPECTED="5"
+            ;;
+        "security.intrusion.block_relay_denied_count.value")
+            EXPECTED="5"
+            ;;
+        "security.intrusion.block_rset_count.value")
+            EXPECTED="5"
+            ;;
+        "security.intrusion.block_spam_score.value")
+            EXPECTED="9.00"
+            ;;
+        "security.intrusion.block_failed_logins.value")
+            EXPECTED="5"
+            ;;
+        "security.intrusion.block_duration_minutes")
+            EXPECTED="30"
+            ;;
+        *)
+            printf 'INFO|INFO|%s' "$VALUE"
+            return
+            ;;
+    esac
+
+    if [[ "$VALUE" == "$EXPECTED" ]]; then
+        BKIND="PASS"
+        BTEXT="PASS"
+        NOTE="Expected: $EXPECTED"
+    else
+        BKIND="WARN"
+        BTEXT="WARN"
+        NOTE="Expected: $EXPECTED (current: $VALUE)"
+    fi
+
+    printf '%s|%s|%s' "$BKIND" "$BTEXT" "$NOTE"
+}
+
 _render_checklist() {
     local CHECKLIST_FILE="${PROJECT_ROOT}/config/checklist.conf.pdf"
     local CUR_SECTION=""
@@ -217,7 +266,7 @@ _render_checklist() {
             _layout_row_index=0
         fi
 
-        # ----- MySQL Server (Remote DB) section auto-N/A -----
+        # MySQL Server (Remote DB) section auto-N/A
         if [[ "$SECTION" == "MySQL Server"* ]] && [ "${DATA[database.scope]:-}" != "remote" ]; then
             local NA_REASON="not applicable"
             case "${DATA[database.type]:-}" in
@@ -229,19 +278,19 @@ _render_checklist() {
             continue
         fi
 
-        # ----- MySQL items in Database section -----
+        # MySQL items in Database section
         if [[ "$SECTION" == "Database" ]] && [[ "$LABEL" == MySQL* ]] && [[ "${DATA[mysql.applicable]:-false}" != "true" ]]; then
             _layout_row "$LABEL" "N/A" "INFO" "INFO" "MySQL is not installed/running on this server"
             continue
         fi
 
-        # ----- Database Type -----
+        # Database Type
         if [ "$LABEL" = "Database Type" ] && [ "${DATA[database.type]:-}" = "sqlite" ]; then
             _layout_row "$LABEL" "sqlite" "WARN" "WARN" "SQLite is not recommended for production - use MySQL"
             continue
         fi
 
-        # ----- Set customers-stat@parsavan.com -----
+        # Set customers-stat@parsavan.com
         if [ "$LABEL" = "Set customers-stat@parsavan.com" ]; then
             local RAW="${DATA[monitor.alert_email]:-}"
             if [[ "$RAW" == *"customers-stat@parsavan.com"* ]] || [[ "$RAW" == *"customers-stat"* ]]; then
@@ -252,7 +301,7 @@ _render_checklist() {
             continue
         fi
 
-        # ----- Check for Certificates -----
+        # Check for Certificates
         if [ "$LABEL" = "Check for Certificates" ]; then
             local EXPIRY="${DATA[icewarp.ssl.expiration]:-}"
             local DAYS_LEFT="${DATA[icewarp.ssl.days_left]:-0}"
@@ -274,7 +323,7 @@ _render_checklist() {
             continue
         fi
 
-        # ----- Last Backup Date and Time -----
+        # Last Backup Date and Time
         if [ "$LABEL" = "Last Backup Date and Time" ]; then
             local BACKUP_TIME="${DATA[icewarp.backup.last_time]:-}"
             if [ -n "$BACKUP_TIME" ]; then
@@ -294,7 +343,7 @@ _render_checklist() {
             continue
         fi
 
-        # ----- Configure Archive Backup Settings -----
+        # Configure Archive Backup Settings
         if [ "$LABEL" = "Configure Archive Backup Settings" ]; then
             local RAW="${DATA[archive.backup.active]:-}"
             if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
@@ -305,7 +354,7 @@ _render_checklist() {
             continue
         fi
 
-        # ----- 2FA -----
+        # 2FA
         if [ "$LABEL" = "2FA" ]; then
             local RAW="${DATA[security.login.2fa_bypass_enabled]:-}"
             if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
@@ -316,7 +365,7 @@ _render_checklist() {
             continue
         fi
 
-        # ----- Hide Server Version -----
+        # Hide Server Version
         if [ "$LABEL" = "Hide Server Version" ]; then
             local RAW="${DATA[smtp.hide_server_version]:-}"
             if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
@@ -327,7 +376,7 @@ _render_checklist() {
             continue
         fi
 
-        # ----- Block Outgoing Port 9001 -----
+        # Block Outgoing Port 9001
         if [ "$LABEL" = "Block Outgoing Port 9001" ]; then
             local RAW="${DATA[security.port_9001_egress.blocked]:-}"
             if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
@@ -338,7 +387,7 @@ _render_checklist() {
             continue
         fi
 
-        # ----- Remove Old AntiSpam Folders -----
+        # Remove Old AntiSpam Folders
         if [ "$LABEL" = "Remove Old AntiSpam Folders" ]; then
             local STATUS="${DATA[security.cyren_folder.status]:-INFO}"
             local MSG="${DATA[security.cyren_folder.message]:-}"
@@ -352,7 +401,7 @@ _render_checklist() {
             continue
         fi
 
-        # ----- Disable AntiSpam Live -----
+        # Disable AntiSpam Live
         if [ "$LABEL" = "Disable AntiSpam Live" ]; then
             local RAW="${DATA[security.antispam_live.enabled]:-}"
             if [[ "$RAW" == "0" ]] || [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
@@ -363,16 +412,49 @@ _render_checklist() {
             continue
         fi
 
-        # ----- Process POP3 / IMAP -----
-        if [ "$LABEL" = "Process POP3" ] || [ "$LABEL" = "Process IMAP" ]; then
-            local KEY="security.intrusion.process_${LABEL#Process }"
-            local KEY="${KEY,,}"  # Convert to lowercase for IMAP
-            local RAW="${DATA[$KEY]:-0}"
+        # Process POP3 / IMAP
+        if [ "$LABEL" = "Process POP3/IMAP" ]; then
+            local RAW="${DATA[security.intrusion.process_pop3_imap]:-0}"
             if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
                 _layout_row "$LABEL" "Enabled" "PASS" "PASS" "$NOTE"
             else
                 _layout_row "$LABEL" "Disabled" "CRITICAL" "CRITICAL" "$NOTE"
             fi
+            continue
+        fi
+
+        # ----- Validation for Intrusion Prevention numeric items -----
+        if [ "$KIND" = "V" ] && [[ "$KEYS" == security.intrusion.*.value* || "$KEYS" == "security.intrusion.block_duration_minutes" ]]; then
+            local RAW="${DATA[$KEYS]:-}"
+            local VALIDATION
+            VALIDATION="$(_validate_intrusion_value "$KEYS" "$RAW" "$LABEL")"
+            local BKIND="${VALIDATION%%|*}"
+            local BTEXT="$(echo "$VALIDATION" | cut -d'|' -f2)"
+            local NOTE_VALID="$(echo "$VALIDATION" | cut -d'|' -f3-)"
+            local VALUE="$RAW"
+            local FINAL_NOTE="$NOTE"
+            [ -n "$NOTE_VALID" ] && FINAL_NOTE="${FINAL_NOTE}${FINAL_NOTE:+ | }${NOTE_VALID}"
+            _layout_row "$LABEL" "$VALUE" "$BKIND" "$BTEXT" "$FINAL_NOTE"
+            continue
+        fi
+
+        # ----- Type T: Threshold validation -----
+        if [ "$KIND" = "T" ]; then
+            local RAW="${DATA[$KEYS]:-}"
+            local EXPECTED="$NOTE"
+            local BKIND="INFO"
+            local BTEXT="INFO"
+            local MSG=""
+            if [ "$RAW" = "$EXPECTED" ]; then
+                BKIND="PASS"
+                BTEXT="PASS"
+                MSG="Expected: $EXPECTED"
+            else
+                BKIND="WARN"
+                BTEXT="WARN"
+                MSG="Expected: $EXPECTED (current: $RAW)"
+            fi
+            _layout_row "$LABEL" "$RAW" "$BKIND" "$BTEXT" "$MSG"
             continue
         fi
 

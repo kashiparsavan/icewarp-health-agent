@@ -36,16 +36,16 @@ SMTP Delivery Settings~Delivery Reports~B~smtp.delivery_reports_enabled~verified
 SMTP Delivery Settings~Use TLS/SSL (Secured Delivery)~B~smtp.use_tls_ssl~
 SMTP Delivery Settings~Process Incoming Messages in MDA Queue~B~smtp.use_incoming_queue~
 SMTP Delivery Settings~Use MDA Queue for Internal Message Delivery~B~smtp.mda_internal_delivery~may be the same underlying setting as the item above, needs confirming
-SMTP Delivery Settings~Maximum Number of Simultaneous Threads~V~smtp.incoming_queue_threads~
+SMTP Delivery Settings~Maximum Number of Simultaneous Threads~T~smtp.incoming_queue_threads~10~
 SMTP Delivery Settings~Hide IP Address from Received for All Messages~B~smtp.hide_ip~
 SMTP Delivery Settings~Hide Server Version~B~smtp.hide_server_version~should be ENABLED
+SMTP Delivery Settings~Bounceback Mode~R~c_mail_smtp_other_bouncebackmode~0=enabled (bad), 1=disabled (good)
 SMTP Protocol Hardening~Require HELO/EHLO~B~smtp.require_helo_ehlo~
 SMTP Protocol Hardening~Add Return-Path to All Messages~B~smtp.add_return_path~
 SMTP Protocol Hardening~Dedupe Email Messages~B~smtp.dedupe~
 SMTP Protocol Hardening~Relay Only if Originators Domain is Local~B~smtp.relay.local_domain_only~
 SMTP Protocol Hardening~Process SMTP~B~security.intrusion.process_smtp~
-SMTP Protocol Hardening~Process POP3~B~security.intrusion.process_pop3~
-SMTP Protocol Hardening~Process IMAP~B~security.intrusion.process_imap~
+SMTP Protocol Hardening~Process POP3/IMAP~B~security.intrusion.process_pop3_imap~
 SMTP Protocol Hardening~Add rDNS Result to Received for All Messages~B~smtp.rdns_in_received~
 SMTP Protocol Hardening~Set Directory Cache Schedule~B~directory_cache.scheduled~raw schedule format still not decoded (see appendix)
 SMTP Protocol Hardening~Change Admin URL~B~admin.url_changed_from_default~heuristic: compares the URL path against IceWarps default "/admin/"
