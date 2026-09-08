@@ -2,7 +2,7 @@
 
 ###############################################################################
 #
-# Health Rules (M5)
+# Health Rules (M5) - Refactored with correct keys
 #
 ###############################################################################
 
@@ -33,20 +33,20 @@ _days_ago() {
 
 evaluate_health() {
 
-    # --- Memory ---
+    # --- Memory (percentage based) ---
     local AVAIL_KB="${DATA[os.memory.available_kb]:-}"
-    local FLOOR_KB="${DATA[monitor.memory.alert_below_kb]:-}"
     local TOTAL_RAM_KB="${DATA[os.memory.total_kb]:-}"
-    if _is_num "$AVAIL_KB" && _is_num "$FLOOR_KB" && [ "$FLOOR_KB" -gt 0 ]; then
-        if _is_num "$TOTAL_RAM_KB" && [ "$FLOOR_KB" -gt "$TOTAL_RAM_KB" ]; then
-            _health_set "memory" "warn" "Configured alert threshold (${FLOOR_KB}KB) exceeds total installed RAM (${TOTAL_RAM_KB}KB) - this check can never pass as configured; review System Monitor in WebAdmin"
-        elif [ "$AVAIL_KB" -lt "$FLOOR_KB" ]; then
-            _health_set "memory" "fail" "Available memory (${AVAIL_KB}KB) is below the server's configured alert threshold (${FLOOR_KB}KB)"
+    if _is_num "$AVAIL_KB" && _is_num "$TOTAL_RAM_KB" && [ "$TOTAL_RAM_KB" -gt 0 ]; then
+        local USED_PERCENT=$(awk -v t="$TOTAL_RAM_KB" -v a="$AVAIL_KB" 'BEGIN{printf "%.2f", ((t-a)/t)*100}')
+        if awk -v used="$USED_PERCENT" -v lim=90 'BEGIN{exit !(used > lim)}'; then
+            _health_set "memory" "critical" "RAM usage is ${USED_PERCENT}% (CRITICAL - above 90%)"
+        elif awk -v used="$USED_PERCENT" -v lim=40 'BEGIN{exit !(used > lim)}'; then
+            _health_set "memory" "warn" "RAM usage is ${USED_PERCENT}% (WARN - above 40%)"
         else
-            _health_set "memory" "pass" "Available memory (${AVAIL_KB}KB) is above threshold (${FLOOR_KB}KB)"
+            _health_set "memory" "pass" "RAM usage is ${USED_PERCENT}% (OK)"
         fi
     else
-        _health_set "memory" "skip" "System Monitor memory threshold not configured on server"
+        _health_set "memory" "skip" "Unable to calculate RAM usage"
     fi
 
     # --- Disk ---
@@ -73,14 +73,14 @@ evaluate_health() {
         TOTAL_GB="${DATA[storage.${MOUNT_NAME}.total_gb]:-}"
 
         if ! _is_num "$DISK_FLOOR_MB" || [ "$DISK_FLOOR_MB" -le 0 ]; then
-            _health_set "disk.${MOUNT_NAME}" "skip" "System Monitor disk threshold not configured on server"
+            _health_set "disk.${MOUNT_NAME}" "skip" "System Monitor disk threshold not configured"
             continue
         fi
 
         if _is_num "$TOTAL_GB"; then
             TOTAL_MB="$(awk -v g="$TOTAL_GB" 'BEGIN{printf "%d", g*1024}')"
             if [ "$DISK_FLOOR_MB" -gt "$TOTAL_MB" ]; then
-                _health_set "disk.${MOUNT_NAME}" "warn" "Configured alert threshold (${DISK_FLOOR_MB}MB) exceeds total disk capacity (${TOTAL_MB}MB) - this check can never pass as configured; review System Monitor in WebAdmin"
+                _health_set "disk.${MOUNT_NAME}" "warn" "Configured threshold (${DISK_FLOOR_MB}MB) exceeds capacity (${TOTAL_MB}MB) - review System Monitor"
                 [ "$WORST" = "pass" ] && WORST="warn"
                 continue
             fi
@@ -108,7 +108,7 @@ evaluate_health() {
             _health_set "cpu" "pass" "1-min load (${LOAD1}) within threshold approximation (${LIMIT})"
         fi
     else
-        _health_set "cpu" "skip" "System Monitor CPU threshold not configured, or load/core data missing"
+        _health_set "cpu" "skip" "System Monitor CPU threshold missing or load/core data unavailable"
     fi
 
     # --- Password policy ---
@@ -116,7 +116,7 @@ evaluate_health() {
     local PW_MIN="${DATA[security.password_policy.min_length]:-}"
     if [ "$PW_ACTIVE" = "1" ] && _is_num "$PW_MIN"; then
         if [ "$PW_MIN" -lt "$HEALTH_MIN_PASSWORD_LENGTH" ]; then
-            _health_set "password_policy" "warn" "Password policy active but min length (${PW_MIN}) is below recommended ${HEALTH_MIN_PASSWORD_LENGTH}"
+            _health_set "password_policy" "warn" "Password policy active but min length (${PW_MIN}) below recommended ${HEALTH_MIN_PASSWORD_LENGTH}"
         else
             _health_set "password_policy" "pass" "Password policy active, min length ${PW_MIN} meets recommendation"
         fi
@@ -132,12 +132,12 @@ evaluate_health() {
 
     if [ "$POLICY_ENABLED" = "1" ] && _is_num "$LOGIN_MAX" && [ "$LOGIN_MAX" -gt 0 ]; then
         if [ "$LOGIN_MAX" -gt "$HEALTH_MAX_LOGIN_ATTEMPTS" ]; then
-            _health_set "login_blocking" "warn" "Login Policy lockout threshold (${LOGIN_MAX}) is higher than recommended (${HEALTH_MAX_LOGIN_ATTEMPTS})"
+            _health_set "login_blocking" "warn" "Login Policy lockout threshold (${LOGIN_MAX}) higher than recommended (${HEALTH_MAX_LOGIN_ATTEMPTS})"
         else
             _health_set "login_blocking" "pass" "Login Policy lockout active, threshold (${LOGIN_MAX}) OK"
         fi
     elif [ "$INTRUSION_ENABLED" = "1" ] && _is_num "$INTRUSION_VAL" && [ "$INTRUSION_VAL" -gt 0 ]; then
-        _health_set "login_blocking" "pass" "Login Policy lockout is off, but Intrusion Prevention blocks the IP after ${INTRUSION_VAL} failed logins"
+        _health_set "login_blocking" "pass" "Login Policy lockout is off, but Intrusion Prevention blocks IP after ${INTRUSION_VAL} failed logins"
     else
         _health_set "login_blocking" "fail" "Neither Login Policy lockout nor Intrusion Prevention failed-login blocking is active"
     fi
@@ -158,35 +158,158 @@ evaluate_health() {
         _health_set "digest_md5" "skip" "Auth scheme list not available"
     fi
 
-    # --- Backup ---
-    if [ "${DATA[icewarp.backup.auto_enabled]:-}" = "1" ] && [ -n "${DATA[icewarp.backup.last_time]:-}" ]; then
-        _health_set "backup" "pass" "Automatic backup enabled, last run: ${DATA[icewarp.backup.last_time]}"
+    # --- Backup (using icewarp.* keys from tool.sh) ---
+    local AUTO_ENABLED="${DATA[icewarp.backup.auto_enabled]:-0}"
+    local LAST_TIME="${DATA[icewarp.backup.last_time]:-}"
+    local DB_ENABLED="${DATA[icewarp.database_backup.enabled]:-0}"
+
+    # Main backup enable
+    if [ "$AUTO_ENABLED" = "1" ]; then
+        _health_set "backup.auto" "pass" "Automatic system backup is enabled"
     else
-        _health_set "backup" "fail" "Automatic backup not enabled or never ran"
+        _health_set "backup.auto" "critical" "Automatic system backup is DISABLED (required for production)"
+    fi
+
+    # Database backup
+    if [ "$DB_ENABLED" = "1" ]; then
+        _health_set "backup.db" "pass" "Database backup is enabled"
+    else
+        _health_set "backup.db" "critical" "Database backup is DISABLED"
+    fi
+
+    # Last backup time
+    if [ -n "$LAST_TIME" ] && [ "$LAST_TIME" != "null" ] && [ "$LAST_TIME" != "N/A" ]; then
+        local DAYS=$(_days_ago "$LAST_TIME")
+        if [ "$DAYS" -lt 2 ]; then
+            _health_set "backup.last_time" "pass" "Last backup run: $LAST_TIME ($DAYS days ago)"
+        elif [ "$DAYS" -lt 7 ]; then
+            _health_set "backup.last_time" "warn" "Last backup run: $LAST_TIME ($DAYS days ago) - consider recent backup"
+        else
+            _health_set "backup.last_time" "critical" "Last backup run: $LAST_TIME ($DAYS days ago) - too old"
+        fi
+    else
+        _health_set "backup.last_time" "warn" "No backup history found (manual run never executed)"
+    fi
+
+    # --- Watchdog (main enable + individual services) ---
+    local CONTROL="${DATA[watchdog.control]:-0}"
+    local SMTP="${DATA[watchdog.smtp]:-0}"
+    local POP3="${DATA[watchdog.pop3]:-0}"
+    local IM="${DATA[watchdog.im]:-0}"
+    local GW="${DATA[watchdog.gw]:-0}"
+    local INTERVAL="${DATA[watchdog.interval_minutes]:-0}"
+
+    # Main watchdog enable
+    if [ "$CONTROL" = "1" ]; then
+        _health_set "watchdog.control" "pass" "System Watchdog is ENABLED"
+    else
+        _health_set "watchdog.control" "critical" "System Watchdog is DISABLED"
+    fi
+
+    # Individual services
+    if [ "$SMTP" = "1" ]; then
+        _health_set "watchdog.smtp" "pass" "SMTP Watchdog is ENABLED"
+    else
+        _health_set "watchdog.smtp" "critical" "SMTP Watchdog is DISABLED"
+    fi
+
+    if [ "$POP3" = "1" ]; then
+        _health_set "watchdog.pop3" "pass" "POP3/IMAP Watchdog is ENABLED"
+    else
+        _health_set "watchdog.pop3" "critical" "POP3/IMAP Watchdog is DISABLED"
+    fi
+
+    if [ "$IM" = "1" ]; then
+        _health_set "watchdog.im" "pass" "IM/VoIP Watchdog is ENABLED"
+    else
+        _health_set "watchdog.im" "critical" "IM/VoIP Watchdog is DISABLED"
+    fi
+
+    if [ "$GW" = "1" ]; then
+        _health_set "watchdog.gw" "pass" "GroupWare Watchdog is ENABLED"
+    else
+        _health_set "watchdog.gw" "critical" "GroupWare Watchdog is DISABLED"
+    fi
+
+    # Watchdog interval
+    if [ "$INTERVAL" -eq 0 ]; then
+        _health_set "watchdog.interval" "pass" "Interval: Every minute (0) - optimal"
+    elif [ "$INTERVAL" -ge 1 ] && [ "$INTERVAL" -le 60 ]; then
+        _health_set "watchdog.interval" "pass" "Interval: ${INTERVAL} minutes (optimal)"
+    elif [ "$INTERVAL" -gt 60 ] && [ "$INTERVAL" -le 1440 ]; then
+        _health_set "watchdog.interval" "warn" "Interval: ${INTERVAL} minutes (more than 1 hour - consider reducing)"
+    else
+        _health_set "watchdog.interval" "critical" "Interval: ${INTERVAL} minutes (too long or invalid)"
+    fi
+
+    # --- System Monitor ---
+    local MONITOR_ENABLED="${DATA[monitor.enabled]:-0}"
+    if [ "$MONITOR_ENABLED" = "1" ]; then
+        local CPU_TH="${DATA[monitor.cpu.threshold_percent]:-50}"
+        local MEM_TH="${DATA[monitor.memory.alert_below_kb]:-1048576}"
+        local DISK_TH="${DATA[monitor.disk.alert_below_mb]:-5120}"
+        _health_set "monitor.enabled" "pass" "System Monitor ENABLED (CPU>${CPU_TH}% | RAM<${MEM_TH}KB | DISK<${DISK_TH}MB)"
+    else
+        _health_set "monitor.enabled" "critical" "System Monitor is DISABLED"
     fi
 
     # --- OS Last Update ---
     local LAST_UPDATE="${DATA[os.last_update_date]:-}"
     if [ -n "$LAST_UPDATE" ] && [ "$LAST_UPDATE" != "N/A" ] && [ "$LAST_UPDATE" != "null" ]; then
         local DAYS=$(_days_ago "$LAST_UPDATE")
-        if [ "$DAYS" -gt 14 ]; then
-            _health_set "os_update" "fail" "OS last update was $DAYS days ago (threshold: 14 days)"
-        elif [ "$DAYS" -gt 7 ]; then
-            _health_set "os_update" "warn" "OS last update was $DAYS days ago (threshold: 7 days)"
+        if [ "$DAYS" -le 7 ]; then
+            _health_set "os_update" "pass" "OS updated recently (${DAYS} days ago)"
+        elif [ "$DAYS" -le 30 ]; then
+            _health_set "os_update" "warn" "OS update is ${DAYS} days old (consider updating within a week)"
         else
-            _health_set "os_update" "pass" "OS last update was $DAYS days ago (OK)"
+            _health_set "os_update" "critical" "OS is outdated (${DAYS} days since last update)"
         fi
     else
         _health_set "os_update" "skip" "OS last update date not available"
     fi
 
-    # --- Roll-up ---
+    # --- Directory Cache Schedule ---
+    local CACHE_SCHED="${DATA[directory_cache.schedule_raw]:-}"
+    if [ -z "$CACHE_SCHED" ] || [ "$CACHE_SCHED" = "not scheduled" ] || [ "$CACHE_SCHED" = "null" ]; then
+        _health_set "directory_cache" "critical" "Directory Cache schedule is NOT SET or failed to parse"
+    else
+        _health_set "directory_cache" "pass" "Directory Cache schedule is configured (${CACHE_SCHED})"
+    fi
+
+    # --- Roll-up (ONLY for items in summary) ---
     local TOTAL=0 FAIL=0 WARN=0
-    for K in "${!HEALTH[@]}"; do
-        [ "${HEALTH[$K]}" = "skip" ] && continue
+
+    local -a SUMMARY_KEYS=(
+        memory
+        disk.root_fs
+        disk.install
+        disk.mail
+        disk.archive
+        disk.root_home
+        cpu
+        login_blocking
+        tls_delivery
+        os_update
+        password_policy
+        backup.auto
+        backup.db
+        backup.last_time
+        watchdog.control
+        watchdog.smtp
+        watchdog.pop3
+        watchdog.im
+        watchdog.gw
+        watchdog.interval
+        monitor.enabled
+        directory_cache
+    )
+
+    for K in "${SUMMARY_KEYS[@]}"; do
+        local RES="${HEALTH[$K]:-skip}"
+        [ "$RES" = "skip" ] && continue
         TOTAL=$((TOTAL+1))
-        [ "${HEALTH[$K]}" = "fail" ] && FAIL=$((FAIL+1))
-        [ "${HEALTH[$K]}" = "warn" ] && WARN=$((WARN+1))
+        [ "$RES" = "fail" ] || [ "$RES" = "critical" ] && FAIL=$((FAIL+1))
+        [ "$RES" = "warn" ] && WARN=$((WARN+1))
     done
 
     collector_set "health.summary.total_checks" "$TOTAL"

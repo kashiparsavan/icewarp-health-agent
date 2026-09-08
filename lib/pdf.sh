@@ -24,7 +24,16 @@ PDF_C_AMBER="0.83 0.53 0.06"
 PDF_C_BLUEGRAY="0.30 0.42 0.55"
 PDF_C_GRAY="0.5 0.53 0.56"
 
-_pdf_escape() { local S="$1"; S="$(printf '%s' "$S" | LC_ALL=C tr -c '\40-\176' '?')"; S="${S//\\/\\\\}"; S="${S//(/\\(}"; S="${S//)/\\)}"; printf '%s' "$S"; }
+_is_num() { [[ "$1" =~ ^-?[0-9]+(\.[0-9]+)?$ ]]; }
+
+_pdf_escape() {
+    local S="$1"
+    S="$(printf '%s' "$S" | LC_ALL=C tr -c '\40-\176' '?')"
+    S="${S//\\/\\\\}"
+    S="${S//(/\\(}"
+    S="${S//)/\\)}"
+    printf '%s' "$S"
+}
 
 _pdf_rect() {
     _PDF_CUR="${_PDF_CUR}${5} rg"$'\n'
@@ -32,7 +41,8 @@ _pdf_rect() {
 }
 
 _pdf_text() {
-    local ESC="$(_pdf_escape "$3")"
+    local ESC
+    ESC="$(_pdf_escape "$3")"
     _PDF_CUR="${_PDF_CUR}${6} rg"$'\n'
     _PDF_CUR="${_PDF_CUR}BT /${4} ${5} Tf ${1} ${2} Td (${ESC}) Tj ET"$'\n'
 }
@@ -44,11 +54,24 @@ _pdf_text_trunc() {
     _pdf_text "$1" "$2" "$TXT" "$4" "$5" "$6"
 }
 
-_PDF_PAGES=(); _PDF_CUR=""; _PDF_Y=$PDF_TOP_Y
+_PDF_PAGES=()
+_PDF_CUR=""
+_PDF_Y=$PDF_TOP_Y
 
-_layout_new_page() { [ -n "$_PDF_CUR" ] && _PDF_PAGES+=("$_PDF_CUR"); _PDF_CUR=""; _PDF_Y=$PDF_TOP_Y; }
-_layout_ensure() { local NEEDED="$1"; [ "$((_PDF_Y - NEEDED))" -lt "$PDF_BOTTOM_Y" ] && _layout_new_page; }
-_layout_finish() { [ -n "$_PDF_CUR" ] && _PDF_PAGES+=("$_PDF_CUR"); }
+_layout_new_page() {
+    [ -n "$_PDF_CUR" ] && _PDF_PAGES+=("$_PDF_CUR")
+    _PDF_CUR=""
+    _PDF_Y=$PDF_TOP_Y
+}
+
+_layout_ensure() {
+    local NEEDED="$1"
+    [ "$((_PDF_Y - NEEDED))" -lt "$PDF_BOTTOM_Y" ] && _layout_new_page
+}
+
+_layout_finish() {
+    [ -n "$_PDF_CUR" ] && _PDF_PAGES+=("$_PDF_CUR")
+}
 
 _layout_section_header() {
     local TITLE="$1"
@@ -73,9 +96,11 @@ _layout_row_index=0
 
 _layout_row() {
     local LABEL="$1" VALUE="$2" BKIND="$3" BTEXT="$4" NOTE="${5:-}"
-    local ROW_H=16; [ -n "$NOTE" ] && ROW_H=27
+    local ROW_H=16
+    [ -n "$NOTE" ] && ROW_H=27
     _layout_ensure "$ROW_H"
-    local BG="$PDF_C_WHITE"; [ $(( _layout_row_index % 2 )) -eq 1 ] && BG="$PDF_C_GRAY_LIGHT"
+    local BG="$PDF_C_WHITE"
+    [ $(( _layout_row_index % 2 )) -eq 1 ] && BG="$PDF_C_GRAY_LIGHT"
     _layout_row_index=$((_layout_row_index + 1))
     local ROW_TOP=$_PDF_Y
     _pdf_rect "$PDF_MARGIN" "$((ROW_TOP - ROW_H + 4))" "$PDF_CONTENT_W" "$ROW_H" "$BG"
@@ -85,22 +110,34 @@ _layout_row() {
     local BADGE_W=76 BADGE_H=13
     local BADGE_X=$((PDF_CONTENT_RIGHT - BADGE_W - 4))
     local BADGE_Y=$((ROW_TOP - 12))
-    local BCOLOR="$(_badge_color "$BKIND")"
+    local BCOLOR
+    BCOLOR="$(_badge_color "$BKIND")"
     _pdf_rect "$BADGE_X" "$BADGE_Y" "$BADGE_W" "$BADGE_H" "$BCOLOR"
     _pdf_text_trunc "$((BADGE_X + 6))" "$((BADGE_Y + 4))" "$BTEXT" "F2" 7.5 "$PDF_C_WHITE" 14
     [ -n "$NOTE" ] && _pdf_text_trunc "$((PDF_MARGIN + 8))" "$((TEXT_Y - 11))" "note: ${NOTE}" "F3" 7.5 "$PDF_C_GRAY" 100
     _PDF_Y=$((_PDF_Y - ROW_H))
 }
 
-_layout_plain_line() { _layout_ensure 12; _pdf_text_trunc "$PDF_MARGIN" "$_PDF_Y" "$1" "F1" 8.5 "$PDF_C_TEXT" 110; _PDF_Y=$((_PDF_Y - 12)); }
+_layout_plain_line() {
+    _layout_ensure 12
+    _pdf_text_trunc "$PDF_MARGIN" "$_PDF_Y" "$1" "F1" 8.5 "$PDF_C_TEXT" 110
+    _PDF_Y=$((_PDF_Y - 12))
+}
 
 _layout_cover() {
-    local HOST="${DATA[agent.hostname]:-unknown}" GEN="${DATA[agent.time]:-unknown}" VER="${DATA[agent.version]:-unknown}"
-    local OVERALL="${DATA[health.summary.overall]:-n/a}" FAILED="${DATA[health.summary.failed]:-0}" WARNINGS="${DATA[health.summary.warnings]:-0}" CHECKED="${DATA[health.summary.total_checks]:-0}"
+    local HOST="${DATA[agent.hostname]:-unknown}"
+    local GEN="${DATA[agent.time]:-unknown}"
+    local VER="${DATA[agent.version]:-unknown}"
+    local OVERALL="${DATA[health.summary.overall]:-n/a}"
+    local FAILED="${DATA[health.summary.failed]:-0}"
+    local WARNINGS="${DATA[health.summary.warnings]:-0}"
+    local CHECKED="${DATA[health.summary.total_checks]:-0}"
+
     _pdf_rect 0 692 "$PDF_PAGE_W" 100 "$PDF_C_NAVY"
     _pdf_text "$PDF_MARGIN" 754 "IceWarp Health Check Report" "F2" 22 "$PDF_C_WHITE"
     _pdf_text "$PDF_MARGIN" 730 "Based on IceWarp CheckList v1.12" "F3" 12 "$PDF_C_WHITE"
     _pdf_text "$PDF_MARGIN" 706 "Host: ${HOST}   Generated: ${GEN}   Agent v${VER}" "F1" 9.5 "$PDF_C_WHITE"
+
     _PDF_Y=660
     local INFO_ROWS=(
         "Company Name|${DATA[general.company]:-Unknown Host}"
@@ -112,21 +149,32 @@ _layout_cover() {
         "License Expiration|${DATA[icewarp.license.trial_expiration]:-N/A (perpetual license)}"
         "SSL Expiration|${DATA[icewarp.ssl.expiration]:-not returned}"
     )
+    local ROW
     for ROW in "${INFO_ROWS[@]}"; do
-        local LBL="${ROW%%|*}"; local VAL="${ROW#*|}"
+        local LBL="${ROW%%|*}"
+        local VAL="${ROW#*|}"
         _pdf_text "$((PDF_MARGIN + 8))" "$_PDF_Y" "${LBL}:" "F2" 9.5 "$PDF_C_TEXT"
         _pdf_text_trunc "$((PDF_MARGIN + 190))" "$_PDF_Y" "$VAL" "F1" 9.5 "$PDF_C_GRAY" 55
         _PDF_Y=$((_PDF_Y - 16))
     done
+
     _PDF_Y=$((_PDF_Y - 14))
-    local BANNER_COLOR; case "$OVERALL" in pass) BANNER_COLOR="$PDF_C_GREEN" ;; warn) BANNER_COLOR="$PDF_C_AMBER" ;; fail) BANNER_COLOR="$PDF_C_RED" ;; *) BANNER_COLOR="$PDF_C_GRAY" ;; esac
+    local BANNER_COLOR
+    case "$OVERALL" in
+        pass) BANNER_COLOR="$PDF_C_GREEN" ;;
+        warn) BANNER_COLOR="$PDF_C_AMBER" ;;
+        fail) BANNER_COLOR="$PDF_C_RED" ;;
+        *) BANNER_COLOR="$PDF_C_GRAY" ;;
+    esac
     _pdf_rect "$PDF_MARGIN" "$((_PDF_Y - 44))" "$PDF_CONTENT_W" 44 "$BANNER_COLOR"
     _pdf_text "$((PDF_MARGIN + 14))" "$((_PDF_Y - 20))" "OVERALL: $(echo "$OVERALL" | tr '[:lower:]' '[:upper:]')" "F2" 15 "$PDF_C_WHITE"
     _pdf_text "$((PDF_MARGIN + 14))" "$((_PDF_Y - 36))" "${CHECKED} checks run  -  ${FAILED} failed  -  ${WARNINGS} warnings" "F1" 9.5 "$PDF_C_WHITE"
     _PDF_Y=$((_PDF_Y - 60))
+
     _pdf_text "$PDF_MARGIN" "$_PDF_Y" "Legend:" "F2" 8.5 "$PDF_C_TEXT"
     local LX=$((PDF_MARGIN + 46))
     local LEGEND_ITEMS=("PASS:Green" "CRITICAL:Red" "WARN:Orange" "INFO:Purple")
+    local ITEM
     for ITEM in "${LEGEND_ITEMS[@]}"; do
         local STATUS="${ITEM%%:*}"
         local BC
@@ -144,39 +192,45 @@ _layout_cover() {
 }
 
 _render_health_summary() {
-    _layout_section_header "Health Summary"; _layout_row_index=0
-    for K in $(printf '%s\n' "${!HEALTH[@]}" | sort); do
-        if [ "$K" = "memory" ] && [ -n "${DATA[watchdog.memory.status]:-}" ]; then
-            continue
-        fi
-        local RESULT="${HEALTH[$K]}"
+    _layout_section_header "Health Summary"
+    _layout_row_index=0
+
+    local -a SUMMARY_ITEMS=(
+        "backup.auto|Backup"
+        "memory|Resource - RAM"
+        "cpu|Resource - CPU"
+        "disk.root_fs|Resource - HDD"
+        "disk.install|Resource - HDD"
+        "disk.mail|Resource - HDD"
+        "disk.archive|Resource - HDD"
+        "disk.root_home|Resource - HDD"
+        "login_blocking|Login Blocking"
+        "tls_delivery|SSL"
+        "os_update|OS Update"
+        "password_policy|Password Policy"
+    )
+
+    for ITEM in "${SUMMARY_ITEMS[@]}"; do
+        local KEY="${ITEM%%|*}"
+        local TITLE="${ITEM##*|}"
+        local RESULT="${HEALTH[$KEY]:-skip}"
+        [ "$RESULT" = "skip" ] && continue
         local BKIND
         case "$RESULT" in
             pass) BKIND="PASS" ;;
             warn) BKIND="WARN" ;;
-            fail) BKIND="CRITICAL" ;;
+            fail|critical) BKIND="CRITICAL" ;;
             *) BKIND="INFO" ;;
         esac
-        _layout_row "$K" "" "$BKIND" "$(echo "$RESULT" | tr '[:lower:]' '[:upper:]')" "${HEALTH_MSG[$K]:-}"
+        _layout_row "$TITLE" "" "$BKIND" "$BKIND" "${HEALTH_MSG[$KEY]:-}"
     done
-    if [ -n "${DATA[watchdog.memory.status]:-}" ]; then
-        local STATUS="${DATA[watchdog.memory.status]}"
-        local MSG="${DATA[watchdog.memory.message]:-}"
-        local BKIND
-        case "$STATUS" in
-            PASS) BKIND="PASS" ;;
-            WARN) BKIND="WARN" ;;
-            FAIL) BKIND="CRITICAL" ;;
-            *) BKIND="INFO" ;;
-        esac
-        _layout_row "memory (watchdog)" "" "$BKIND" "$(echo "$STATUS" | tr '[:lower:]' '[:upper:]')" "$MSG"
-    fi
 }
 
 _days_ago() {
     local date_str="$1"
     [[ -z "$date_str" ]] && echo "999"
-    local date_epoch=$(date -d "$date_str" +%s 2>/dev/null)
+    local date_epoch
+    date_epoch="$(date -d "$date_str" +%s 2>/dev/null)"
     [[ -z "$date_epoch" ]] && echo "999"
     echo $(( ( $(date +%s) - date_epoch ) / 86400 ))
 }
@@ -184,20 +238,24 @@ _days_ago() {
 _cl_value_render() {
     local KEYS="$1"
     if [[ "$KEYS" == *,* ]]; then
-        local -a PARTS=(); local K SHORT
+        local -a PARTS=()
+        local K SHORT
         IFS=',' read -ra _KARR <<< "$KEYS"
-        for K in "${_KARR[@]}"; do SHORT="${K##*.}"; PARTS+=("${SHORT}=${DATA[$K]:-?}"); done
-        local JOINED="$(IFS=', '; echo "${PARTS[*]}")"; printf '%s' "$JOINED"
+        for K in "${_KARR[@]}"; do
+            SHORT="${K##*.}"
+            PARTS+=("${SHORT}=${DATA[$K]:-?}")
+        done
+        local JOINED
+        JOINED="$(IFS=', '; echo "${PARTS[*]}")"
+        printf '%s' "$JOINED"
     else
         printf '%s' "${DATA[$KEYS]:-(empty)}"
     fi
 }
 
-# ---------- Validation for Intrusion Prevention ----------
 _validate_intrusion_value() {
     local KEY="$1"
     local VALUE="$2"
-    local LABEL="$3"
     local EXPECTED=""
     local BKIND="INFO"
     local BTEXT="INFO"
@@ -231,7 +289,11 @@ _validate_intrusion_value() {
             ;;
     esac
 
-    if [[ "$VALUE" == "$EXPECTED" ]]; then
+    if [ -z "$VALUE" ]; then
+        BKIND="CRITICAL"
+        BTEXT="CRITICAL"
+        NOTE="Setting not found"
+    elif [[ "$VALUE" == "$EXPECTED" ]]; then
         BKIND="PASS"
         BTEXT="PASS"
         NOTE="Expected: $EXPECTED"
@@ -266,7 +328,6 @@ _render_checklist() {
             _layout_row_index=0
         fi
 
-        # MySQL Server (Remote DB) section auto-N/A
         if [[ "$SECTION" == "MySQL Server"* ]] && [ "${DATA[database.scope]:-}" != "remote" ]; then
             local NA_REASON="not applicable"
             case "${DATA[database.type]:-}" in
@@ -278,19 +339,16 @@ _render_checklist() {
             continue
         fi
 
-        # MySQL items in Database section
         if [[ "$SECTION" == "Database" ]] && [[ "$LABEL" == MySQL* ]] && [[ "${DATA[mysql.applicable]:-false}" != "true" ]]; then
             _layout_row "$LABEL" "N/A" "INFO" "INFO" "MySQL is not installed/running on this server"
             continue
         fi
 
-        # Database Type
         if [ "$LABEL" = "Database Type" ] && [ "${DATA[database.type]:-}" = "sqlite" ]; then
             _layout_row "$LABEL" "sqlite" "WARN" "WARN" "SQLite is not recommended for production - use MySQL"
             continue
         fi
 
-        # Set customers-stat@parsavan.com
         if [ "$LABEL" = "Set customers-stat@parsavan.com" ]; then
             local RAW="${DATA[monitor.alert_email]:-}"
             if [[ "$RAW" == *"customers-stat@parsavan.com"* ]] || [[ "$RAW" == *"customers-stat"* ]]; then
@@ -301,40 +359,48 @@ _render_checklist() {
             continue
         fi
 
-        # Check for Certificates
         if [ "$LABEL" = "Check for Certificates" ]; then
             local EXPIRY="${DATA[icewarp.ssl.expiration]:-}"
             local DAYS_LEFT="${DATA[icewarp.ssl.days_left]:-0}"
-            local BKIND="INFO"; local BTEXT="INFO"; local VALUE=""
+            local BKIND="INFO"
+            local BTEXT="INFO"
+            local VALUE=""
             if [[ -n "$EXPIRY" ]] && [[ "$EXPIRY" != "N/A" ]] && [[ "$EXPIRY" != "not returned" ]]; then
                 VALUE="expires $EXPIRY ($DAYS_LEFT days left)"
                 if [[ "$DAYS_LEFT" -gt 90 ]]; then
-                    BKIND="PASS"; BTEXT="PASS"
+                    BKIND="PASS"
+                    BTEXT="PASS"
                 elif [[ "$DAYS_LEFT" -gt 30 ]]; then
-                    BKIND="WARN"; BTEXT="WARN"
+                    BKIND="WARN"
+                    BTEXT="WARN"
                 else
-                    BKIND="CRITICAL"; BTEXT="CRITICAL"
+                    BKIND="CRITICAL"
+                    BTEXT="CRITICAL"
                 fi
             else
                 VALUE="N/A"
-                BKIND="INFO"; BTEXT="INFO"
+                BKIND="INFO"
+                BTEXT="INFO"
             fi
             _layout_row "$LABEL" "$VALUE" "$BKIND" "$BTEXT" "$NOTE"
             continue
         fi
 
-        # Last Backup Date and Time
         if [ "$LABEL" = "Last Backup Date and Time" ]; then
             local BACKUP_TIME="${DATA[icewarp.backup.last_time]:-}"
             if [ -n "$BACKUP_TIME" ]; then
                 local DAYS=$(_days_ago "$BACKUP_TIME")
-                local BKIND="INFO"; local BTEXT="INFO"
+                local BKIND="INFO"
+                local BTEXT="INFO"
                 if [ "$DAYS" -lt 2 ]; then
-                    BKIND="PASS"; BTEXT="PASS"
+                    BKIND="PASS"
+                    BTEXT="PASS"
                 elif [ "$DAYS" -lt 4 ]; then
-                    BKIND="WARN"; BTEXT="WARN"
+                    BKIND="WARN"
+                    BTEXT="WARN"
                 else
-                    BKIND="CRITICAL"; BTEXT="CRITICAL"
+                    BKIND="CRITICAL"
+                    BTEXT="CRITICAL"
                 fi
                 _layout_row "$LABEL" "$BACKUP_TIME ($DAYS days ago)" "$BKIND" "$BTEXT" "Backup age: $DAYS days"
             else
@@ -343,7 +409,6 @@ _render_checklist() {
             continue
         fi
 
-        # Configure Archive Backup Settings
         if [ "$LABEL" = "Configure Archive Backup Settings" ]; then
             local RAW="${DATA[archive.backup.active]:-}"
             if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
@@ -354,7 +419,6 @@ _render_checklist() {
             continue
         fi
 
-        # 2FA
         if [ "$LABEL" = "2FA" ]; then
             local RAW="${DATA[security.login.2fa_bypass_enabled]:-}"
             if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
@@ -365,7 +429,6 @@ _render_checklist() {
             continue
         fi
 
-        # Hide Server Version
         if [ "$LABEL" = "Hide Server Version" ]; then
             local RAW="${DATA[smtp.hide_server_version]:-}"
             if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
@@ -376,7 +439,6 @@ _render_checklist() {
             continue
         fi
 
-        # Block Outgoing Port 9001
         if [ "$LABEL" = "Block Outgoing Port 9001" ]; then
             local RAW="${DATA[security.port_9001_egress.blocked]:-}"
             if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
@@ -387,11 +449,11 @@ _render_checklist() {
             continue
         fi
 
-        # Remove Old AntiSpam Folders
         if [ "$LABEL" = "Remove Old AntiSpam Folders" ]; then
             local STATUS="${DATA[security.cyren_folder.status]:-INFO}"
             local MSG="${DATA[security.cyren_folder.message]:-}"
-            local BKIND="INFO"; local BTEXT="INFO"
+            local BKIND="INFO"
+            local BTEXT="INFO"
             case "$STATUS" in
                 OK) BKIND="PASS"; BTEXT="PASS" ;;
                 WARN) BKIND="WARN"; BTEXT="WARN" ;;
@@ -401,7 +463,6 @@ _render_checklist() {
             continue
         fi
 
-        # Disable AntiSpam Live
         if [ "$LABEL" = "Disable AntiSpam Live" ]; then
             local RAW="${DATA[security.antispam_live.enabled]:-}"
             if [[ "$RAW" == "0" ]] || [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
@@ -412,7 +473,6 @@ _render_checklist() {
             continue
         fi
 
-        # Process POP3 / IMAP
         if [ "$LABEL" = "Process POP3/IMAP" ]; then
             local RAW="${DATA[security.intrusion.process_pop3_imap]:-0}"
             if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
@@ -423,7 +483,311 @@ _render_checklist() {
             continue
         fi
 
-        # ----- Validation for Intrusion Prevention numeric items -----
+        if [ "$LABEL" = "Disable Cloud Features" ]; then
+            local RAW="${DATA[icewarp.cloud_api.autoconfigure]:-}"
+            if [[ "$RAW" == "0" ]] || [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
+                _layout_row "$LABEL" "Disabled" "PASS" "PASS" "$NOTE"
+            elif [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
+                _layout_row "$LABEL" "Enabled" "CRITICAL" "CRITICAL" "$NOTE"
+            else
+                _layout_row "$LABEL" "N/A" "INFO" "INFO" "$NOTE"
+            fi
+            continue
+        fi
+
+        if [ "$LABEL" = "Disable DIGEST-MD5" ]; then
+            local RAW="${DATA[security.digest_md5.enabled]:-}"
+            if [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
+                _layout_row "$LABEL" "Disabled" "PASS" "PASS" "$NOTE"
+            elif [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
+                _layout_row "$LABEL" "Enabled" "CRITICAL" "CRITICAL" "$NOTE"
+            else
+                _layout_row "$LABEL" "N/A" "INFO" "INFO" "$NOTE"
+            fi
+            continue
+        fi
+
+        if [ "$LABEL" = "Disable IMAP" ] || [ "$LABEL" = "Disable POP3" ]; then
+            local RAW="${DATA[${KEYS}]:-0}"
+            if [[ "$RAW" == "0" ]] || [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
+                _layout_row "$LABEL" "Disabled" "PASS" "PASS" "${NOTE:-If service is needed, enable it; otherwise disabled is secure}"
+            else
+                _layout_row "$LABEL" "Enabled" "PASS" "PASS" "${NOTE:-Service is enabled - ensure it is required}"
+            fi
+            continue
+        fi
+
+        if [ "$LABEL" = "Disable VRFY" ]; then
+            local RAW="${DATA[smtp.deny_vrfy]:-}"
+            if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
+                _layout_row "$LABEL" "Disabled" "PASS" "PASS" "$NOTE"
+            elif [[ "$RAW" == "0" ]] || [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
+                _layout_row "$LABEL" "Enabled" "CRITICAL" "CRITICAL" "$NOTE"
+            else
+                _layout_row "$LABEL" "Unknown" "CRITICAL" "CRITICAL" "VRFY setting not detected - please verify manually"
+            fi
+            continue
+        fi
+
+        if [ "$LABEL" = "Number of Used Seats / License Max Users" ]; then
+            local RAW="${DATA[icewarp.license.used_seats_note]:-}"
+            if [ -z "$RAW" ] || [[ "$RAW" == *"not available"* ]]; then
+                _layout_row "$LABEL" "unavailable" "WARN" "WARN" "Unable to retrieve license usage - check via Admin API"
+            else
+                _layout_row "$LABEL" "$RAW" "INFO" "INFO" "$NOTE"
+            fi
+            continue
+        fi
+
+        if [ "$LABEL" = "Enable Daytime Clock Synchronization" ]; then
+            local RAW="${DATA[icewarp.daytime_clock_sync.enabled]:-}"
+            if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
+                _layout_row "$LABEL" "Enabled" "PASS" "PASS" "$NOTE"
+            elif [[ "$RAW" == "0" ]] || [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
+                _layout_row "$LABEL" "Disabled" "CRITICAL" "CRITICAL" "$NOTE"
+            else
+                _layout_row "$LABEL" "Unknown" "WARN" "WARN" "Daytime sync setting not detected - please verify manually"
+            fi
+            continue
+        fi
+
+        # --- Enable System Backup (using icewarp.backup.auto_enabled) ---
+        if [ "$LABEL" = "Enable System Backup" ]; then
+            local RAW="${DATA[icewarp.backup.auto_enabled]:-0}"
+            if [ "$RAW" = "1" ]; then
+                _layout_row "$LABEL" "Enabled" "PASS" "PASS" "$NOTE"
+            else
+                _layout_row "$LABEL" "Disabled" "CRITICAL" "CRITICAL" "$NOTE"
+            fi
+            continue
+        fi
+
+        # --- Enable Database Backup (using icewarp.database_backup.enabled) ---
+        if [ "$LABEL" = "Enable Database Backup" ]; then
+            local RAW="${DATA[icewarp.database_backup.enabled]:-0}"
+            if [ "$RAW" = "1" ]; then
+                _layout_row "$LABEL" "Enabled" "PASS" "PASS" "$NOTE"
+            else
+                _layout_row "$LABEL" "Disabled" "CRITICAL" "CRITICAL" "$NOTE"
+            fi
+            continue
+        fi
+
+        # --- Maximum Number of Simultaneous Threads ---
+        if [ "$LABEL" = "Maximum Number of Simultaneous Threads" ]; then
+            local RAW="${DATA[smtp.incoming_queue_threads]:-}"
+            local BKIND="INFO"
+            local BTEXT="INFO"
+            local MSG=""
+            if [ -z "$RAW" ]; then
+                BKIND="CRITICAL"; BTEXT="CRITICAL"; MSG="Setting not found"
+            elif [ "$RAW" = "10" ]; then
+                BKIND="PASS"; BTEXT="PASS"; MSG="Expected: 10 (OK)"
+            else
+                BKIND="WARN"; BTEXT="WARN"; MSG="Expected: 10 (current: $RAW)"
+            fi
+            _layout_row "$LABEL" "$RAW" "$BKIND" "$BTEXT" "$MSG"
+            continue
+        fi
+
+        # --- Set Directory Cache Schedule ---
+        if [ "$LABEL" = "Set Directory Cache Schedule" ]; then
+            local RAW="${DATA[directory_cache.scheduled]:-}"
+            local BKIND="INFO"
+            local BTEXT="INFO"
+            local MSG=""
+            if [ "$RAW" = "1" ] || [ "$RAW" = "true" ]; then
+                BKIND="PASS"; BTEXT="PASS"; MSG="Schedule is configured"
+            else
+                BKIND="CRITICAL"; BTEXT="CRITICAL"; MSG="Schedule is NOT configured"
+            fi
+            _layout_row "$LABEL" "$RAW" "$BKIND" "$BTEXT" "$MSG"
+            continue
+        fi
+
+        # --- Watchdog items (main + individual) ---
+        if [ "$LABEL" = "Enable System Watchdog" ]; then
+            local CTRL="${DATA[watchdog.control]:-0}"
+            if [ "$CTRL" = "1" ]; then
+                _layout_row "$LABEL" "Enabled" "PASS" "PASS" "$NOTE"
+            else
+                _layout_row "$LABEL" "Disabled" "CRITICAL" "CRITICAL" "$NOTE"
+            fi
+            continue
+        fi
+
+        if [ "$LABEL" = "Watchdog - SMTP" ]; then
+            local VAL="${DATA[watchdog.smtp]:-0}"
+            if [ "$VAL" = "1" ]; then
+                _layout_row "$LABEL" "Enabled" "PASS" "PASS" "$NOTE"
+            else
+                _layout_row "$LABEL" "Disabled" "CRITICAL" "CRITICAL" "$NOTE"
+            fi
+            continue
+        fi
+
+        if [ "$LABEL" = "Watchdog - POP3/IMAP" ]; then
+            local VAL="${DATA[watchdog.pop3]:-0}"
+            if [ "$VAL" = "1" ]; then
+                _layout_row "$LABEL" "Enabled" "PASS" "PASS" "$NOTE"
+            else
+                _layout_row "$LABEL" "Disabled" "CRITICAL" "CRITICAL" "$NOTE"
+            fi
+            continue
+        fi
+
+        if [ "$LABEL" = "Watchdog - IM/VoIP" ]; then
+            local VAL="${DATA[watchdog.im]:-0}"
+            if [ "$VAL" = "1" ]; then
+                _layout_row "$LABEL" "Enabled" "PASS" "PASS" "$NOTE"
+            else
+                _layout_row "$LABEL" "Disabled" "CRITICAL" "CRITICAL" "$NOTE"
+            fi
+            continue
+        fi
+
+        if [ "$LABEL" = "Watchdog - GroupWare" ]; then
+            local VAL="${DATA[watchdog.gw]:-0}"
+            if [ "$VAL" = "1" ]; then
+                _layout_row "$LABEL" "Enabled" "PASS" "PASS" "$NOTE"
+            else
+                _layout_row "$LABEL" "Disabled" "CRITICAL" "CRITICAL" "$NOTE"
+            fi
+            continue
+        fi
+
+        if [ "$LABEL" = "Watchdog Interval" ]; then
+            local INTERVAL="${DATA[watchdog.interval_minutes]:-0}"
+            local BKIND="INFO"
+            local BTEXT="INFO"
+            local MSG=""
+            if [ "$INTERVAL" -eq 0 ]; then
+                BKIND="PASS"; BTEXT="PASS"; MSG="Every minute (0) - optimal"
+            elif [ "$INTERVAL" -ge 1 ] && [ "$INTERVAL" -le 60 ]; then
+                BKIND="PASS"; BTEXT="PASS"; MSG="${INTERVAL} minutes (optimal)"
+            elif [ "$INTERVAL" -gt 60 ] && [ "$INTERVAL" -le 1440 ]; then
+                BKIND="WARN"; BTEXT="WARN"; MSG="${INTERVAL} minutes (>1h - consider reducing)"
+            else
+                BKIND="CRITICAL"; BTEXT="CRITICAL"; MSG="${INTERVAL} minutes (invalid)"
+            fi
+            _layout_row "$LABEL" "$INTERVAL" "$BKIND" "$BTEXT" "$MSG"
+            continue
+        fi
+
+        # --- APP OS / Infrastructure items ---
+        if [ "$KIND" = "V" ]; then
+            case "$LABEL" in
+                "Disk (Total GB / Used %)")
+                    local TOTAL_GB="${DATA[storage.root_fs.total_gb]:-0}"
+                    local USED_PERCENT="${DATA[storage.root_fs.used_percent]:-0}"
+                    local VALUE="total_gb=${TOTAL_GB},used_percent=${USED_PERCENT}"
+                    local BKIND="PASS"
+                    local BTEXT="PASS"
+                    local MSG=""
+                    if _is_num "$USED_PERCENT"; then
+                        if [ "$USED_PERCENT" -ge 95 ]; then
+                            BKIND="CRITICAL"; BTEXT="CRITICAL"; MSG="Disk usage is ${USED_PERCENT}% (CRITICAL - above 95%)"
+                        elif [ "$USED_PERCENT" -ge 80 ]; then
+                            BKIND="WARN"; BTEXT="WARN"; MSG="Disk usage is ${USED_PERCENT}% (WARN - above 80%)"
+                        else
+                            BKIND="PASS"; BTEXT="PASS"; MSG="Disk usage is ${USED_PERCENT}% (OK)"
+                        fi
+                    else
+                        MSG="Unable to calculate disk usage percentage"
+                    fi
+                    _layout_row "$LABEL" "$VALUE" "$BKIND" "$BTEXT" "$MSG"
+                    continue
+                    ;;
+                "CPU Usage")
+                    local LOAD15="${DATA[os.cpu.load15]:-0}"
+                    local CORES="${DATA[os.cpu.count]:-1}"
+                    local CPU_PERCENT=0
+                  local VALUE="$LOAD15"
+                    local BKIND="PASS"
+                    local BTEXT="PASS"
+                    local MSG=""
+                    if _is_num "$LOAD15" && _is_num "$CORES" && [ "$CORES" -gt 0 ]; then
+                        CPU_PERCENT=$(awk -v l="$LOAD15" -v c="$CORES" 'BEGIN{printf "%.2f", (l/c)*100}')
+                        local CRIT_LIMIT=$(awk 'BEGIN{print 95}')
+                        local WARN_LIMIT=$(awk 'BEGIN{print 50}')
+                        if awk -v cpu="$CPU_PERCENT" -v lim="$CRIT_LIMIT" 'BEGIN{exit !(cpu > lim)}'; then
+                            BKIND="CRITICAL"; BTEXT="CRITICAL"; MSG="CPU load is ${CPU_PERCENT}% (CRITICAL - above 95%)"
+                        elif awk -v cpu="$CPU_PERCENT" -v lim="$WARN_LIMIT" 'BEGIN{exit !(cpu > lim)}'; then
+                            BKIND="WARN"; BTEXT="WARN"; MSG="CPU load is ${CPU_PERCENT}% (WARN - above 50%)"
+                        else
+                            BKIND="PASS"; BTEXT="PASS"; MSG="CPU load is ${CPU_PERCENT}% (OK)"
+                        fi
+                    else
+                        MSG="Unable to calculate CPU load percentage"
+                    fi
+                    _layout_row "$LABEL" "$VALUE" "$BKIND" "$BTEXT" "$MSG"
+                    continue
+                    ;;
+                "RAM (Total KB / Available KB)")
+                    local TOTAL_KB="${DATA[os.memory.total_kb]:-0}"
+                    local AVAIL_KB="${DATA[os.memory.available_kb]:-0}"
+                    local VALUE="total_kb=${TOTAL_KB},available_kb=${AVAIL_KB}"
+                    local BKIND="PASS"
+                    local BTEXT="PASS"
+                    local MSG=""
+                    if _is_num "$TOTAL_KB" && _is_num "$AVAIL_KB" && [ "$TOTAL_KB" -gt 0 ]; then
+                        local USED_PERCENT=$(awk -v t="$TOTAL_KB" -v a="$AVAIL_KB" 'BEGIN{printf "%.2f", ((t-a)/t)*100}')
+                        local CRIT_LIMIT=$(awk 'BEGIN{print 90}')
+                        local WARN_LIMIT=$(awk 'BEGIN{print 40}')
+                        if awk -v used="$USED_PERCENT" -v lim="$CRIT_LIMIT" 'BEGIN{exit !(used > lim)}'; then
+                            BKIND="CRITICAL"; BTEXT="CRITICAL"; MSG="RAM usage is ${USED_PERCENT}% (CRITICAL - above 90%)"
+                        elif awk -v used="$USED_PERCENT" -v lim="$WARN_LIMIT" 'BEGIN{exit !(used > lim)}'; then
+                            BKIND="WARN"; BTEXT="WARN"; MSG="RAM usage is ${USED_PERCENT}% (WARN - above 40%)"
+                        else
+                            BKIND="PASS"; BTEXT="PASS"; MSG="RAM usage is ${USED_PERCENT}% (OK)"
+                        fi
+                    else
+                        MSG="Unable to calculate RAM usage percentage"
+                    fi
+                    _layout_row "$LABEL" "$VALUE" "$BKIND" "$BTEXT" "$MSG"
+                    continue
+                    ;;
+                "APP OS Last Update")
+                    local LAST_UPDATE="${DATA[os.last_update_date]:-}"
+                    local VALUE="${LAST_UPDATE:-unknown}"
+                    local BKIND="INFO"
+                    local BTEXT="INFO"
+                    local MSG=""
+                    if [ -n "$LAST_UPDATE" ] && [ "$LAST_UPDATE" != "N/A" ] && [ "$LAST_UPDATE" != "null" ]; then
+                        local DAYS=$(_days_ago "$LAST_UPDATE")
+                        if [ "$DAYS" -le 7 ]; then
+                            BKIND="PASS"; BTEXT="PASS"; MSG="OS updated recently (${DAYS} days ago)"
+                        elif [ "$DAYS" -le 30 ]; then
+                            BKIND="WARN"; BTEXT="WARN"; MSG="OS update is ${DAYS} days old (consider updating)"
+                        else
+                            BKIND="CRITICAL"; BTEXT="CRITICAL"; MSG="OS is outdated (${DAYS} days since last update)"
+                        fi
+                    else
+                        MSG="OS last update date not available"
+                    fi
+                    _layout_row "$LABEL" "$VALUE" "$BKIND" "$BTEXT" "$MSG"
+                    continue
+                    ;;
+                "Swap Usage (7 days)")
+                    local STATUS="${DATA[system.swap.status]:-INFO}"
+                    local MSG="${DATA[system.swap.message]:-}"
+                    local BKIND="INFO"
+                    local BTEXT="INFO"
+                    case "$STATUS" in
+                        PASS) BKIND="PASS"; BTEXT="PASS" ;;
+                        CRITICAL) BKIND="CRITICAL"; BTEXT="CRITICAL" ;;
+                        *) BKIND="INFO"; BTEXT="INFO" ;;
+                    esac
+                    _layout_row "$LABEL" "${DATA[system.swap.used_percent]:-0}%" "$BKIND" "$BTEXT" "$MSG"
+                    continue
+                    ;;
+            esac
+            local VAL="$(_cl_value_render "$KEYS")"
+            _layout_row "$LABEL" "$VAL" "INFO" "INFO" "$NOTE"
+            continue
+        fi
+
+        # --- Intrusion Prevention validation ---
         if [ "$KIND" = "V" ] && [[ "$KEYS" == security.intrusion.*.value* || "$KEYS" == "security.intrusion.block_duration_minutes" ]]; then
             local RAW="${DATA[$KEYS]:-}"
             local VALIDATION
@@ -438,7 +802,6 @@ _render_checklist() {
             continue
         fi
 
-        # ----- Type T: Threshold validation -----
         if [ "$KIND" = "T" ]; then
             local RAW="${DATA[$KEYS]:-}"
             local EXPECTED="$NOTE"
@@ -458,7 +821,6 @@ _render_checklist() {
             continue
         fi
 
-        # ----- Generic logic based on KIND -----
         local RAW="${DATA[$KEYS]:-}"
         case "$KIND" in
             F)
@@ -485,10 +847,6 @@ _render_checklist() {
                 else
                     _layout_row "$LABEL" "N/A" "INFO" "INFO" "$NOTE"
                 fi
-                ;;
-            V)
-                local VAL="$(_cl_value_render "$KEYS")"
-                _layout_row "$LABEL" "$VAL" "INFO" "INFO" "$NOTE"
                 ;;
             L)
                 if [[ -n "$RAW" ]] && [[ "$RAW" != "0" ]]; then
@@ -533,11 +891,12 @@ _render_checklist() {
                 _layout_row "$LABEL" "$RAW" "INFO" "INFO" "$NOTE"
                 ;;
             D)
-                # Already handled
                 ;;
             H)
-                local WORST="pass"; local MSGS=()
+                local WORST="pass"
+                local MSGS=()
                 IFS=',' read -ra _HKARR <<< "$KEYS"
+                local K
                 for K in "${_HKARR[@]}"; do
                     local RESULT="${HEALTH[$K]:-skip}"
                     [ -n "${HEALTH_MSG[$K]:-}" ] && MSGS+=("${HEALTH_MSG[$K]}")
@@ -552,7 +911,8 @@ _render_checklist() {
                     warn) BKIND="WARN" ;;
                     fail) BKIND="CRITICAL" ;;
                 esac
-                local JOINED_MSG="$(IFS='; '; echo "${MSGS[*]}")"
+                local JOINED_MSG
+                JOINED_MSG="$(IFS='; '; echo "${MSGS[*]}")"
                 _layout_row "$LABEL" "" "$BKIND" "$BKIND" "${JOINED_MSG:-$NOTE}"
                 ;;
             *)
@@ -566,7 +926,12 @@ _render_checklist() {
     done < "$CHECKLIST_FILE"
 }
 
-_pdf_obj() { local NUM="$1"; shift; PDF_OFFSETS[$NUM]="$(wc -c < "$PDF_OUT_FILE")"; printf '%s' "$1" >> "$PDF_OUT_FILE"; }
+_pdf_obj() {
+    local NUM="$1"
+    local CONTENT="$2"
+    PDF_OFFSETS[$NUM]="$(wc -c < "$PDF_OUT_FILE")"
+    printf '%s' "$CONTENT" >> "$PDF_OUT_FILE"
+}
 
 _pdf_write_file() {
     local OUT_PDF="$1"
@@ -586,21 +951,26 @@ _pdf_write_file() {
 << /Type /Catalog /Pages 2 0 R >>
 endobj
 "
+
     local KIDS=""
-    for ((i=1; i<=P; i++)); do KIDS="${KIDS}$((2+i)) 0 R "; done
+    local i
+    for ((i=1; i<=P; i++)); do
+        KIDS="${KIDS}$((2+i)) 0 R "
+    done
     _pdf_obj 2 "2 0 obj
 << /Type /Pages /Kids [ ${KIDS}] /Count ${P} >>
 endobj
 "
+
     for ((i=1; i<=P; i++)); do
         local PAGE_NUM=$((2+i))
         local CONTENT_NUM=$((2+P+i))
         local STREAM="${_PDF_PAGES[$((i-1))]}"
         local STREAM_LEN="$(printf '%s' "$STREAM" | wc -c)"
+
         _pdf_obj "$PAGE_NUM" "${PAGE_NUM} 0 obj
-<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 ${F_REG} 0 R /F2 ${F_BOLD} 0 R /F3 ${F_OBL} 0 R >> >> /MediaBox [0 0 ${PDF_PAGE_W} ${PDF_PAGE_H}] /Contents ${CONTENT_NUM} 0 R >>
-endobj
-"
+<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 ${F_REG} 0 R /F2 ${F_BOLD} 0 R /F3 ${F_OBL} 0 R >> >> /MediaBox [0 0 ${PDF_PAGE_W} ${PDF_PAGE_H}] /Contents ${CONTENT_NUM} 0 R >"
+
         _pdf_obj "$CONTENT_NUM" "${CONTENT_NUM} 0 obj
 << /Length ${STREAM_LEN} >>
 stream
@@ -640,7 +1010,9 @@ endobj
 
 build_pdf() {
     local OUT_PDF="${OUTPUT_PDF:-${PROJECT_ROOT}/output/report.pdf}"
-    _PDF_PAGES=(); _PDF_CUR=""; _PDF_Y=$PDF_TOP_Y
+    _PDF_PAGES=()
+    _PDF_CUR=""
+    _PDF_Y=$PDF_TOP_Y
 
     _layout_cover
     if [ "${#HEALTH[@]}" -gt 0 ] || [ -n "${DATA[watchdog.memory.status]:-}" ]; then
@@ -651,7 +1023,8 @@ build_pdf() {
 
     _layout_new_page
     _layout_section_header "Collector Status"
-    local K FAILED_COLLECTORS=0
+    local K
+    local FAILED_COLLECTORS=0
     _layout_row_index=0
     for K in $(printf '%s\n' "${!STATUS[@]}" | sort); do
         [ "${STATUS[$K]}" = "ok" ] && continue
