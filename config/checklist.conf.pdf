@@ -6,10 +6,10 @@ DNS & Mail Flow Verification~Check TLS and Start TLS~F~smtp.starttls_live_test~S
 DNS & Mail Flow Verification~Check DNS Server~V~dns.configured_server~Configured DNS servers
 DNS & Mail Flow Verification~Test DNS Lookup~F~dns.lookup_test.ok~Basic DNS lookup test
 DNS & Mail Flow Verification~Resolver External Test~F~dns.resolver.external_test_ok~External resolver test
-Logging~Enable Logging - Authentication~B~logging.auth_log_level~Authentication logging (should be enabled)
-Logging~Enable Logging - Maintenance~B~logging.maintenance_log_level~Maintenance logging (should be enabled)
-Logging~Enable MailFlow Log~B~logging.mailqueue.level~Mail flow logging
-Logging~Enable SQL Failed Logs~B~logging.sql_log_type~SQL failed query logging
+Logging~Enable Logging - Authentication~L~logging.auth_log_level~Authentication logging (should be enabled)
+Logging~Enable Logging - Maintenance~L~logging.maintenance_log_level~Maintenance logging (should be enabled)
+Logging~Enable MailFlow Log~L~logging.mailqueue.level~Mail flow logging
+Logging~Enable SQL Failed Logs~L~logging.sql_log_type~SQL failed query logging
 Backup, Watchdog and Monitoring~Enable System Backup~B~icewarp.backup.auto_enabled~Main automatic backup enable
 Backup, Watchdog and Monitoring~Last Backup Date and Time~V~icewarp.backup.last_time~Last backup timestamp
 Backup, Watchdog and Monitoring~Enable Database Backup~B~icewarp.database_backup.enabled~Database backup
