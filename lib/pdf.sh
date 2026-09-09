@@ -1,10 +1,17 @@
 #!/bin/bash
 
 ###############################################################################
+# =============================================================================
+# SECTION 1: HEADER AND LICENSE
+# =============================================================================
 #
 # PDF Report Writer (M5) - FINAL WITH VALIDATION
 #
 ###############################################################################
+
+# =============================================================================
+# SECTION 2: CONSTANTS (Page dimensions, colors, margins)
+# =============================================================================
 
 PDF_PAGE_W=612
 PDF_PAGE_H=792
@@ -23,6 +30,10 @@ PDF_C_RED="0.753 0.224 0.169"
 PDF_C_AMBER="0.83 0.53 0.06"
 PDF_C_BLUEGRAY="0.30 0.42 0.55"
 PDF_C_GRAY="0.5 0.53 0.56"
+
+# =============================================================================
+# SECTION 3: HELPER FUNCTIONS
+# =============================================================================
 
 _is_num() { [[ "$1" =~ ^-?[0-9]+(\.[0-9]+)?$ ]]; }
 
@@ -54,6 +65,10 @@ _pdf_text_trunc() {
     _pdf_text "$1" "$2" "$TXT" "$4" "$5" "$6"
 }
 
+# =============================================================================
+# SECTION 4: PAGE MANAGEMENT
+# =============================================================================
+
 _PDF_PAGES=()
 _PDF_CUR=""
 _PDF_Y=$PDF_TOP_Y
@@ -81,6 +96,10 @@ _layout_section_header() {
     _pdf_text "$((PDF_MARGIN + 8))" "$((_PDF_Y - 12))" "$TITLE" "F2" 11 "$PDF_C_WHITE"
     _PDF_Y=$((_PDF_Y - 30))
 }
+
+# =============================================================================
+# SECTION 5: BADGE COLOR AND ROW RENDERER
+# =============================================================================
 
 _badge_color() {
     case "$1" in
@@ -123,6 +142,10 @@ _layout_plain_line() {
     _pdf_text_trunc "$PDF_MARGIN" "$_PDF_Y" "$1" "F1" 8.5 "$PDF_C_TEXT" 110
     _PDF_Y=$((_PDF_Y - 12))
 }
+
+# =============================================================================
+# SECTION 6: COVER PAGE
+# =============================================================================
 
 _layout_cover() {
     local HOST="${DATA[agent.hostname]:-unknown}"
@@ -191,6 +214,10 @@ _layout_cover() {
     _PDF_Y=$((_PDF_Y - 20))
 }
 
+# =============================================================================
+# SECTION 7: HEALTH SUMMARY RENDERER
+# =============================================================================
+
 _render_health_summary() {
     _layout_section_header "Health Summary"
     _layout_row_index=0
@@ -225,6 +252,10 @@ _render_health_summary() {
         _layout_row "$TITLE" "" "$BKIND" "$BKIND" "${HEALTH_MSG[$KEY]:-}"
     done
 }
+
+# =============================================================================
+# SECTION 8: DATE, VALUE RENDER, INTRUSION VALIDATION HELPERS
+# =============================================================================
 
 _days_ago() {
     local date_str="$1"
@@ -306,6 +337,10 @@ _validate_intrusion_value() {
     printf '%s|%s|%s' "$BKIND" "$BTEXT" "$NOTE"
 }
 
+# =============================================================================
+# SECTION 9: MAIN CHECKLIST RENDERER
+# =============================================================================
+
 _render_checklist() {
     local CHECKLIST_FILE="${PROJECT_ROOT}/config/checklist.conf.pdf"
     local CUR_SECTION=""
@@ -328,6 +363,7 @@ _render_checklist() {
             _layout_row_index=0
         fi
 
+        # ---- Special case: MySQL Server section ----
         if [[ "$SECTION" == "MySQL Server"* ]] && [ "${DATA[database.scope]:-}" != "remote" ]; then
             local NA_REASON="not applicable"
             case "${DATA[database.type]:-}" in
@@ -339,16 +375,19 @@ _render_checklist() {
             continue
         fi
 
+        # ---- Special case: MySQL items in Database section ----
         if [[ "$SECTION" == "Database" ]] && [[ "$LABEL" == MySQL* ]] && [[ "${DATA[mysql.applicable]:-false}" != "true" ]]; then
             _layout_row "$LABEL" "N/A" "INFO" "INFO" "MySQL is not installed/running on this server"
             continue
         fi
 
+        # ---- Special case: Database Type ----
         if [ "$LABEL" = "Database Type" ] && [ "${DATA[database.type]:-}" = "sqlite" ]; then
             _layout_row "$LABEL" "sqlite" "WARN" "WARN" "SQLite is not recommended for production - use MySQL"
             continue
         fi
 
+        # ---- Special case: customers-stat email ----
         if [ "$LABEL" = "Set customers-stat@parsavan.com" ]; then
             local RAW="${DATA[monitor.alert_email]:-}"
             if [[ "$RAW" == *"customers-stat@parsavan.com"* ]] || [[ "$RAW" == *"customers-stat"* ]]; then
@@ -359,6 +398,7 @@ _render_checklist() {
             continue
         fi
 
+        # ---- Special case: Certificates ----
         if [ "$LABEL" = "Check for Certificates" ]; then
             local EXPIRY="${DATA[icewarp.ssl.expiration]:-}"
             local DAYS_LEFT="${DATA[icewarp.ssl.days_left]:-0}"
@@ -386,6 +426,7 @@ _render_checklist() {
             continue
         fi
 
+        # ---- Special case: Last Backup Date ----
         if [ "$LABEL" = "Last Backup Date and Time" ]; then
             local BACKUP_TIME="${DATA[icewarp.backup.last_time]:-}"
             if [ -n "$BACKUP_TIME" ]; then
@@ -409,16 +450,7 @@ _render_checklist() {
             continue
         fi
 
-        if [ "$LABEL" = "Configure Archive Backup Settings" ]; then
-            local RAW="${DATA[archive.backup.active]:-}"
-            if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
-                _layout_row "$LABEL" "Enabled" "PASS" "PASS" "$NOTE"
-            else
-                _layout_row "$LABEL" "Disabled" "CRITICAL" "CRITICAL" "$NOTE"
-            fi
-            continue
-        fi
-
+        # ---- Special case: 2FA ----
         if [ "$LABEL" = "2FA" ]; then
             local RAW="${DATA[security.login.2fa_bypass_enabled]:-}"
             if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
@@ -429,6 +461,7 @@ _render_checklist() {
             continue
         fi
 
+        # ---- Special case: Hide Server Version ----
         if [ "$LABEL" = "Hide Server Version" ]; then
             local RAW="${DATA[smtp.hide_server_version]:-}"
             if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
@@ -439,6 +472,7 @@ _render_checklist() {
             continue
         fi
 
+        # ---- Special case: Port 9001 ----
         if [ "$LABEL" = "Block Outgoing Port 9001" ]; then
             local RAW="${DATA[security.port_9001_egress.blocked]:-}"
             if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
@@ -449,6 +483,7 @@ _render_checklist() {
             continue
         fi
 
+        # ---- Special case: AntiSpam Folders ----
         if [ "$LABEL" = "Remove Old AntiSpam Folders" ]; then
             local STATUS="${DATA[security.cyren_folder.status]:-INFO}"
             local MSG="${DATA[security.cyren_folder.message]:-}"
@@ -463,6 +498,7 @@ _render_checklist() {
             continue
         fi
 
+        # ---- Special case: AntiSpam Live ----
         if [ "$LABEL" = "Disable AntiSpam Live" ]; then
             local RAW="${DATA[security.antispam_live.enabled]:-}"
             if [[ "$RAW" == "0" ]] || [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
@@ -473,6 +509,7 @@ _render_checklist() {
             continue
         fi
 
+        # ---- Special case: Process POP3/IMAP ----
         if [ "$LABEL" = "Process POP3/IMAP" ]; then
             local RAW="${DATA[security.intrusion.process_pop3_imap]:-0}"
             if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
@@ -483,18 +520,20 @@ _render_checklist() {
             continue
         fi
 
+        # ---- Special case: Cloud Features (CHANGED to WARN for enabled) ----
         if [ "$LABEL" = "Disable Cloud Features" ]; then
             local RAW="${DATA[icewarp.cloud_api.autoconfigure]:-}"
             if [[ "$RAW" == "0" ]] || [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
                 _layout_row "$LABEL" "Disabled" "PASS" "PASS" "$NOTE"
             elif [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
-                _layout_row "$LABEL" "Enabled" "CRITICAL" "CRITICAL" "$NOTE"
+                _layout_row "$LABEL" "Enabled" "WARN" "WARN" "$NOTE"
             else
                 _layout_row "$LABEL" "N/A" "INFO" "INFO" "$NOTE"
             fi
             continue
         fi
 
+        # ---- Special case: DIGEST-MD5 ----
         if [ "$LABEL" = "Disable DIGEST-MD5" ]; then
             local RAW="${DATA[security.digest_md5.enabled]:-}"
             if [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
@@ -507,6 +546,7 @@ _render_checklist() {
             continue
         fi
 
+        # ---- Special case: IMAP / POP3 ----
         if [ "$LABEL" = "Disable IMAP" ] || [ "$LABEL" = "Disable POP3" ]; then
             local RAW="${DATA[${KEYS}]:-0}"
             if [[ "$RAW" == "0" ]] || [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
@@ -517,6 +557,7 @@ _render_checklist() {
             continue
         fi
 
+        # ---- Special case: VRFY ----
         if [ "$LABEL" = "Disable VRFY" ]; then
             local RAW="${DATA[smtp.deny_vrfy]:-}"
             if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
@@ -529,6 +570,7 @@ _render_checklist() {
             continue
         fi
 
+        # ---- Special case: License ----
         if [ "$LABEL" = "Number of Used Seats / License Max Users" ]; then
             local RAW="${DATA[icewarp.license.used_seats_note]:-}"
             if [ -z "$RAW" ] || [[ "$RAW" == *"not available"* ]]; then
@@ -539,6 +581,7 @@ _render_checklist() {
             continue
         fi
 
+        # ---- Special case: Daytime Clock ----
         if [ "$LABEL" = "Enable Daytime Clock Synchronization" ]; then
             local RAW="${DATA[icewarp.daytime_clock_sync.enabled]:-}"
             if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
@@ -551,7 +594,7 @@ _render_checklist() {
             continue
         fi
 
-        # --- Enable System Backup (using icewarp.backup.auto_enabled) ---
+        # ---- Special case: System Backup ----
         if [ "$LABEL" = "Enable System Backup" ]; then
             local RAW="${DATA[icewarp.backup.auto_enabled]:-0}"
             if [ "$RAW" = "1" ]; then
@@ -562,7 +605,7 @@ _render_checklist() {
             continue
         fi
 
-        # --- Enable Database Backup (using icewarp.database_backup.enabled) ---
+        # ---- Special case: Database Backup (legacy) ----
         if [ "$LABEL" = "Enable Database Backup" ]; then
             local RAW="${DATA[icewarp.database_backup.enabled]:-0}"
             if [ "$RAW" = "1" ]; then
@@ -573,7 +616,7 @@ _render_checklist() {
             continue
         fi
 
-        # --- Maximum Number of Simultaneous Threads ---
+        # ---- Special case: Maximum Threads ----
         if [ "$LABEL" = "Maximum Number of Simultaneous Threads" ]; then
             local RAW="${DATA[smtp.incoming_queue_threads]:-}"
             local BKIND="INFO"
@@ -590,7 +633,7 @@ _render_checklist() {
             continue
         fi
 
-        # --- Set Directory Cache Schedule ---
+        # ---- Special case: Directory Cache ----
         if [ "$LABEL" = "Set Directory Cache Schedule" ]; then
             local RAW="${DATA[directory_cache.scheduled]:-}"
             local BKIND="INFO"
@@ -605,7 +648,7 @@ _render_checklist() {
             continue
         fi
 
-        # --- Watchdog items (main + individual) ---
+        # ---- Watchdog items (main + individual) ----
         if [ "$LABEL" = "Enable System Watchdog" ]; then
             local CTRL="${DATA[watchdog.control]:-0}"
             if [ "$CTRL" = "1" ]; then
@@ -674,7 +717,47 @@ _render_checklist() {
             continue
         fi
 
-        # --- APP OS / Infrastructure items ---
+        # ---- NEW: Special case for Integrate Archive with IMAP Folder (show value) ----
+        if [ "$LABEL" = "Integrate Archive with IMAP Folder" ]; then
+            local RAW="${DATA[archive.integrate_with_imap]:-0}"
+            local VALUE=""
+            local BKIND="INFO"
+            local BTEXT="INFO"
+            local MSG=""
+            if [ "$RAW" = "1" ]; then
+                BKIND="PASS"; BTEXT="PASS"
+                VALUE="Enabled"
+                MSG="Integrate archive with IMAP folder: Archive"
+            else
+                BKIND="CRITICAL"; BTEXT="CRITICAL"
+                VALUE="Disabled"
+                MSG="Integrate archive with IMAP folder: Disabled"
+            fi
+            _layout_row "$LABEL" "$VALUE" "$BKIND" "$BTEXT" "$MSG"
+            continue
+        fi
+
+        # ============================================================
+        # IMPORTANT: Intrusion Prevention validation
+        # MUST be checked BEFORE general KIND=V handling
+        # ============================================================
+        if [ "$KIND" = "V" ] && [[ "$KEYS" == security.intrusion.*.value* || "$KEYS" == "security.intrusion.block_duration_minutes" ]]; then
+            local RAW="${DATA[$KEYS]:-}"
+            local VALIDATION
+            VALIDATION="$(_validate_intrusion_value "$KEYS" "$RAW" "$LABEL")"
+            local BKIND="${VALIDATION%%|*}"
+            local BTEXT="$(echo "$VALIDATION" | cut -d'|' -f2)"
+            local NOTE_VALID="$(echo "$VALIDATION" | cut -d'|' -f3-)"
+            local VALUE="$RAW"
+            local FINAL_NOTE="$NOTE"
+            [ -n "$NOTE_VALID" ] && FINAL_NOTE="${FINAL_NOTE}${FINAL_NOTE:+ | }${NOTE_VALID}"
+            _layout_row "$LABEL" "$VALUE" "$BKIND" "$BTEXT" "$FINAL_NOTE"
+            continue
+        fi
+
+        # ============================================================
+        # APP OS / Infrastructure items (KIND=V with specific LABELs)
+        # ============================================================
         if [ "$KIND" = "V" ]; then
             case "$LABEL" in
                 "Disk (Total GB / Used %)")
@@ -702,7 +785,7 @@ _render_checklist() {
                     local LOAD15="${DATA[os.cpu.load15]:-0}"
                     local CORES="${DATA[os.cpu.count]:-1}"
                     local CPU_PERCENT=0
-                  local VALUE="$LOAD15"
+                    local VALUE="$LOAD15"
                     local BKIND="PASS"
                     local BTEXT="PASS"
                     local MSG=""
@@ -782,25 +865,15 @@ _render_checklist() {
                     continue
                     ;;
             esac
+            # Fallback for generic V items
             local VAL="$(_cl_value_render "$KEYS")"
             _layout_row "$LABEL" "$VAL" "INFO" "INFO" "$NOTE"
             continue
         fi
 
-        # --- Intrusion Prevention validation ---
-        if [ "$KIND" = "V" ] && [[ "$KEYS" == security.intrusion.*.value* || "$KEYS" == "security.intrusion.block_duration_minutes" ]]; then
-            local RAW="${DATA[$KEYS]:-}"
-            local VALIDATION
-            VALIDATION="$(_validate_intrusion_value "$KEYS" "$RAW" "$LABEL")"
-            local BKIND="${VALIDATION%%|*}"
-            local BTEXT="$(echo "$VALIDATION" | cut -d'|' -f2)"
-            local NOTE_VALID="$(echo "$VALIDATION" | cut -d'|' -f3-)"
-            local VALUE="$RAW"
-            local FINAL_NOTE="$NOTE"
-            [ -n "$NOTE_VALID" ] && FINAL_NOTE="${FINAL_NOTE}${FINAL_NOTE:+ | }${NOTE_VALID}"
-            _layout_row "$LABEL" "$VALUE" "$BKIND" "$BTEXT" "$FINAL_NOTE"
-            continue
-        fi
+        # ============================================================
+        # Other KIND types (T, F, B, R, L, Z, M, G, P, W, D, H, etc.)
+        # ============================================================
 
         if [ "$KIND" = "T" ]; then
             local RAW="${DATA[$KEYS]:-}"
@@ -859,7 +932,7 @@ _render_checklist() {
                 ;;
             Z)
                 if [ "$RAW" = "0" ]; then
-                    _layout_row "$LABEL" "0 (unlimited)" "WARN" "WARN" "${NOTE:-a limit of 0 means unlimited - consider setting a real value}"
+                    _layout_row "$LABEL" "Disabled" "WARN" "WARN" "${NOTE:-Backup emails is disabled (WARN)}"
                 elif [ -n "$RAW" ]; then
                     _layout_row "$LABEL" "$RAW" "INFO" "INFO" "$NOTE"
                 else
@@ -891,6 +964,14 @@ _render_checklist() {
                 _layout_row "$LABEL" "$RAW" "INFO" "INFO" "$NOTE"
                 ;;
             D)
+                # KIND D: 0/disabled = PASS, 1/enabled = WARN
+                if [[ "$RAW" == "0" ]] || [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
+                    _layout_row "$LABEL" "Disabled" "PASS" "PASS" "$NOTE"
+                elif [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
+                    _layout_row "$LABEL" "Enabled" "WARN" "WARN" "$NOTE"
+                else
+                    _layout_row "$LABEL" "N/A" "INFO" "INFO" "$NOTE"
+                fi
                 ;;
             H)
                 local WORST="pass"
@@ -925,6 +1006,10 @@ _render_checklist() {
         esac
     done < "$CHECKLIST_FILE"
 }
+
+# =============================================================================
+# SECTION 10: PDF LOW-LEVEL WRITER
+# =============================================================================
 
 _pdf_obj() {
     local NUM="$1"
@@ -969,7 +1054,9 @@ endobj
         local STREAM_LEN="$(printf '%s' "$STREAM" | wc -c)"
 
         _pdf_obj "$PAGE_NUM" "${PAGE_NUM} 0 obj
-<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 ${F_REG} 0 R /F2 ${F_BOLD} 0 R /F3 ${F_OBL} 0 R >> >> /MediaBox [0 0 ${PDF_PAGE_W} ${PDF_PAGE_H}] /Contents ${CONTENT_NUM} 0 R >"
+<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 ${F_REG} 0 R /F2 ${F_BOLD} 0 R /F3 ${F_OBL} 0 R >> >> /MediaBox [0 0 ${PDF_PAGE_W} ${PDF_PAGE_H}] /Contents ${CONTENT_NUM} 0 R >>
+endobj
+"
 
         _pdf_obj "$CONTENT_NUM" "${CONTENT_NUM} 0 obj
 << /Length ${STREAM_LEN} >>
@@ -1007,6 +1094,10 @@ endobj
 
     echo "[INFO] PDF report written: $OUT_PDF ($(wc -c < "$OUT_PDF") bytes, ${P} page(s))"
 }
+
+# =============================================================================
+# SECTION 11: MAIN BUILDER
+# =============================================================================
 
 build_pdf() {
     local OUT_PDF="${OUTPUT_PDF:-${PROJECT_ROOT}/output/report.pdf}"

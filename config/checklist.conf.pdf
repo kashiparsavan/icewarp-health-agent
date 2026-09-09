@@ -12,10 +12,13 @@ Logging~Enable MailFlow Log~L~logging.mailqueue.level~Mail flow logging
 Logging~Enable SQL Failed Logs~L~logging.sql_log_type~SQL failed query logging
 Backup, Watchdog and Monitoring~Enable System Backup~B~icewarp.backup.auto_enabled~Main automatic backup enable
 Backup, Watchdog and Monitoring~Last Backup Date and Time~V~icewarp.backup.last_time~Last backup timestamp
-Backup, Watchdog and Monitoring~Enable Database Backup~B~icewarp.database_backup.enabled~Database backup
-Backup, Watchdog and Monitoring~Configure Archive Backup Settings~B~archive.backup.active~Archive backup settings
+Backup, Watchdog and Monitoring~Enable Database Backup - Accounts~B~backup.db.accounts.enabled~Accounts database backup
+Backup, Watchdog and Monitoring~Enable Database Backup - AntiSpam~B~backup.db.as.enabled~Anti-Spam database backup
+Backup, Watchdog and Monitoring~Enable Database Backup - GroupWare~B~backup.db.gw.enabled~GroupWare database backup
+Backup, Watchdog and Monitoring~Enable Database Backup - Directory Cache~B~backup.db.cache.enabled~Directory Cache backup (optional)
+Backup, Watchdog and Monitoring~Backup Emails~Z~backup.emails.enabled~Backup emails option (WARN if disabled)
 Backup, Watchdog and Monitoring~Enable System Watchdog~B~watchdog.control~Main watchdog control
-Backup, Watchdog and Monitoring~Remote Server Watchdog~B~watchdog.remoteserver.enable~Remote server watchdog
+Backup, Watchdog and Monitoring~Remote Server Watchdog~V~watchdog.remoteserver.enable~Remote server watchdog (INFO)
 Backup, Watchdog and Monitoring~Enable System Monitor (Mem/Disk/CPU)~B~monitor.enabled~System monitoring
 Migration Safety~Migration Active~R~icewarp.migration.active~Migration active flag
 Migration Safety~Migration Source Server~V~icewarp.migration.server~Migration source server
@@ -27,7 +30,6 @@ Storage, Certificates and Services~RBL Valli Check (is our IP blacklisted)~R~sec
 Storage, Certificates and Services~Enable Full Text Search Services~P~fulltext.enabled~Full text search (should be OFF)
 Storage, Certificates and Services~Reject if SMTP AUTH Different from Sender~B~smtp.reject_auth_sender_mismatch~Reject auth/sender mismatch
 Storage, Certificates and Services~2FA~R~security.login.2fa_bypass_enabled~2FA bypass status
-Storage, Certificates and Services~Archive Active~B~archive.active~Archive feature
 Storage, Certificates and Services~Daily Send Email limit~Z~domain.primary.daily_send_messages_limit~Daily send limit (0=unlimited)
 SMTP Delivery Settings~Max Message Size (MB)~V~smtp.max_message_size.mb~Max message size in MB
 SMTP Delivery Settings~Delivery Reports~B~smtp.delivery_reports_enabled~Delivery reports
@@ -71,16 +73,15 @@ Rejection Rules and Access~Password Policy Min Length~V~security.password_policy
 Rejection Rules and Access~Set Admin Email~V~monitor.alert_email~Admin email
 Rejection Rules and Access~Change Admin Port~B~admin.port_changed_from_default~Admin port changed
 Rejection Rules and Access~Block Outgoing Port 9001~B~security.port_9001_egress.blocked~Port 9001 egress blocked
-Archive Settings~Archive to Directory~V~icewarp.archive.default~Archive directory
-Archive Settings~Number of Used Seats / License Max Users~V~icewarp.license.used_seats_note~License usage
-Archive Settings~Integrate Archive with IMAP Folder~B~archive.integrate_with_imap~Archive with IMAP
-Archive Settings~Do Not Archive Spam~B~archive.do_not_archive_spam~Don't archive spam
-Archive Settings~Enable Daytime Clock Synchronization~B~icewarp.daytime_clock_sync.enabled~Daytime clock sync
+Archive Settings~Archive Active~B~archive.active~Archive feature (should be enabled)
+Archive Settings~Archive to Directory~V~icewarp.archive.default~Archive directory path
+Archive Settings~Integrate Archive with IMAP Folder~B~archive.integrate_with_imap~Integrate archive with IMAP folder
+Archive Settings~Do Not Archive Spam~B~archive.do_not_archive_spam~Do not archive spam messages
 Protocol and Access Hardening~Disable VRFY~B~smtp.deny_vrfy~VRFY command (1=disabled good)
 Protocol and Access Hardening~Disable DIGEST-MD5~R~security.digest_md5.enabled~DIGEST-MD5 (false=good)
 Protocol and Access Hardening~Session Timeout~V~icewarp.session_timeout_minutes~Session timeout
 Protocol and Access Hardening~Enable SSL/TLS~B~smtp.use_tls_ssl~SSL/TLS enabled
-Protocol and Access Hardening~Disable Cloud Features~R~icewarp.cloud_api.autoconfigure~Cloud features (0=disabled good)
+Protocol and Access Hardening~Disable Cloud Features~D~icewarp.cloud_api.autoconfigure~Cloud features (0=disabled good, 1=enabled warn)
 Protocol and Access Hardening~Disable IMAP~V~service.imap.active~IMAP service status
 Protocol and Access Hardening~Disable POP3~V~service.pop3.active~POP3 service status
 Protocol and Access Hardening~Watchdog - SMTP~B~watchdog.smtp~SMTP service watchdog

@@ -1,6 +1,9 @@
 #!/bin/bash
 
 ###############################################################################
+# =============================================================================
+# SECTION 1: HEADER AND LICENSE
+# =============================================================================
 #
 # Management Report (lib/management_report.sh)
 #
@@ -10,6 +13,10 @@
 # Reads from config/checklist.conf.pdf - same source as the full technical report.
 #
 ###############################################################################
+
+# =============================================================================
+# SECTION 2: CONSTANTS (Page dimensions, colors, margins)
+# =============================================================================
 
 MR_PAGE_W=612
 MR_PAGE_H=792
@@ -31,6 +38,10 @@ MR_C_GREEN="0.22 0.55 0.30"
 MR_C_RED="0.75 0.24 0.18"
 MR_C_GRAY="0.62 0.60 0.57"
 MR_C_INFO_BADGE="0.35 0.45 0.58"
+
+# =============================================================================
+# SECTION 3: HELPER FUNCTIONS
+# =============================================================================
 
 _is_num() { [[ "$1" =~ ^-?[0-9]+(\.[0-9]+)?$ ]]; }
 
@@ -79,6 +90,10 @@ f
 "
 }
 
+# =============================================================================
+# SECTION 4: PAGE MANAGEMENT
+# =============================================================================
+
 _MR_PAGES=()
 _MR_CUR=""
 _MR_Y=$MR_TOP_Y
@@ -102,6 +117,10 @@ _mr_section_header() {
     _mr_text "$((MR_MARGIN + 8))" "$((_MR_Y - 11))" "$1" "F2" 10.5 "$MR_C_WHITE"
     _MR_Y=$((_MR_Y - 28))
 }
+
+# =============================================================================
+# SECTION 5: STATUS STYLING AND GRID
+# =============================================================================
 
 _mr_status_style() {
     case "$1" in
@@ -151,6 +170,10 @@ _mr_grid_end_row() {
         _MR_Y=$((_MR_Y - 17))
     fi
 }
+
+# =============================================================================
+# SECTION 6: PDF LOW-LEVEL WRITER
+# =============================================================================
 
 _mr_obj() {
     MR_OFFSETS[$1]="$(wc -c < "$MR_OUT_FILE")"
@@ -218,6 +241,10 @@ endobj
     echo "[INFO] Management report written: $OUT_PDF ($(wc -c < "$OUT_PDF") bytes, ${P} page(s))"
 }
 
+# =============================================================================
+# SECTION 7: DATE AND VALIDATION HELPERS
+# =============================================================================
+
 _days_ago() {
     local date_str="$1"
     [[ -z "$date_str" ]] && echo "999"
@@ -249,6 +276,10 @@ _validate_intrusion_value() {
     fi
 }
 
+# =============================================================================
+# SECTION 8: MAIN CHECKLIST RENDERER
+# =============================================================================
+
 _mr_render_checklist() {
     local CHECKLIST_FILE="${PROJECT_ROOT}/config/checklist.conf.pdf"
     local CUR_SECTION=""
@@ -272,21 +303,25 @@ _mr_render_checklist() {
             _mr_grid_reset
         fi
 
+        # ---- Special case: MySQL Server section ----
         if [[ "$SECTION" == "MySQL Server"* ]] && [ "${DATA[database.scope]:-}" != "remote" ]; then
             _mr_grid_item "$LABEL" "NA"
             continue
         fi
 
+        # ---- Special case: MySQL items in Database section ----
         if [[ "$SECTION" == "Database" ]] && [[ "$LABEL" == MySQL* ]] && [[ "${DATA[mysql.applicable]:-false}" != "true" ]]; then
             _mr_grid_item "$LABEL" "NA"
             continue
         fi
 
+        # ---- Special case: Database Type ----
         if [ "$LABEL" = "Database Type" ] && [ "${DATA[database.type]:-}" = "sqlite" ]; then
             _mr_grid_item "$LABEL" "WARN"
             continue
         fi
 
+        # ---- Special case: customers-stat email ----
         if [ "$LABEL" = "Set customers-stat@parsavan.com" ]; then
             local RAW="${DATA[monitor.alert_email]:-}"
             if [[ "$RAW" == *"customers-stat@parsavan.com"* ]] || [[ "$RAW" == *"customers-stat"* ]]; then
@@ -297,6 +332,7 @@ _mr_render_checklist() {
             continue
         fi
 
+        # ---- Special case: Certificates ----
         if [ "$LABEL" = "Check for Certificates" ]; then
             local DAYS_LEFT="${DATA[icewarp.ssl.days_left]:-0}"
             local STATUS="INFO"
@@ -308,6 +344,7 @@ _mr_render_checklist() {
             continue
         fi
 
+        # ---- Special case: Last Backup Date ----
         if [ "$LABEL" = "Last Backup Date and Time" ]; then
             local BACKUP_TIME="${DATA[icewarp.backup.last_time]:-}"
             local STATUS="NA"
@@ -324,16 +361,7 @@ _mr_render_checklist() {
             continue
         fi
 
-        if [ "$LABEL" = "Configure Archive Backup Settings" ]; then
-            local RAW="${DATA[archive.backup.active]:-}"
-            if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
-                _mr_grid_item "$LABEL" "PASS"
-            else
-                _mr_grid_item "$LABEL" "CRITICAL"
-            fi
-            continue
-        fi
-
+        # ---- Special case: 2FA ----
         if [ "$LABEL" = "2FA" ]; then
             local RAW="${DATA[security.login.2fa_bypass_enabled]:-}"
             if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
@@ -344,6 +372,7 @@ _mr_render_checklist() {
             continue
         fi
 
+        # ---- Special case: Hide Server Version ----
         if [ "$LABEL" = "Hide Server Version" ]; then
             local RAW="${DATA[smtp.hide_server_version]:-}"
             if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
@@ -354,6 +383,7 @@ _mr_render_checklist() {
             continue
         fi
 
+        # ---- Special case: Port 9001 ----
         if [ "$LABEL" = "Block Outgoing Port 9001" ]; then
             local RAW="${DATA[security.port_9001_egress.blocked]:-}"
             if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
@@ -364,6 +394,7 @@ _mr_render_checklist() {
             continue
         fi
 
+        # ---- Special case: AntiSpam Folders ----
         if [ "$LABEL" = "Remove Old AntiSpam Folders" ]; then
             local STATUS="${DATA[security.cyren_folder.status]:-INFO}"
             case "$STATUS" in
@@ -374,6 +405,7 @@ _mr_render_checklist() {
             continue
         fi
 
+        # ---- Special case: AntiSpam Live ----
         if [ "$LABEL" = "Disable AntiSpam Live" ]; then
             local RAW="${DATA[security.antispam_live.enabled]:-}"
             if [[ "$RAW" == "0" ]] || [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
@@ -384,6 +416,7 @@ _mr_render_checklist() {
             continue
         fi
 
+        # ---- Special case: Process POP3/IMAP ----
         if [ "$LABEL" = "Process POP3/IMAP" ]; then
             local RAW="${DATA[security.intrusion.process_pop3_imap]:-0}"
             if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
@@ -394,18 +427,20 @@ _mr_render_checklist() {
             continue
         fi
 
+        # ---- Special case: Cloud Features (CHANGED to WARN for enabled) ----
         if [ "$LABEL" = "Disable Cloud Features" ]; then
             local RAW="${DATA[icewarp.cloud_api.autoconfigure]:-}"
             if [[ "$RAW" == "0" ]] || [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
                 _mr_grid_item "$LABEL" "PASS"
             elif [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
-                _mr_grid_item "$LABEL" "CRITICAL"
+                _mr_grid_item "$LABEL" "WARN"
             else
                 _mr_grid_item "$LABEL" "NA"
             fi
             continue
         fi
 
+        # ---- Special case: DIGEST-MD5 ----
         if [ "$LABEL" = "Disable DIGEST-MD5" ]; then
             local RAW="${DATA[security.digest_md5.enabled]:-}"
             if [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
@@ -418,6 +453,7 @@ _mr_render_checklist() {
             continue
         fi
 
+        # ---- Special case: IMAP / POP3 ----
         if [ "$LABEL" = "Disable IMAP" ] || [ "$LABEL" = "Disable POP3" ]; then
             local RAW="${DATA[${KEYS}]:-0}"
             if [[ "$RAW" == "0" ]] || [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
@@ -428,6 +464,7 @@ _mr_render_checklist() {
             continue
         fi
 
+        # ---- Special case: VRFY ----
         if [ "$LABEL" = "Disable VRFY" ]; then
             local RAW="${DATA[smtp.deny_vrfy]:-}"
             if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
@@ -440,6 +477,7 @@ _mr_render_checklist() {
             continue
         fi
 
+        # ---- Special case: License ----
         if [ "$LABEL" = "Number of Used Seats / License Max Users" ]; then
             local RAW="${DATA[icewarp.license.used_seats_note]:-}"
             if [ -z "$RAW" ] || [[ "$RAW" == *"not available"* ]]; then
@@ -450,6 +488,7 @@ _mr_render_checklist() {
             continue
         fi
 
+        # ---- Special case: Daytime Clock ----
         if [ "$LABEL" = "Enable Daytime Clock Synchronization" ]; then
             local RAW="${DATA[icewarp.daytime_clock_sync.enabled]:-}"
             if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
@@ -462,7 +501,7 @@ _mr_render_checklist() {
             continue
         fi
 
-        # --- Enable System Backup (icewarp.backup.auto_enabled) ---
+        # ---- Special case: System Backup ----
         if [ "$LABEL" = "Enable System Backup" ]; then
             local RAW="${DATA[icewarp.backup.auto_enabled]:-0}"
             if [ "$RAW" = "1" ]; then
@@ -473,7 +512,7 @@ _mr_render_checklist() {
             continue
         fi
 
-        # --- Enable Database Backup (icewarp.database_backup.enabled) ---
+        # ---- Special case: Database Backup (legacy) ----
         if [ "$LABEL" = "Enable Database Backup" ]; then
             local RAW="${DATA[icewarp.database_backup.enabled]:-0}"
             if [ "$RAW" = "1" ]; then
@@ -484,7 +523,7 @@ _mr_render_checklist() {
             continue
         fi
 
-        # --- Maximum Number of Simultaneous Threads ---
+        # ---- Special case: Maximum Threads ----
         if [ "$LABEL" = "Maximum Number of Simultaneous Threads" ]; then
             local RAW="${DATA[smtp.incoming_queue_threads]:-}"
             local STATUS="INFO"
@@ -499,7 +538,7 @@ _mr_render_checklist() {
             continue
         fi
 
-        # --- Set Directory Cache Schedule ---
+        # ---- Special case: Directory Cache ----
         if [ "$LABEL" = "Set Directory Cache Schedule" ]; then
             local RAW="${DATA[directory_cache.scheduled]:-}"
             if [ "$RAW" = "1" ] || [ "$RAW" = "true" ]; then
@@ -510,7 +549,7 @@ _mr_render_checklist() {
             continue
         fi
 
-        # --- Watchdog items ---
+        # ---- Watchdog items (main + individual) ----
         if [ "$LABEL" = "Enable System Watchdog" ]; then
             local CTRL="${DATA[watchdog.control]:-0}"
             if [ "$CTRL" = "1" ]; then
@@ -577,7 +616,30 @@ _mr_render_checklist() {
             continue
         fi
 
-        # --- APP OS / Infrastructure items ---
+        # ---- NEW: Special case for Integrate Archive with IMAP Folder ----
+        if [ "$LABEL" = "Integrate Archive with IMAP Folder" ]; then
+            local RAW="${DATA[archive.integrate_with_imap]:-0}"
+            if [ "$RAW" = "1" ]; then
+                _mr_grid_item "$LABEL" "PASS"
+            else
+                _mr_grid_item "$LABEL" "CRITICAL"
+            fi
+            continue
+        fi
+
+        # ============================================================
+        # Intrusion Prevention validation (BEFORE general V handling)
+        # ============================================================
+        if [ "$KIND" = "V" ] && [[ "$KEYS" == security.intrusion.*.value* || "$KEYS" == "security.intrusion.block_duration_minutes" ]]; then
+            local RAW="${DATA[$KEYS]:-}"
+            local STATUS="$(_validate_intrusion_value "$KEYS" "$RAW")"
+            _mr_grid_item "$LABEL" "$STATUS"
+            continue
+        fi
+
+        # ============================================================
+        # APP OS / Infrastructure items (KIND=V with specific LABELs)
+        # ============================================================
         if [ "$KIND" = "V" ]; then
             case "$LABEL" in
                 "Disk (Total GB / Used %)")
@@ -645,17 +707,14 @@ _mr_render_checklist() {
                     continue
                     ;;
             esac
+            # Fallback for generic V items
             _mr_grid_item "$LABEL" "$([ -n "${DATA[$KEYS]:-}" ] && echo "INFO" || echo "NA")"
             continue
         fi
 
-        # --- Intrusion Prevention validation ---
-        if [ "$KIND" = "V" ] && [[ "$KEYS" == security.intrusion.*.value* || "$KEYS" == "security.intrusion.block_duration_minutes" ]]; then
-            local RAW="${DATA[$KEYS]:-}"
-            local STATUS="$(_validate_intrusion_value "$KEYS" "$RAW")"
-            _mr_grid_item "$LABEL" "$STATUS"
-            continue
-        fi
+        # ============================================================
+        # Other KIND types
+        # ============================================================
 
         if [ "$KIND" = "T" ]; then
             local RAW="${DATA[$KEYS]:-}"
@@ -712,10 +771,13 @@ _mr_render_checklist() {
                 fi
                 ;;
             L)
-                if [ "${DATA[database.type]:-}" = "mysql" ] && [ "${DATA[database.scope]:-}" = "local" ]; then
-                    _mr_grid_item "$LABEL" "$([ -n "$RAW" ] && echo "INFO" || echo "NA")"
+                local RAW="${DATA[$KEYS]:-}"
+                if [[ -n "$RAW" ]] && [[ "$RAW" != "0" ]]; then
+                    _mr_grid_item "$LABEL" "PASS"
+                elif [[ "$RAW" == "0" ]]; then
+                    _mr_grid_item "$LABEL" "CRITICAL"
                 else
-                    _mr_grid_item "$LABEL" "NA"
+                    _mr_grid_item "$LABEL" "INFO"
                 fi
                 ;;
             P)
@@ -749,6 +811,14 @@ _mr_render_checklist() {
                 fi
                 ;;
             D)
+                # KIND D: 0/disabled = PASS, 1/enabled = WARN
+                if [[ "$RAW" == "0" ]] || [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
+                    _mr_grid_item "$LABEL" "PASS"
+                elif [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
+                    _mr_grid_item "$LABEL" "WARN"
+                else
+                    _mr_grid_item "$LABEL" "NA"
+                fi
                 ;;
             H)
                 local WORST="PASS" K RESULT
@@ -771,6 +841,10 @@ _mr_render_checklist() {
     done < "$CHECKLIST_FILE"
     _mr_grid_end_row
 }
+
+# =============================================================================
+# SECTION 9: COVER LETTER
+# =============================================================================
 
 _mr_cover_letter() {
     local HOST="${DATA[agent.hostname]:-unknown}"
@@ -844,6 +918,10 @@ _mr_cover_letter() {
 
     _mr_new_page
 }
+
+# =============================================================================
+# SECTION 10: MAIN BUILDER
+# =============================================================================
 
 build_management_pdf() {
     local OUT_PDF="${OUTPUT_MANAGEMENT_PDF:-${PROJECT_ROOT}/output/management_report.pdf}"
