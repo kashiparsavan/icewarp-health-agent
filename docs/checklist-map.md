@@ -1,126 +1,187 @@
 # IceWarp Checklist Mapping
 
-Legend: ✅ collected via tool.sh property (verified in tool.help) | 🟡 collected, OS/config fallback (needs verification on real server) | ❌ not implemented yet | ⚠️ implemented but property/syntax unverified - test on lab server
+Legend:
+- Collected via tool.sh property (verified)
+- Collected via config or OS fallback
+- Not implemented
+- Syntax unverified
+
+Last updated: 2026-09-23 (v0.4.0)
 
 ## General Information
 
 | Checklist Item | Collector | Status | Notes |
 |---|---|---|---|
-| Company name | icewarp/company.sh | 🟡 | Manual value, set `COMPANY_NAME` in agent.conf |
-| Date | general/date.sh | ✅ | |
-| Technician | - | ❌ | Likely manual/report-time field, not a system value |
-| IceWarp Version | icewarp/version.sh | ✅ | C_Version |
-| Antispam Last Update | icewarp/antispam.sh | 🟡 | No tool.sh property found; file mtime fallback |
-| Antivirus Last Update | icewarp/antivirus.sh | 🟡 | No tool.sh property found; file mtime fallback |
-| Last Backup Date and Time | icewarp/backup.sh | 🟡 | Filesystem mtime + C_System_Tools_AutoBackup_* |
-| IceWarp Expiration Date | icewarp/license.sh | ✅ | C_LicenseStatus / C_License_Type / C_License_TrialExpire |
-| SSL Expiration Date | icewarp/certificate.sh | 🟡 | openssl on configured cert path (IW_SSL_CERT) |
+| Company name | CLI parameter or `icewarp/company.sh` | OK | via `--company` flag or `COMPANY_NAME` in agent.conf |
+| Date | `general/date.sh` | OK | |
+| Technician | CLI parameter | OK | via `--technician` flag |
+| IceWarp Version | `icewarp/version.sh` | OK | `c_version` |
+| Antispam Last Update | `icewarp/antispam.sh` | Fallback | file mtime |
+| Antivirus Last Update | `icewarp/antivirus.sh` | Fallback | file mtime |
+| Last Backup Date and Time | `icewarp/backup.sh` | OK | filesystem mtime |
+| IceWarp Expiration Date | `icewarp/license.sh` | OK | `c_evalexpirationtime` for Trial and Evaluation |
+| SSL Expiration Date | `icewarp/certificate.sh` | Fallback | openssl on `IW_SSL_CERT` |
 
-## Mail Server Checks
-
-| Checklist Item | Collector | Status | Notes |
-|---|---|---|---|
-| Check PTR | dns/ptr.sh | 🟡 | live `dig -x`, needs MAIL_PUBLIC_IP |
-| Check SPF | dns/spf.sh | 🟡 | live `dig TXT` |
-| Check DKIM | dns/dkim.sh | ⚠️ | domain-scoped tool.sh syntax unverified + DNS fallback |
-| Check DMARC | dns/dmarc.sh | 🟡 | live `dig TXT _dmarc.<domain>` |
-| Check TLS & StartTLS | dns/starttls.sh | 🟡 | live openssl s_client handshake |
-| Check DNS Server | dns/dns_server.sh | ✅ | C_Mail_SMTP_General_DNSServer + live lookup test |
-| Enable Logging - Auth/Maintenance | logging/sql_auth_log.sh | ✅ | C_Accounts_Global_Accounts_AuthLog / MaintenanceLog |
-| Enable MailFlow Log | logging/mailqueue.sh | ✅ | C_System_Log_MailQueue (already existed) |
-| Enable SQL Failed Logs | logging/sql_auth_log.sh | ✅ | C_System_SQLLogType |
-| Daily Send Email limit | - | ❌ | Found only at account/domain level (U_NumberSendLimit / D_NumberLimit), no global property |
-| Block outgoing port 9001 | - | ❌ | Needs firewall rule check (iptables/firewalld), not yet implemented |
-| Enable System Backup | icewarp/backup.sh | ✅ | C_System_Tools_AutoBackup_Enable |
-| Enable Database Backup | icewarp/backup.sh | 🟡 | covered generically by AutoBackup; no separate "DB only" flag found |
-| Configure Archive Backup Settings | icewarp/backup.sh | 🟡 | partial - directory only, retention/schedule TBD |
-| Enable System Watchdog | icewarp/watchdog.sh | ✅ | C_System_Tools_WatchDog_SMTP/POP3 |
-| Enable System Monitor / Mem/Disk/CPU thresholds | os/cpu.sh, os/memory.sh, storage/storage.sh | 🟡 | raw values collected; threshold *rules* (4GB/100GB/50%) belong in M5 (Health Rules), not collectors |
-| Check for Storage Locations | icewarp/storage_paths.sh | ✅ | renamed from icewarp/storage.sh |
-| Check for Certificates | icewarp/certificate.sh | 🟡 | see above |
-| RBL Valli Check | - | ❌ | No verified property found yet - needs more tool.help exploration |
-| Enable Full Text Search Services | fulltext/scanner_queue.sh | ✅ | C_System_Services_Fulltext_Scanner_Queues |
-| Reject if SMTP AUTH different from sender | mailserver/reject_auth_mismatch.sh | ✅ | C_Mail_Security_Protection_RejectSMTPAuthSender |
-| 2FA | security/login_policy.sh | 🟡 | only global bypass-list flag found; per-domain 2FA needs domain iteration |
-| Test DNS Lookup | dns/dns_server.sh | ✅ | live test |
-| Max Message Size | smtp/max_message_size.sh | ✅ | C_Mail_SMTP_Delivery_MaxMsgSize |
-| Use TLS/SSL (Secured Delivery) | mailserver/tls_ssl.sh | ✅ | C_Mail_SMTP_Delivery_UseTLSSSL |
-| Process Incoming Messages in MDA Queue | mailserver/mda_queue.sh | ✅ | C_Mail_SMTP_Delivery_UseIncomingQueue |
-| Use MDA Queue for Internal Delivery | mailserver/mda_queue.sh | ✅ | C_Mail_SMTP_Delivery_MDAInternal |
-| Maximum Number of Simultaneous Threads | smtp/max_connections.sh | ✅ | C_System_Services_SMTP_ThreadCache (renamed from ambiguous old collector) |
-| Hide IP Address from Received | mailserver/hide_ip.sh | ✅ | C_Mail_SMTP_Delivery_HideIP |
-| Require HELO/EHLO | - | ❌ | No matching property found yet |
-| Add Return-Path to All Messages | mailserver/rdns_returnpath.sh | ✅ | C_Mail_SMTP_Delivery_ReturnPath |
-| Dedupe Email Messages | mailserver/dedupe.sh | ✅ | C_Mail_SMTP_Other_Dedupe |
-| Relay Only if Originator's Domain is Local | smtp/relay.sh | ✅ | C_Mail_Security_Protection_LocalDomain |
-| Process SMTP / POP3/IMAP | mailserver/process_protocols.sh | ✅ | C_Mail_SMTP_Active / C_Mail_IMAP_Active / C_Mail_POP_Active |
-| Block IP - connections in 1 minute | smtp/parallel_ip_limit.sh | ✅ | (already existed) C_Mail_SMTP_General_ParallelIPConnectionsLimit |
-| Set Directory Cache Schedule | - | ❌ | C_Accounts_Global_Accounts_DirectoryCacheSchedule found, type "Schedule" - needs format research |
-| Hide Server Version | mailserver/hide_ip.sh | ✅ | C_Mail_SMTP_Delivery_HideServerVersion |
-| Change Admin URL/Port | - | ❌ | Not located yet |
-
-## Security / Anti-Spam (partial - large section, more to do)
+## DNS and Mail Flow
 
 | Checklist Item | Collector | Status | Notes |
 |---|---|---|---|
-| Disable VRFY | mailserver/process_protocols.sh | ✅ | C_Mail_Security_Protocols_DenyVRFY |
-| Whitelist trusted/local IPs and domains | security/antispam_policy.sh | ✅ | C_AS_BypassLocalIPs / BypassLocalDomains |
-| Antispam mode / thread pool | security/antispam_policy.sh | ✅ | C_AS_General_AntispamMode / SpamMaxThreads |
-| Block IP (failed logins) | security/login_policy.sh | ✅ | C_Accounts_Policies_Login_Attempts/BlockPeriod |
-| Use DNSBL / IP Reputation / RBL blocking thresholds | - | ❌ | Not located yet - needs dedicated tool.help search |
-| Archive Active | icewarp/archive.sh | ✅ | C_System_Tools_AutoArchive_Enable - implemented since this table was last edited, see appendix below |
-| Password Policy | - | ❌ | TBD - separate password-policy property group exists in tool.help, not yet mapped |
-| Disable DIGEST-MD5 | - | ❌ | Not located in available reference subset |
-| Disable IMAP/POP3 | mailserver/process_protocols.sh | ✅ | same Active flags, inverse reading |
-| Session Timeout | - | ❌ | Not located yet |
+| Check PTR | `dns/ptr.sh` | OK | needs `MAIL_PUBLIC_IP` |
+| Check SPF | `dns/spf.sh` | OK | live dig TXT |
+| Check DKIM | `dns/dkim.sh` | OK | multi-selector DNS fallback |
+| Check DMARC | `dns/dmarc.sh` | OK | live dig TXT _dmarc |
+| Check TLS and StartTLS | `dns/starttls.sh` | OK | live openssl |
+| Check DNS Server | `dns/dns_server.sh` | OK | c_mail_smtp_general_dnsserver |
+| Test DNS Lookup | `dns/dns_server.sh` | OK | live test |
+| Resolver External Test | `dns/resolver_external.sh` | OK | Google and Cloudflare test |
 
-## Application Server / MySQL Server
+## Logging
 
-Not started - these checks target a *different* host (the app/MySQL server, not the IceWarp box), so they need a remote-execution strategy (SSH key, separate config block) before collectors can even be written. Flagging for a design discussion before coding.
+| Checklist Item | Collector | Status | Notes |
+|---|---|---|---|
+| Enable Logging - Auth | `logging/auth_log.sh` | OK | KIND=L |
+| Enable Logging - Maintenance | `logging/maintenance_log.sh` | OK | KIND=L |
+| Enable MailFlow Log | `logging/mailqueue.sh` | OK | KIND=L |
+| Enable SQL Failed Logs | `logging/sql_failed_log.sh` | OK | KIND=L |
 
----
-_This table replaces the previous draft version. Anything marked 🟡 or ⚠️ should be run once on the lab server and corrected if the property name, path, or CLI syntax turns out to be wrong._
+## Backup, Watchdog and Monitoring
 
----
+| Checklist Item | Collector | Status | Notes |
+|---|---|---|---|
+| Enable System Backup | `icewarp/backup.sh` | OK | c_system_tools_autobackup_enable |
+| Enable Database Backup - Accounts | `icewarp/database_backup.sh` | OK | c_system_tools_backup_db_accountsenabled |
+| Enable Database Backup - AntiSpam | `icewarp/database_backup.sh` | OK | c_system_tools_backup_db_asenabled |
+| Enable Database Backup - GroupWare | `icewarp/database_backup.sh` | OK | c_system_tools_backup_db_gwenabled |
+| Enable Database Backup - Directory Cache | `icewarp/database_backup.sh` | OK | c_system_tools_backup_db_directorycacheenabled |
+| Backup Emails | `icewarp/backup.sh` | OK | KIND=Z, disabled means WARN |
+| Last Backup Date and Time | `icewarp/backup.sh` | OK | filesystem mtime |
+| Enable System Watchdog | `icewarp/watchdog.sh` | OK | watchdog.control |
+| Watchdog - SMTP | `icewarp/watchdog.sh` | OK | watchdog.smtp |
+| Watchdog - POP3/IMAP | `icewarp/watchdog.sh` | OK | watchdog.pop3 |
+| Watchdog - IM/VoIP | `icewarp/watchdog.sh` | OK | watchdog.im |
+| Watchdog - GroupWare | `icewarp/watchdog.sh` | OK | watchdog.gw |
+| Watchdog Interval | `icewarp/watchdog.sh` | OK | watchdog.interval_minutes |
+| Enable System Monitor | `icewarp/system_monitor.sh` | OK | monitor.enabled |
+| Remote Server Watchdog | `icewarp/watchdog.sh` | OK | KIND=V (INFO) |
 
-## Appendix: collectors implemented but not yet mapped to a checklist row
+## Storage, Certificates and Services
 
-26 collectors exist in the codebase that were never added to the tables above
-(they were written across sessions and this doc fell behind). They are all
-real, working, tested collectors — just not yet cross-referenced against the
-original checklist item names. Re-mapping these against the source checklist
-document is a remaining M5 documentation task; for now, here's what each one
-actually collects (auto-generated from source, 2026-07-11):
+| Checklist Item | Collector | Status | Notes |
+|---|---|---|---|
+| Check for Storage Locations | `icewarp/storage_paths.sh` | OK | |
+| Check for Certificates | `icewarp/certificate.sh` | OK | |
+| RBL Valli Check | `security/rbl_self_check.sh` | OK | live DNS RBL query |
+| Enable Full Text Search | `fulltext/scanner_queue.sh` | OK | KIND=P |
+| Reject if SMTP AUTH Different | `mailserver/reject_auth_mismatch.sh` | OK | |
+| 2FA | `security/login_policy.sh` | OK | security.login.2fa_bypass_enabled |
+| Daily Send Email limit | `icewarp/domain_limits.sh` | OK | KIND=Z |
 
-| Collector | Purpose | Keys produced |
-|---|---|---|
-| general/os.sh | OS name/version detection | `general.os.*` |
-| general/version.sh | IceWarp version (general-info duplicate of icewarp/version.sh) | `general.icewarp.version` |
-| icewarp/env.sh | Base install paths / tool.sh presence | `icewarp.home`, `icewarp.installed`, `icewarp.tool*`, default path fields |
-| icewarp/archive.sh | Archive settings (active, retention, IMAP integration, archive backup) | `archive.*` |
-| icewarp/admin_access.sh | WebAdmin URL / dedicated port change detection | `admin.*` |
-| icewarp/database_type.sh | SQLite vs local/remote MySQL detection (gates the MySQL Server section) | `database.*` |
-| icewarp/directory_cache.sh | Directory cache schedule (raw only - format not decoded yet) | `directory_cache.*` |
-| icewarp/domain_limits.sh | Per-domain send/quota limits, iterates all real domains | `domain.*` |
-| icewarp/protocol_advanced.sh | Daytime clock sync, DIGEST-MD5 detection via auth scheme list | `icewarp.daytime_clock_sync.enabled`, `security.digest_md5.enabled` |
-| icewarp/system_monitor.sh | IceWarp's own System Monitor alert thresholds (mem/disk/CPU) - now consumed directly by `lib/health.sh` | `monitor.*` |
-| icewarp/watchdog_extra.sh | Watchdog services beyond SMTP/POP3 (IM, GW, Control, interval) | `watchdog.*` |
-| http/port.sh, http/max_connections.sh | WebAdmin HTTP port/connections (⚠️ config-file key names unverified) | `http.port`, `http.max_connections` |
-| mailserver/security_advanced.sh | Require HELO/EHLO, greeting delay, global POP-before-SMTP | `smtp.require_helo_ehlo`, `smtp.greeting_delay_seconds`, `smtp.global_pop_before_smtp` |
-| mailserver/smtp_limits.sh | Hop count, recipient limits, per-domain throttling, header/footer, fulltext endpoint | `smtp.max_hop_count`, `smtp.max_*_recipients`, `smtp.max_per_domain_*`, `fulltext.enabled` |
-| os/memory.sh | RAM/swap from /proc/meminfo | `os.memory.*`, `os.swap.*` |
-| queue/incoming_queue.sh, queue/incoming_queue_enabled.sh, queue/no_retry.sh | SMTP incoming queue size/enabled/no-retry flag | `queue.smtp.*` |
-| security/dnsbl_rdns.sh | DNSBL use, reverse-DNS/MX rejection rules, IP reputation | `security.dnsbl.*`, `security.reject_*`, `security.ip_reputation.use` |
-| security/intrusion_prevention.sh | Full "Block IP that..." rule set (failed logins, relay denials, spam score, etc.) | `security.intrusion.*` (23 keys) |
-| security/login_policy_mode.sh | Login policy mode (companion to login_policy.sh) | `security.login.block_mode` |
-| security/password_policy.sh | Full password policy (length, complexity, expiration) - now evaluated by `lib/health.sh` | `security.password_policy.*` |
-| smtp/max_incoming_connections.sh, smtp/max_outgoing_connections.sh | SMTP connection ceilings | `smtp.max_incoming_connections`, `smtp.max_outgoing_connections` |
-| smtp/relay_server.sh | Configured relay server (companion to smtp/relay.sh) | `smtp.relay.server` |
-| storage/storage.sh | Per-mount disk usage (install/mail/archive/root) - now evaluated by `lib/health.sh` | `storage.*.free_gb`, `.used_percent`, etc. |
+## SMTP Delivery Settings
 
-**Corrected checklist tally as of 2026-07-11** (counting only the tables above,
-not the appendix): 31 ✅ fully verified, 16 🟡 collected via fallback, 3 ⚠️
-unverified syntax, 13 ❌ not yet found — 63 checklist rows tracked so far
-against the original ~110-item document. The appendix adds ~26 more collectors
-that already work but haven't been cross-referenced against checklist item
-names yet.
+| Checklist Item | Collector | Status | Notes |
+|---|---|---|---|
+| Max Message Size (MB) | `smtp/max_message_size.sh` | OK | |
+| Delivery Reports | `mailserver/smtp_limits.sh` | OK | |
+| Use TLS/SSL | `mailserver/tls_ssl.sh` | OK | |
+| Process Incoming Messages in MDA Queue | `mailserver/mda_queue.sh` | OK | |
+| Use MDA Queue for Internal Delivery | `mailserver/mda_queue.sh` | OK | |
+| Maximum Simultaneous Threads | `smtp/max_connections.sh` | OK | Expected: 10 |
+| Hide IP Address from Received | `mailserver/hide_ip.sh` | OK | |
+| Hide Server Version | `mailserver/hide_ip.sh` | OK | |
+
+## SMTP Protocol Hardening
+
+| Checklist Item | Collector | Status | Notes |
+|---|---|---|---|
+| Require HELO/EHLO | `mailserver/security_advanced.sh` | OK | |
+| Add Return-Path | `mailserver/rdns_returnpath.sh` | OK | |
+| Dedupe Email Messages | `mailserver/dedupe.sh` | OK | |
+| Relay Only if Originator Local | `smtp/relay.sh` | OK | |
+| Process SMTP | `mailserver/process_protocols.sh` | OK | |
+| Process POP3/IMAP | `mailserver/process_protocols.sh` | OK | |
+| Add rDNS Result to Received | `mailserver/rdns_returnpath.sh` | OK | |
+| Set Directory Cache Schedule | `icewarp/directory_cache.sh` | OK | KIND=B, critical if not set |
+| Change Admin URL | `icewarp/admin_access.sh` | OK | |
+
+## Intrusion Prevention - Block Rules
+
+| Checklist Item | Collector | Status | Notes |
+|---|---|---|---|
+| Block IP - Connections per Minute | `security/intrusion_prevention.sh` | OK | Expected: 10 |
+| Block IP - Unknown User Delivery | `security/intrusion_prevention.sh` | OK | Expected: 5 |
+| Block IP - Denied for Relay | `security/intrusion_prevention.sh` | OK | Expected: 5 |
+| Block IP - RSET Session Count | `security/intrusion_prevention.sh` | OK | Expected: 5 |
+| Block IP - Spam Score | `security/intrusion_prevention.sh` | OK | Expected: 9.00 |
+| Block IP - Failed Logins | `security/intrusion_prevention.sh` | OK | Expected: 5 |
+| Block Duration | `security/intrusion_prevention.sh` | OK | Expected: 30 |
+| Block IP - Listed on DNSBL | `security/intrusion_prevention.sh` | OK | |
+| Refuse Blocked IP | `security/intrusion_prevention.sh` | OK | |
+| Close Blocked Connection | `security/intrusion_prevention.sh` | OK | |
+| Close All Other Connections | `security/intrusion_prevention.sh` | OK | |
+| Cross Session Processing | `security/intrusion_prevention.sh` | OK | |
+
+## Rejection Rules and Access
+
+| Checklist Item | Collector | Status | Notes |
+|---|---|---|---|
+| Use DNSBL | `security/dnsbl_rdns.sh` | OK | |
+| Close Connections for DNSBL | `security/dnsbl_rdns.sh` | OK | |
+| Use IP Reputation | `security/dnsbl_rdns.sh` | OK | |
+| Reject if no rDNS | `security/dnsbl_rdns.sh` | OK | |
+| Reject if Domain Does Not Exist | `security/dnsbl_rdns.sh` | OK | |
+| Reject if Local and Not Authorized | `smtp/relay.sh` | OK | |
+| Set customers-stat@parsavan.com | Custom | OK | expects monitor.alert_email |
+| Disable AntiSpam Live | `security/antispam_live.sh` | OK | KIND=D |
+| Remove Old AntiSpam Folders | `security/cyren_folder.sh` | OK | |
+| Password Policy Min Length | `security/password_policy.sh` | OK | |
+| Set Admin Email | Custom | OK | |
+| Change Admin Port | `icewarp/admin_access.sh` | OK | |
+| Block Outgoing Port 9001 | `security/port_9001.sh` | OK | firewalld check |
+
+## Archive Settings
+
+| Checklist Item | Collector | Status | Notes |
+|---|---|---|---|
+| Archive Active | `icewarp/backup.sh` | OK | c_system_tools_autoarchive_enable |
+| Archive to Directory | `icewarp/backup.sh` | OK | c_system_tools_autoarchive_path |
+| Integrate Archive with IMAP | `icewarp/backup.sh` | OK | c_system_tools_autoarchive_imaparchive |
+| Do Not Archive Spam | `icewarp/backup.sh` | OK | c_system_tools_autoarchive_donotspam |
+| Archive Backup (Deleted Messages) | `icewarp/backup.sh` | OK | c_system_tools_autoarchive_backup_active |
+
+## Protocol and Access Hardening
+
+| Checklist Item | Collector | Status | Notes |
+|---|---|---|---|
+| Disable VRFY | `security/vrfy.sh` | OK | c_mail_security_protocols_denyvrfy |
+| Disable DIGEST-MD5 | `security/digest_md5.sh` | OK | checks c_auth_schemes, KIND=R |
+| Session Timeout | `icewarp/protocol_advanced.sh` | OK | |
+| Enable SSL/TLS | `mailserver/tls_ssl.sh` | OK | |
+| Disable Cloud Features | `security/cloud_features.sh` | OK | KIND=D, 0 is PASS, 1 is WARN |
+| Disable IMAP | `mailserver/process_protocols.sh` | OK | |
+| Disable POP3 | `mailserver/process_protocols.sh` | OK | |
+
+## APP OS and Infrastructure
+
+| Checklist Item | Collector | Status | Notes |
+|---|---|---|---|
+| APP OS Version | `general/os.sh` | OK | |
+| Disk (Total and Used Percent) | `storage/storage.sh` | OK | WARN at 80 percent, CRITICAL at 95 percent |
+| CPU Usage | `os/cpu.sh` | OK | 15-min load, WARN above 50, CRITICAL above 95 |
+| RAM (Total and Available) | `os/memory.sh` | OK | WARN above 40, CRITICAL above 90 |
+| APP OS Last Update | `os/os_update.sh` | OK | under 7d PASS, 7-30d WARN, over 30d CRITICAL |
+| Repository Access | `os/repository_access.sh` | OK | |
+| Time Sync (OS-level NTP) | `os/time_sync.sh` | OK | |
+| Swap Usage (7 days) | `os/swap.sh` | OK | |
+
+## Database
+
+| Checklist Item | Collector | Status | Notes |
+|---|---|---|---|
+| Database Type | `icewarp/database_type.sh` | OK | sqlite is WARN, mysql is PASS |
+| Database Scope | `icewarp/database_type.sh` | OK | |
+| MySQL items | Not implemented | Pending | Remote DB requires separate strategy |
+
+## MySQL Server (Remote DB)
+
+Not implemented. Requires a remote-execution strategy (SSH or API).
+Out of scope for v0.4.0.
