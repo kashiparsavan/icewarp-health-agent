@@ -158,10 +158,15 @@ evaluate_health() {
         _health_set "digest_md5" "skip" "Auth scheme list not available"
     fi
 
-    # --- Backup (using icewarp.* keys from tool.sh) ---
+    # --- Backup (using icewarp.* and backup.db.* keys) ---
     local AUTO_ENABLED="${DATA[icewarp.backup.auto_enabled]:-0}"
     local LAST_TIME="${DATA[icewarp.backup.last_time]:-}"
-    local DB_ENABLED="${DATA[icewarp.database_backup.enabled]:-0}"
+    
+    # Individual database backup statuses (from new collectors)
+    local DB_ACCOUNTS="${DATA[backup.db.accounts.enabled]:-0}"
+    local DB_AS="${DATA[backup.db.as.enabled]:-0}"
+    local DB_GW="${DATA[backup.db.gw.enabled]:-0}"
+    local DB_CACHE="${DATA[backup.db.cache.enabled]:-0}"
 
     # Main backup enable
     if [ "$AUTO_ENABLED" = "1" ]; then
@@ -170,11 +175,37 @@ evaluate_health() {
         _health_set "backup.auto" "critical" "Automatic system backup is DISABLED (required for production)"
     fi
 
-    # Database backup
-    if [ "$DB_ENABLED" = "1" ]; then
-        _health_set "backup.db" "pass" "Database backup is enabled"
+    # Overall database backup: PASS if at least Accounts is enabled (core DB)
+    if [ "$DB_ACCOUNTS" = "1" ]; then
+        _health_set "backup.db" "pass" "Database backup is enabled (Accounts)"
     else
-        _health_set "backup.db" "critical" "Database backup is DISABLED"
+        _health_set "backup.db" "critical" "Database backup is DISABLED (Accounts missing)"
+    fi
+
+    # Individual database backup statuses (for detailed reporting)
+    if [ "$DB_ACCOUNTS" = "1" ]; then
+        _health_set "backup.db.accounts" "pass" "Accounts database backup is enabled"
+    else
+        _health_set "backup.db.accounts" "critical" "Accounts database backup is DISABLED"
+    fi
+
+    if [ "$DB_AS" = "1" ]; then
+        _health_set "backup.db.as" "pass" "Anti-Spam database backup is enabled"
+    else
+        _health_set "backup.db.as" "critical" "Anti-Spam database backup is DISABLED"
+    fi
+
+    if [ "$DB_GW" = "1" ]; then
+        _health_set "backup.db.gw" "pass" "GroupWare database backup is enabled"
+    else
+        _health_set "backup.db.gw" "critical" "GroupWare database backup is DISABLED"
+    fi
+
+    # Directory Cache is optional – informational only
+    if [ "$DB_CACHE" = "1" ]; then
+        _health_set "backup.db.cache" "info" "Directory Cache database backup is enabled (optional)"
+    else
+        _health_set "backup.db.cache" "info" "Directory Cache database backup is disabled (optional)"
     fi
 
     # Last backup time
@@ -292,16 +323,10 @@ evaluate_health() {
         os_update
         password_policy
         backup.auto
-        backup.db
+        backup.db.accounts.enabled
+        backup.db.as.enabled
+        backup.db.gw.enabled
         backup.last_time
-        watchdog.control
-        watchdog.smtp
-        watchdog.pop3
-        watchdog.im
-        watchdog.gw
-        watchdog.interval
-        monitor.enabled
-        directory_cache
     )
 
     for K in "${SUMMARY_KEYS[@]}"; do

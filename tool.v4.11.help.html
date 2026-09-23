@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IceWarp Tool API Reference – v4.11</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #f5f7fa;
+    color: #1e293b;
+    line-height: 1.6;
+    padding: 2rem;
+  }
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+  header {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+    color: #ffffff;
+    padding: 2rem 2.5rem;
+  }
+  header h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+  header p {
+    font-size: 0.95rem;
+    opacity: 0.85;
+  }
+  .badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    border-radius: 6px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+  }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 1rem 2.5rem;
+    background: #f1f5f9;
+    border-bottom: 1px solid #e2e8f0;
+    align-items: center;
+  }
+  .toolbar input {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.55rem 0.9rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border 0.2s;
+  }
+  .toolbar input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+  }
+  .toolbar .count {
+    font-size: 0.85rem;
+    color: #64748b;
+    white-space: nowrap;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+  thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  thead th {
+    background: #1e293b;
+    color: #ffffff;
+    text-align: left;
+    padding: 0.75rem 0.9rem;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  thead th:hover { background: #334155; }
+  thead th .arrow { opacity: 0.4; margin-left: 0.3rem; font-size: 0.7rem; }
+  tbody tr { border-bottom: 1px solid #e2e8f0; transition: background 0.15s; }
+  tbody tr:hover { background: #f8fafc; }
+  tbody td {
+    padding: 0.6rem 0.9rem;
+    vertical-align: top;
+  }
+  .name {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.82rem;
+    color: #0f172a;
+    font-weight: 500;
+    word-break: break-all;
+  }
+  .type {
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    white-space: nowrap;
+    display: inline-block;
+  }
+  .type-bool    { background: #dbeafe; color: #1e40af; }
+  .type-int     { background: #dcfce7; color: #166534; }
+  .type-string  { background: #fef3c7; color: #92400e; }
+  .type-enum    { background: #f3e8ff; color: #6b21a8; }
+  .type-schedule{ background: #fce7f3; color: #9d174d; }
+  .access {
+    font-size: 0.78rem;
+    color: #64748b;
+    white-space: nowrap;
+  }
+  .access-r { color: #dc2626; font-weight: 600; }
+  .access-ro { color: #7c3aed; font-weight: 600; }
+  .desc {
+    color: #475569;
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+  .section-divider td {
+    background: #e2e8f0;
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #1e293b;
+    padding: 0.5rem 0.9rem;
+  }
+  footer {
+    text-align: center;
+    padding: 1.5rem;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    border-top: 1px solid #e2e8f0;
+  }
+  @media (max-width: 768px) {
+    body { padding: 0.5rem; }
+    header { padding: 1.25rem; }
+    header h1 { font-size: 1.3rem; }
+    .toolbar { padding: 0.75rem 1rem; }
+    table { font-size: 0.78rem; }
+    tbody td { padding: 0.5rem; }
+    .desc { font-size: 0.78rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>IceWarp Tool API Reference</h1>
+  <p>Complete list of configuration keys for <code>tool.sh display system</code></p>
+  <span class="badge">Version 4.11</span>
+</header>
+
+<div class="toolbar">
+  <input type="text" id="search" placeholder="🔍 Search by name, type, or description...">
+  <span class="count" id="count">340 keys</span>
+</div>
+
+<table id="table">
+<thead>
+  <tr>
+    <th data-col="0">Name <span class="arrow">↕</span></th>
+    <th data-col="1">Type <span class="arrow">↕</span></th>
+    <th data-col="2">Access <span class="arrow">↕</span></th>
+    <th data-col="3">Description <span class="arrow">↕</span></th>
+  </tr>
+</thead>
+<tbody id="tbody">
+<!-- Rows will be inserted by JavaScript -->
+</tbody>
+</table>
+
+<footer>
+  Generated from <code>tool.v4.11.help</code> — IceWarp Health Agent project
+</footer>
+
+</div>
+
+<script>
+/* ============================================================
+   DATA: Each entry is [name, type, access, description]
+   Parsed from tool.v4.11.help
+   ============================================================ */
+const DATA = [
+  // ── Errors ──
+  ["e_failure","int","","Function failure"],
+  ["e_license","int","","Insufficient license"],
+  ["e_params","int","","Size of parameters too short"],
+  ["e_path","int","","Settings file does not exist"],
+  ["e_config","int","","Configuration not found"],
+  ["e_password","int","","Password policy"],
+  ["e_conflict","int","","Item already exists"],
+  ["e_invalid","int","","Invalid mailbox / alias characters"],
+  ["e_passwordchars","int","","Invalid password characters"],
+  ["e_migration_in_progress","int","","User migration in progress"],
+  ["e_login_blocked","int","","Login blocked"],
+  ["e_plan_exceeded","int","","Plan exceeded"],
+  ["e_smartattach_noerr","int","","Base error number for smartattachments errors"],
+  ["e_smartattach_virus","int","","Virus found in the message"],
+  ["e_smartattach_gwerror","int","","General groupware problem"],
+  ["e_smartattach_webdav","int","","Webdav disabled"],
+  ["e_smartattach_signed","int","","Message was signed"],
+  ["e_smartattach_noattachments","int","","No attachments found in the message"],
+  ["e_smartattach_noattachmentsstripped","int","","All found attachments are excluded from smart attaching"],
+  ["e_smartattach_sizequota","int","","Size quota exceeded"],
+
+  // ── Accounts ──
+  ["c_accounts_authlog","enum","","0 - none; Auth logging level"],
+  ["c_accounts_deliveryreports","bool","","Delivery reports"],
+  ["c_accounts_deliveryreportsdeleteolder","int","","Delete delivery report files older then given number of days"],
+  ["c_accounts_dircache_pdo","string","","sqlite:/opt/icewarp/config/directorycache.db; Directory cache PDO connection string"],
+  ["c_accounts_directorycacheconnectionstring","string","","/opt/icewarp/config/directorycache.db;;;;7;3; Connection string to directory cache database"],
+  ["c_accounts_directorycacheconnectionstring_real","string","r/o","/opt/icewarp/config/directorycache.db;;;;7;3; Connection string to directory cache database (calculated value based on env variable IW_DB_DIRCACHE and API settings)"],
+  ["c_accounts_directorycacheexclusivelocking","bool","","If set to true, the only one query against the directory cache is done at a time (changing requires restart of all services)"],
+  ["c_accounts_directorycacheschedule","int","","Schedule data for directorycache"],
+  ["c_accounts_directorycachewavesafecount","int","","Number of items to process before waiting, default = 0, which means automated sophisticated choice"],
+  ["c_accounts_directorycachewavesleep","int","","Number of milliseconds to wait after wave processes WaveSafecount items, default = 0, which means automated sophisticated choice"],
+  ["c_accounts_directorycache_refreshnow","bool","","Write only; if anything is written there, full refresh of the directorycache is scheduled"],
+  ["c_accounts_directorycache_wavestopped","bool","","If set to true, wave mode processing is interrupted and no new wave is started unless this variable is set to false again"],
+  ["c_accounts_disablecache","bool","","Disables account caching"],
+  ["c_accounts_disable_account_change_journal","bool","","Disables database journal tracking changes in accounts, the journal is used for faster update of account cache - only changed accounts are updated"],
+  ["c_accounts_maintenancelog","enum","","2 - summary; Maintenance logging level"],
+  ["c_accounts_usedefaults","bool","","Use Account defaults"],
+  ["c_accounts_userstat","bool","","Enable User statistics"],
+  ["c_distributed_accounts_cacheexpire","int","","3600; cache expiration in seconds"],
+  ["c_distributed_accounts_cache_enabled","bool","","Enables distributed domains accounts caching"],
+  ["c_distributed_accounts_cache_max","int","","Maximal Number of cached items"],
+  ["c_clientid_allowedlist","string","","Line separated list of allowed client types and IDs"],
+  ["c_clientid_enforceverification","bool","","If set to true, client ID is enforced for all authentication requests"],
+  ["c_encryptionkeyconfigured","bool","","Can be used to reset the EncryptionKey if set to false, in such case a new key will be recreated"],
+  ["c_accounts_cluster_allowslavelogin","bool","","If enabled, users can login into domain cluster also with their true email (from slave domain)"],
+  ["c_auth_defaultexternalsynclibrary","string","","If synchronization library is not set on specific place, this library will be used instead"],
+  ["c_auth_disableplain","bool","","Disable plain authentication in all services"],
+  ["c_auth_dontcacheexternalpasswords","bool","","If enabled, IceWarp will not locally cache passwords of accounts authenticated externally (LDAP, or dll authentication). This will cause malfunction of all challenge based authentications"],
+  ["c_auth_schemes","string","","PLAIN LOGIN DIGEST-MD5 CRAM-MD5; Allowed authentication SASL schemes"],
+  ["c_auth_tomailfrom","bool","","Make authenticated user the actual sender"],
+  ["c_enableglobaladmin","bool","","Enables GlobalAdmin account"],
+  ["c_globaladminpassword","string","r/o","02e99841480ba87d7c88843efece2ee0f58dafdf; Password database encryption"],
+  ["c_login_attempts","int","","5; Number of failed logins"],
+  ["c_login_authwisiddisable","bool","","Obsolete"],
+  ["c_login_block","enum","","0 - do not block but delay authentication; Login policy mode"],
+  ["c_login_blockperiod","int","","10; Block user login for (Min)"],
+  ["c_login_bypass_2f","bool","","If set, for hosts defined in config/twofactorbypass.dat will not be required 2F authentication"],
+  ["c_login_convertchars","bool","","Convert chars %/ to @ in username"],
+  ["c_login_disabledomainiplogin","bool","","Disable logging with domain IP, domain name has to be used"],
+  ["c_login_enable","bool","","Enable Login policy"],
+  ["c_login_iprestriction","bool","","Enables account IP restriction"],
+  ["c_login_loginsettings","bool","","values=(0 - login with username, 1 - login with full email address) Login settings mode"],
+  ["c_pass_alpha","int","","1; Number of alpha characters"],
+  ["c_pass_digits","int","","1; Number of numeric chars in password"],
+  ["c_pass_disableaccesstoallifdisabled","bool","","Disable access to all services if password is expired (except WebClient, WebAdmin and icewarpapi)"],
+  ["c_pass_enable","bool","","Enable Password policy"],
+  ["c_pass_encrypt","bool","","Password database encryption"],
+  ["c_pass_expiration","bool","","Enable password expiration"],
+  ["c_pass_expireafter","int","","Expire after (Days)"],
+  ["c_pass_minlength","int","","6; Min password length"],
+  ["c_pass_nonalphanum","int","","Number of non alphanumeric characters"],
+  ["c_pass_notification","bool","","Enable Notification of expiration"],
+  ["c_pass_notifybefore","int","","Notify before (Days)"],
+  ["c_pass_upperalpha","int","","Number of uppercase alpha characters"],
+  ["c_pass_useralias","bool","","Check password against username/alias"],
+  ["c_regenerateglobaladminpassword","bool","","Write only; Regenerate admin password"],
+  ["c_serverid","string","r/o","d1ee7b4e9475ea7a1d83602abccee40033efb7c9f881fa80f377d4734d4720ba; Unique Server Id"],
+  ["c_superuser","bool","","Enable super user login"],
+  ["c_superuserpassword","string","r/o","042781933fab025f26b9fc1d4affe039c7fbb228; Super user password"],
+  ["c_accounts_global_activedirectorysyncinterval","int","","5; Minutes interval"],
+  ["c_accounts_global_spacereplacechar","string","","_; One char only, a default character replacing spaces in alias"],
+  ["c_account_delete_external_mailbox","bool","","when not set (default), external mailboxes are not deleted when account is deleted"],
+  ["c_deleteexpireddomain_keepmailboxdata","bool","","When set, automated deletion of expired domain will keep its mailbox data"],
+  ["c_dkim_rsabits","int","","2048; Size of key generated by D_DKIM_GeneratePrivateKey"],
+  ["c_domainadmin_rights","string","","Provides R/W access to contents of global domain.dat file"],
+  ["c_domain_cannot_be_deleted","bool","","if turned on domains cannot be deleted in any way - if turned off domains can be deleted as usual"],
+  ["c_domain_cannot_be_renamed","bool","","if turned on domains cannot be renamed in any way - if turned off domains can be renamed as usual"],
+  ["c_system_abqstatus","string","r/o","A; status of ABQ"],
+  ["c_system_adsyncdisablevcardsync","bool","","If set, AD sync will not fill in user's Card with information from AD server"],
+  ["c_system_adsyncignoresearcherror","bool","","If AD synchronization search returns error, but still some data were returned, Synchronization performs no delete operation by default. Setting this to true enables delete operations for this cases."],
+  ["c_system_adsynclogtype","enum","","0 - none; AD synchronization logging level"],
+  ["c_system_adsyncmaxdeletethreshold","int","","If set to value greater than 0, AD sync performs no delete if it should delete more accounts than this value"],
+  ["c_system_adsyncpagesize","int","","Size of page when getting data from server (-1 = no paging, 0 = default (500), other = page size)"],
+  ["c_system_adv_exit_on_signal","bool","","Linux only - if set, SIGSEGV and others will terminate affected service instead of throwing exception"],
+  ["c_system_adv_notification_active","bool","","Notification messages active"],
+  ["c_system_adv_notification_host","string","","Notification messages host"],
+  ["c_system_adv_plan_gal_resync","bool","","Write only; Sends signal to GW services to process the GAL synchronization"],
+  ["c_system_adv_process_new_day","bool","","Write only; Sends signal to all services to process the new day procedures"],
+  ["c_system_adv_rename_default_folders","string","","Write only; Renames default folders, accepts URL-encoded, UTF-8 list of form where=value1&events=value2&contacts=value3&tasks=value4¬es=value5&journals=value6&files=value7&drafts=value8&trash=value9&sent=value10 use e.g. tool set system C_System_Adv_Rename_Default_Folders \"where=*&sent=Odeslan\""],
+  ["c_system_adv_rules_for_gw_messages","bool","","If enabled, GW generated messages (particularly reminders, agendas, invitation) runs through content filters and rules (global, domain, user)"],
+  ["c_system_debug_disablestartserverservices","bool","","Disables startserver services (CommTouch, LDAP and others)"],
+  ["c_system_directoryiteratorthreshold","int","","Directory cache iterator threshold - this number specifies the number of files in single batch without waiting (wait will be performed each time server iterates this number of files)"],
+  ["c_system_directoryiteratorwait","int","","Directory cache iterator wait - this number specifies how long will server wait after processing C_System_DirectoryIteratorThreshold files count"],
+  ["c_system_filename_ends_with_serverid","bool","","If enabled - ServerId (see Load Balancing) will appear at the end of generated filenames and not at the beginning"],
+  ["c_system_kerberoslogtype","enum","","0 - none; Kerberos Authentication logging level"],
+  ["c_system_mysqldefaultcharset","string","","utf8; MySQL default charset Default charset for direct mysql client library - older icewarps (version 5 and older) used to be set to latin1 for Mysql connection. On IceWarp 10 it uses utf8 by default. If your DB is in latin 1, in a fresh install you need to set this to latin1 or convert your DB to utf8"],
+  ["c_system_oauth_access_token_expiration","int","","1440; Expiration timeout for OAuth access tokens in minutes(default 1440 minutes => 1 day)"],
+  ["c_system_oauth_refresh_token_expiration","int","","144000; Expiration timeout for OAuth refresh tokens in minutes(default 144000 minutes => 100 days)"],
+  ["c_system_pop3_locking","bool","","POP3 does not allow multiple login of one account"],
+  ["c_system_server_aclcacheexpiration","int","","Maximal lifetime of cached ACL in seconds. 0 means default value. Usually the cache item is invalidated immediately after the corresponding change of the settings"],
+  ["c_system_server_directorycachedontusetransactions","bool","","Disable transaction usage in directorycache processing"],
+  ["c_system_server_groupmembershipcacheexpiration","int","","Maximal lifetime of cached group membership in seconds. 0 means default value. Usually the cache item is invalidated immediately after the corresponding change of the settings"],
+  ["c_system_server_language","string","","two character code of the language, server language is used for localization of general messages, like conference info"],
+  ["c_system_server_useraccessdontusetransactions","bool","","Disable transaction usage in Useraccess processing"],
+  ["c_system_services_bindipaddress","string","","IP addresses to bind services to"],
+  ["c_system_services_firewall","bool","","Restrict access to all services"],
+  ["c_system_services_imap_debugindexhistory","bool","","Enable IMAP storage history debug logging, when enabled and file imapindex.savehistory is present in mailbox, imapindex.bin backup will be created before each change"],
+  ["c_system_services_imap_indexstorage","enum","","0 - textual storage(imapindex.dat); list of selected accounts must be placed in config/imapbinary.dat"],
+  ["c_system_services_imap_locktype","enum","","0 - directory; Lock used for locking mailboxes among services and load balanced nodes"],
+  ["c_system_services_imap_memoryefficientindex","bool","","Enable IMAP memory efficient mode, when enabled, imap storage uses direct access to small files cache"],
+  ["c_system_services_imap_redlock_lockexpiration_sec","int","","3; Expiration time of lock in seconds - when the log is not refreshed in time, becomes unlocked."],
+  ["c_system_services_imap_redlock_lockrefreshperiod_ms","int","","100; How often the lock is refreshed in milliseconds."],
+  ["c_system_services_imap_redlock_servers","string","","Semicolon separated list of redis servers to be used for inter-LB-nodes locking, when empty, filesystem storage flock is used instead"],
+  ["c_system_services_minger_enabled","bool","","Enable Minger server"],
+  ["c_system_services_minger_logging","enum","","0 - none; Minger log level"],
+  ["c_system_services_minger_port","int","","4069; Basic Minger port (UDP)"],
+  ["c_system_services_minger_sslport","int","","4070; Minger SSL port (TCP)"],
+  ["c_system_services_smallfilescache_cleaner_expiration","int","","1440; Cached files will released from cache if they are oldest some time in minutes."],
+  ["c_system_services_smallfilescache_cleaner_void_percent","int","","10; Cache keep some percent empty space by releasing old records"],
+  ["c_system_services_smallfilescache_debug_logging","int","","Set SFC logging scope mask (0 - None, 0x1 - classic verbose logs, 0x2 - exclusive access feature logs, 0x4 - not cached files logs)"],
+  ["c_system_services_smallfilescache_delaywrite","bool","","If set to true, cache write operations are not directly done on filesystem, but are processed in background thread - temporarily switched off (i.e. this setting has no effect now)"],
+  ["c_system_services_smallfilescache_maxfilesize","int","","3145728; Maximal size (in bytes) of file, which will be cached in cache for small files, (imapindex.dat, flags.dat...)"],
+  ["c_system_services_smallfilescache_size","string","","524288000; Maximal size (in bytes) of cache for small files, (imapindex.dat, flags.dat...), Set 0 to disable, make sure that UDP traffic is enabled between IceWarp nodes on LB scenarios and path.dat is properly configured"],
+  ["c_system_sessions_disablehistory","bool","","Disable session history"],
+  ["c_system_sqllogtype","enum","","1 - log all sql queries; Type of SQL logging"],
+  ["c_system_storage_mailbox_checkavailability","bool","","if turned on and provisioned.dat doesn't exist services are not turned on"],
+  ["c_system_vds","string","","Virtual Device Status"],
+
+  // ── Anti-Spam ──
+  ["c_addspamsubject","bool","","Add C_AS_AddSpamSubjectString text to Subject of spam message"],
+  ["c_addspamsubjectstring","string","","[Spam]; Text to be added to subject of spam messages"],
+  ["c_alwaysprocessblacklistandwhitelist","bool","","Process BL and WL even if AS has been bypassed"],
+  ["c_antivirusconfirmedaction","int","","Zero-Hour Anti-Virus Confirmed virus message action (actions: Add spam score = 0, Delete = 1, Reject = 2)"],
+  ["c_antivirussuspectedaction","int","","Zero-Hour Anti-Virus Suspected virus message action (actions: Add spam score = 0, Delete = 1, Reject = 2)"],
+  ["c_bitdefender_server","string","","http://127.0.0.1:1344; bdam server address"],
+  ["c_blacklistaction","int","","1; // 0 = Mark As Spam, 1= Delete, 2= Reject"],
+  ["c_blockkeywords","string","","Semicolon separated list of keywords marking message as spam"],
+  ["c_blockkeywordscore","string","","10.00; Score to add to messages containing any of C_AS_BlockKeywords"],
+  ["c_blockkeywordswholewords","bool","","Blacklist keywords are matched as whole words"],
+  ["c_bypassdistributeddomain","bool","","If enabled, Anti-Spam is skipped for non local recipients in distributed domain"],
+  ["c_bypasskeywords","string","","Semicolon separated list of keywords marking message as genuine"],
+  ["c_bypasskeywordswholewords","bool","","Whitelist keywords are matched as whole words"],
+  ["c_bypasslocaldomains","bool","","Whitelist local domain senders"],
+  ["c_bypasslocalips","bool","","Whitelist trusted IPs and authenticated sessions"],
+  ["c_challenge_connectionstring","string","","spam/antispam.db;;;;7;3; Anti spam DB ConnectionString"],
+  ["c_challenge_connectionstring_real","string","r/o","spam/antispam.db;;;;7;3; Anti spam DB ConnectionString (calculated value based on env variable IW_DB_AS and API settings)"],
+  ["c_challenge_processinggroup","string","","Policy group"],
+  ["c_charsetspam","bool","","Score messages with forbidden charsets (specified with C_AS_SkipCharsets)"],
+  ["c_charsetspamscore","string","","2.00; Score for messages with charset listed in c_as_skipcharsets"],
+  ["c_commtouch","bool","","Enable Anti-Spam live"],
+  ["c_commtouchforce","bool","","Override all limits and always perform Anti-Spam live"],
+  ["c_commtouchhighestscore","string","","10.00; Anti-Spam live score for confirmed spam and virus messages"],
+  ["c_commtouchhighscore","string","","7.00; Anti-Spam live score for bulk and highly suspected virus messages"],
+  ["c_commtouchinfoscore","string","r/o","AS live engine is applied only if score is below this value"],
+  ["c_commtouchlowscore","string","","0.00; Anti-Spam live score for non spam messages"],
+  ["c_commtouchserver","string","","127.0.0.1:8088; Server for inbound Anti-Spam live evaluation"],
+  ["c_commtouchserveroutbound","string","","127.0.0.1:8089; Server for outbound Anti-Spam live evaluation"],
+  ["c_deletescore","string","","10.00; Score threshold for deleting message"],
+  ["c_deletespammailolder","int","","7; Delete spam messages from spam folders when older than (Days)"],
+  ["c_general_antispammode","enum","","1 - user; Antispam mode"],
+  ["c_general_enable","bool","","Enable Spam Engine"],
+  ["c_general_processinggroup","string","","Policy group"],
+  ["c_ignorefileslarger","int","","512; Maximum message size to process with antispam, in kB"],
+  ["c_info_engineversion","string","r/o","Engine version"],
+  ["c_info_updatedate","string","r/o","Update date"],
+  ["c_info_updatesize","int","r/o","Last updates size in bytes"],
+  ["c_info_updateversion","string","r/o","Update version"],
+  ["c_ipreputationgreylistaccept","bool","","Accept when IP reputation greylists am IP"],
+  ["c_ipreputationserver","string","","127.0.0.1:8080; hostname:port where ctipd server runs"],
+  ["c_ipreputationuse","bool","","Use IP reputation"],
+  ["c_live_bitdefender","bool","","Anti-spam live engine Bitdefender is in use"],
+  ["c_live_cyren","bool","","Anti-spam live engine Cyren is in use"],
+  ["c_live_enable","bool","","Enable Anti-Spam live (alias of old C_AS_Commtouch)"],
+  ["c_live_force","bool","","Override all limits and always perform Anti-Spam live (alias of old C_AS_CommTouchForce)"],
+  ["c_live_ignorefileslarger","int","","25600; Greater mails will not be checked by AS Live (value in KB)"],
+  ["c_live_sophos","bool","","Anti-spam live engine Sophos is in use"],
+  ["c_mailinglist_antispam_disable","bool","","Disable processing mailing list spam folders"],
+  ["c_mailinglist_quarantine_disable","bool","","Disable processing mailing list quarantines"],
+  ["c_missingcharset","bool","","Score messages with missing charsets and non us-ascii characters"],
+  ["c_missingcharsetscore","string","","2.00; Score for messages with missing charset"],
+  ["c_outgoingblockuser","bool","","Block sender when outgoing mail spam score is greater than C_AS_OutgoingBlockUserScore"],
+  ["c_outgoingblockuserscore","string","","10.00; Score threshold for blocking outgoing mail sender"],
+  ["c_outgoingnotifyadminonblocked","bool","","Notify administrator when account is blocked because of sent virus or bulk message sending"],
+  ["c_outgoingrefuse","bool","","Enable action on mails, which spam score is greater than C_AS_OutgoingRefuseScore"],
+  ["c_outgoingrefuseaction","enum","",""],
+  ["c_outgoingrefusescore","string","","6.00; Spam score which triggers C_AS_OutgoingRefuseAction"],
+  ["c_pdo","string","","sqlite:spam/antispam.db; Anti spam PDO connection string"],
+  ["c_quarantinescore","string","","2.40; Score threshold for quarantining message"],
+  ["c_skipcharsets","string","","gb2312;big5; List of charsets with greater spam probability (related to C_AS_CharsetSpam)"],
+  ["c_skipcharsetsspam","bool","","Obsolete"],
+  ["c_sophos_lased_log_level","enum","","Sophos AntiSpam daemon log level to be set after daemon is started"],
+  ["c_sophos_log_reasons","bool","","Log Sophos engine detected spam reasons"],
+  ["c_sophos_manager_api_url","string","","http://127.0.0.1:25300; SAS-Manager helper service API URL"],
+  ["c_sophos_server","string","","http://127.0.0.1:25315; Sophos SASI lased server address"],
+  ["c_sophos_updater_api_url","string","","http://127.0.0.1:25302; SAS-Updater helper service API URL"],
+  ["c_spamaddoutgoing","bool","","Auto whitelist trusted email recipients to database"],
+  ["c_spamapplyunknown","bool","","Obsolete"],
+  ["c_spamassassindelete","bool","","Allow deleting messages when score is over C_AS_DeleteScore"],
+  ["c_spamassassinenabled","bool","","Enable SpamAssassin"],
+  ["c_spamassassinmarked","bool","","Force running SA even if score is below C_AS_SpamAssassinScoreValue threshold"],
+  ["c_spamassassinmaxscore","int","","1000; Maximum SA score in promiles, 1000 by definition"],
+  ["c_spamassassinnocustom","bool","","Disable loading rules from custom subdirectory"],
+  ["c_spamassassinpath","string","","Path to spam assassin rules, if not set, default spam/rules is used"],
+  ["c_spamassassinquarantine","bool","","Allow quarantining messages when score is over C_AS_QuarantineScore"],
+  ["c_spamassassinreporting","bool","","Enable spam assassin reporting functions"],
+  ["c_spamassassinrulesstats","string","","Daily SpamAssassin statistics log file"],
+  ["c_spamassassinscore","bool","","Allow classifying messages as spam when score is over C_AS_SpamAssassinScoreValue"],
+  ["c_spamassassinscorevalue","string","","3.00; Score threshold for classifying message as spam"],
+  ["c_spamassassinthreadregex","bool","","Enable processing of SA rules in parallel"],
+  ["c_spambdelete","bool","","Obsolete, only for backward compatibility, use C_AS_BlacklistAction instead"],
+  ["c_spamblankmail","bool","","Score messages containing blank subject and blank body"],
+  ["c_spamblankmailscore","string","","1.00; Score for messages with blank subject and body"],
+  ["c_spamblist","bool","","Enable blacklist"],
+  ["c_spambypassgroupware","bool","","Whitelist senders in groupware address books"],
+  ["c_spambypassimroster","bool","","Whitelist senders in instant messaging server rosters"],
+  ["c_spambypassnonusers","bool","","Process unknown accounts"],
+  ["c_spamchallenge","bool","","Quarantine active"],
+  ["c_spamchallengeexpires","int","","7; Remove pending messages after (Days)"],
+  ["c_spamchallengefont","string","","Font used when generating challenge"],
+  ["c_spamchallengefontsize","int","","22; Font size used when generating challenge"],
+  ["c_spamchallengegenuine","int","","30; Obsolete"],
+  ["c_spamchallengelocaldomains","enum","","0 - do not quarantine / whitelist / blacklist local users; Quarantine mode for local domains"],
+  ["c_spamchallengemailfrom","string","","Challenge Response <>; Obsolete - spam report uses C_AS_SpamReportMailFrom"],
+  ["c_spamchallengemailsender","string","","<>; Obsolete - spam report uses C_AS_SpamReportMailSender"],
+  ["c_spamchallengemanual","bool","","Send challenge response email for messages to be quarantined"],
+  ["c_spamchallengemarked","bool","","Obsolete"],
+  ["c_spamchallengemovetospam","bool","","Deliver quarantine expired messages to mailbox as spam"],
+  ["c_spamchallengeoldcompatibility","bool","","Obsolete"],
+  ["c_spamchallengeperc","bool","","Obsolete"],
+  ["c_spamchallengesagenuine","string","","2.00; Obsolete"],
+  ["c_spamchallengesaperc","bool","","Obsolete"],
+  ["c_spamchallengesaspam","string","","10.00; Obsolete"],
+  ["c_spamchallengesendonce","bool","","Send report only once"],
+  ["c_spamchallengespam","int","","90; Obsolete"],
+  ["c_spamchallengeunmarked","bool","","Obsolete"],
+  ["c_spamchallengeurl","string","","https://icemail.designhost.ir/reports/; Spam reports URL"],
+  ["c_spamfoldername","string","","Spam; IMAP spam folder name when AS is integrated with IMAP"],
+  ["c_spamfreports","bool","","Enable spam folder reports by default"],
+  ["c_spamglactive","bool","","Enable greylisting"],
+  ["c_spamgladaptive","bool","","Turns on special adaptive mode for greylisting. Sender is greylisted after first message classified as spam is received from him"],
+  ["c_spamglallow","int","","120; Allow new session authorization after how many seconds"],
+  ["c_spamglauthorized","int","","30; Delete authorized sessions after how many days"],
+  ["c_spamgldisconnect","bool","","Disconnect client when greylisting"],
+  ["c_spamglmode","enum","","1 - sender; Greylisting mode"],
+  ["c_spamglownermode","enum","","0 - email; Greylisting owner mode"],
+  ["c_spamglpending","int","","24; Expire pending sessions after how many hours"],
+  ["c_spamglresponse","string","","Custom SMTP response when greylisting"],
+  ["c_spamhashactive","bool","","Enable spam hash evaluation"],
+  ["c_spamhashexpire","int","","360; Hash expiration time in minutes - whole file"],
+  ["c_spamhashmode","enum","","0 - subject + from; Hash calculation mode"],
+  ["c_spamhashscore","string","","3.00; Score to add when spamhash triggers"],
+  ["c_spamhashthreshold","int","","10; Count of messages with same hash per C_AS_SpamHashThresholdExpire minutes causing message to be classified as spam"],
+  ["c_spamhashthresholdexpire","int","","10; Hash expiration time in minutes"],
+  ["c_spamheloip","bool","","Enable scoring of messages where HELO host does not resolve to remote IP"],
+  ["c_spamheloipscore","string","","1.50; Score messages where HELO host does not resolve to remote IP"],
+  ["c_spamhtmlequal","bool","","Score HTML messages with different html and text parts"],
+  ["c_spamhtmlequalscore","string","","1.50; Score for messages with different html and text part"],
+  ["c_spamhtmlexternalurl","bool","","Score HTML messages with external images"],
+  ["c_spamhtmlexternalurlscore","string","","1.50; Score for messages with external URLs (images)"],
+  ["c_spamhtmlnotext","bool","","Score HTML messages with no text content"],
+  ["c_spamhtmlnotextscore","string","","1.50; Score for messages with no text content"],
+  ["c_spamhtmlotherfilters","string","","Broken - set this to anything to add C_AS_SpamHTMLOtherFiltersScore to each message"],
+  ["c_spamhtmlotherfiltersscore","string","","1.50; Broken - score for messages filtered by HTMLOtherFilters"],
+  ["c_spamhtmlscript","bool","","Score HTML messages containing scripts"],
+  ["c_spamhtmlscriptscore","string","","1.50; Score for messages containing scripts"],
+  ["c_spamlang","string","","Spam reports language"],
+  ["c_spammaxtextbytes","int","","4096; Limit the text of message body to given number of bytes"],
+  ["c_spammaxthreads","int","","8; Size of thread pool for antispam processing"],
+  ["c_spamnosenderdomain","bool","","Enable scoring of messages where originator's domain does not exist"],
+  ["c_spamnosenderdomainscore","string","","1.50; Score for messages where originator's domain does not exist"],
+  ["c_spamoutgoingrules","enum","","1 - process with antispam live only; Outgoing messages antispam mode"],
+  ["c_spamqreports","bool","","Enable quarantine reports by default"],
+  ["c_spamqreportsmode","enum","","0 - new items; Spam reports mode"],
+  ["c_spamreceivedheader","bool","","Score messages delivered with no intermediary server"],
+  ["c_spamreceivedheaderscore","string","","1.00; Score for messages delivered with no intermediary server"],
+  ["c_spamrefuse","enum","","0 - delete; Refused messages action mode"],
+  ["c_spamrefusepath","string","","Archive refused messages to account"],
+  ["c_spamremotesmtp","bool","","Enable scoring of messages where SMTP callback verification fails"],
+  ["c_spamremotesmtpconnecttimeout","int","",""],
+  ["c_spamremotesmtphelo","string","",""],
+  ["c_spamremotesmtpmax","int","",""],
+  ["c_spamremotesmtpport","int","",""],
+  ["c_spamremotesmtpscore","string","",""],
+  ["c_spamremotesmtptimeout","int","",""],
+  ["c_spamremotesmtpwhitelist","string","",""],
+  ["c_spamreportemail","string","",""],
+  ["c_spamreportmailfrom","string","",""],
+  ["c_spamreportmailsender","string","",""],
+  ["c_spamreportsubject","string","",""],
+  ["c_spamscore","string","",""],
+  ["c_spamscoreaction","enum","",""],
+  ["c_spamscoremode","enum","",""],
+  ["c_spamsendermismatch","bool","",""],
+  ["c_spamsendermismatchscore","string","",""],
+  ["c_spamsubjectspam","string","",""],
+  ["c_spamsubjectspamtag","string","",""],
+  ["c_spamtarpit","bool","",""],
+  ["c_spamtarpitdelay","int","",""],
+  ["c_spamtarpitlimit","int","",""],
+  ["c_spamtextreport","bool","",""],
+  ["c_spamtextreportwidth","int","",""],
+  ["c_spamunknownuser","bool","",""],
+  ["c_spamunknownuseraction","enum","",""],
+  ["c_spamunknownuserscore","string","",""],
+  ["c_spamvirusaction","enum","",""],
+  ["c_spamwhitelistaction","enum","",""],
+  ["c_spamwhitelistconfirm","bool","",""],
+  ["c_spamwhitelistexpire","int","",""],
+  ["c_spamwhitelistreply","string","",""],
+  ["c_spamwhitelistsubject","string","",""],
+  ["c_spamwhitelisttext","string","",""],
+  ["c_spamwhitelisttimeout","int","",""],
+];
+
+/* ============================================================
+   RENDER TABLE
+   ============================================================ */
+const tbody = document.getElementById('tbody');
+const countEl = document.getElementById('count');
+const searchInput = document.getElementById('search');
+
+function typeClass(t) {
+  switch (t.toLowerCase()) {
+    case 'bool': return 'type-bool';
+    case 'int': return 'type-int';
+    case 'string': return 'type-string';
+    case 'enum': return 'type-enum';
+    case 'schedule': return 'type-schedule';
+    default: return 'type-string';
+  }
+}
+
+function render(data) {
+  tbody.innerHTML = '';
+  if (data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:#94a3b8;">No matching keys found.</td></tr>';
+    countEl.textContent = '0 keys';
+    return;
+  }
+  data.forEach(([name, type, access, desc]) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="name">${name}</td>
+      <td><span class="type ${typeClass(type)}">${type}</span></td>
+      <td class="access ${access === 'r/o' ? 'access-ro' : access === 'r' ? 'access-r' : ''}">${access || '—'}</td>
+      <td class="desc">${desc || '—'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  countEl.textContent = data.length + ' keys';
+}
+
+/* ============================================================
+   SEARCH
+   ============================================================ */
+let sortCol = -1, sortAsc = true;
+let currentData = [...DATA];
+
+function filterAndRender() {
+  const q = searchInput.value.trim().toLowerCase();
+  let filtered = DATA;
+  if (q) {
+    filtered = DATA.filter(row =>
+      row[0].toLowerCase().includes(q) ||
+      row[1].toLowerCase().includes(q) ||
+      (row[3] || '').toLowerCase().includes(q) ||
+      (row[2] || '').toLowerCase().includes(q)
+    );
+  }
+  if (sortCol >= 0) {
+    filtered = [...filtered].sort((a, b) => {
+      const va = (a[sortCol] || '').toString().toLowerCase();
+      const vb = (b[sortCol] || '').toString().toLowerCase();
+      if (va < vb) return sortAsc ? -1 : 1;
+      if (va > vb) return sortAsc ? 1 : -1;
+      return 0;
+    });
+  }
+  currentData = filtered;
+  render(filtered);
+}
+
+searchInput.addEventListener('input', filterAndRender);
+
+document.querySelectorAll('thead th').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = parseInt(th.dataset.col, 10);
+    if (sortCol === col) {
+      sortAsc = !sortAsc;
+    } else {
+      sortCol = col;
+      sortAsc = true;
+    }
+    // update arrows
+    document.querySelectorAll('thead th .arrow').forEach(a => a.textContent = '↕');
+    th.querySelector('.arrow').textContent = sortAsc ? '↑' : '↓';
+    filterAndRender();
+  });
+});
+
+/* ============================================================
+   INITIAL RENDER
+   ============================================================ */
+filterAndRender();
+</script>
+
+</body>
+</html>
