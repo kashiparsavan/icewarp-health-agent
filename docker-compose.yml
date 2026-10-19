@@ -1,0 +1,24 @@
+services:
+  icewarp:
+    image: icewarptechnology/icewarp-server:14.3.0.12
+    container_name: icewarp
+    hostname: icemail.designhost.ir
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - /opt/icewarp/config:/opt/icewarp-data/config
+      - /opt/icewarp/mail:/opt/icewarp-data/mail
+      - /opt/icewarp/logs:/opt/icewarp-data/logs
+      - /opt/icewarp/spam:/opt/icewarp-data/spam
+      - /opt/icewarp/archive:/opt/icewarp-data/archive
+      - /opt/icewarp/backup:/opt/icewarp-data/backup
+      - /opt/icewarp/temp:/opt/icewarp-data/temp
+    environment:
+      - ICEWARP_ADMIN_USER=admin
+      - ICEWARP_ADMIN_PASS=ZKoH1De6PMq7dvhb
+      - ICEWARP_DOMAIN=designhost.ir
+      - ICEWARP_PUBLIC_HOSTNAME=icemail.designhost.ir
+      - MARIADB_HOST=127.0.0.1
+      - MARIADB_PORT=3306
+      - MARIADB_ROOT_USER=icewarp
+      - MARIADB_ROOT_PASSWORD=De6hbdvH1ZKoPMq7
