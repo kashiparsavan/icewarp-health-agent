@@ -24,6 +24,38 @@ After that, every invocation checks `origin/main` automatically. No cron or
 systemd change is needed if the agent is already scheduled; the updater runs at
 the start of each scheduled invocation.
 
+### Upgrading an existing customized checkout
+
+If `git pull --ff-only origin main` refuses because `config/agent.conf` or
+`config/icewarp.conf` has local edits, back up the files and preserve the edits:
+
+```bash
+cd /root/iceauto
+git status
+cp config/agent.conf  /root/agent.conf.bak
+cp config/icewarp.conf /root/icewarp.conf.bak
+
+# Option A: stash only the local config edits, then pull and reapply.
+git stash push -m "server config" -- config/agent.conf config/icewarp.conf
+git pull --ff-only origin main
+git stash pop
+
+# Option B: if you prefer a clean checkout, restore the tracked config files,
+# pull, then reapply MONITOR_URL/SEND_DATA/COMPANY_NAME/paths from the backups.
+# git checkout -- config/agent.conf config/icewarp.conf
+# git pull --ff-only origin main
+```
+
+Check for conflicts after `git stash pop` and verify the result:
+
+```bash
+./agent.sh --check-update
+./agent.sh --config          # dry-run: confirm recommended settings still read correctly
+```
+
+After this one-time upgrade, future updates preserve unstaged `config/*.conf`
+edits automatically.
+
 ## Requirements
 
 - The project must be a Git clone, not a downloaded ZIP or copied directory.
