@@ -38,11 +38,11 @@ configurator_run() {
         [ -z "$KEY" ] && continue
         [[ "$KEY" =~ ^# ]] && continue
 
-        # Check if key exists (allow spaces before colon)
+        # Check if key exists (allow leading spaces and case differences)
         local RAW
-        RAW="$(timeout 5 "$IW_TOOL" display system "$KEY" 2>/dev/null)"
-        
-        if ! echo "$RAW" | grep -q "^${KEY}[[:space:]]*:"; then
+        RAW="$(timeout "${TOOL_TIMEOUT:-5}" "$IW_TOOL" display system "$KEY" 2>/dev/null)"
+
+        if ! printf '%s\n' "$RAW" | grep -qiE "^[[:space:]]*${KEY}[[:space:]]*:"; then
             echo "[SKIP] $KEY ($DESC) - key not found"
             SKIPPED=$((SKIPPED+1))
             continue
@@ -50,7 +50,7 @@ configurator_run() {
 
         # Key exists, extract value (could be empty)
         local CURRENT
-        CURRENT="$(echo "$RAW" | sed "s/^${KEY}[[:space:]]*:[[:space:]]*//" | tr -d '[:space:]')"
+        CURRENT="$(printf '%s\n' "$RAW" | sed -E "s/^[[:space:]]*${KEY}[[:space:]]*:[[:space:]]*//I" | tr -d '[:space:]')"
         DESIRED="$(printf '%s' "$DESIRED" | tr -d '[:space:]')"
 
         if [ "$CURRENT" = "$DESIRED" ]; then
@@ -96,7 +96,7 @@ configurator_run() {
     local FAIL=0
     while IFS='|' read -r KEY DESIRED DESC; do
         printf "  %-55s -> %-15s ... " "$KEY" "$DESIRED"
-        if timeout 5 "$IW_TOOL" set system "$KEY" "$DESIRED" >/dev/null 2>&1; then
+        if timeout "${TOOL_TIMEOUT:-5}" "$IW_TOOL" set system "$KEY" "$DESIRED" >/dev/null 2>&1; then
             echo "OK"
         else
             echo "FAIL"
@@ -117,10 +117,10 @@ configurator_run() {
     echo "Verification (re-reading all values):"
     while IFS='|' read -r KEY DESIRED DESC; do
         local RAW
-        RAW="$(timeout 5 "$IW_TOOL" display system "$KEY" 2>/dev/null)"
-        if echo "$RAW" | grep -q "^${KEY}[[:space:]]*:"; then
+        RAW="$(timeout "${TOOL_TIMEOUT:-5}" "$IW_TOOL" display system "$KEY" 2>/dev/null)"
+        if printf '%s\n' "$RAW" | grep -qiE "^[[:space:]]*${KEY}[[:space:]]*:"; then
             local CURRENT
-            CURRENT="$(echo "$RAW" | sed "s/^${KEY}[[:space:]]*:[[:space:]]*//" | tr -d '[:space:]')"
+            CURRENT="$(printf '%s\n' "$RAW" | sed -E "s/^[[:space:]]*${KEY}[[:space:]]*:[[:space:]]*//I" | tr -d '[:space:]')"
             if [ "$CURRENT" = "$DESIRED" ]; then
                 echo "  [OK]   $KEY = '$CURRENT'"
             else

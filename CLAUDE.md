@@ -150,7 +150,11 @@ reads the key.
   and `MAIL_HOSTNAME` / `MAIL_PUBLIC_IP` (required for PTR/SPF/DKIM/DMARC
   collectors).
 - `config/recommended.conf` — desired `tool.sh` properties consumed only by the
-  configurator (`--config`); it is **not** sourced by `agent.sh`.
+  configurator (`--config`); it is **not** sourced by `agent.sh`. Keys must be
+  the canonical names from `tool.help`; verify each new key with
+  `grep -i '^<key> ' tool.help` before adding it. The configurator matches
+  returned keys case-insensitively, but it cannot invent a property that does
+  not exist in the installed IceWarp version.
 - `config/checklist.conf.pdf` — checklist source of truth.
 - `.env` — local Docker deployment values (gitignored). Copy `.env.example`
   and fill in real values; never commit `.env`.
@@ -227,6 +231,13 @@ graphify cluster-only . --no-label
 ```
 
 ## Change checklist
+
+For a configurator key:
+
+1. Confirm the key exists in `tool.help` and is writable (not `r/o`).
+2. Add it to `config/recommended.conf` as `key|value|description`.
+3. Run `./agent.sh --config` on the lab server and expect no
+   `key not found` lines for it before using `--apply`.
 
 For a collector change:
 
