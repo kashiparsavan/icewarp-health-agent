@@ -98,6 +98,13 @@ acquire_lock() {
     if [ -f "$LOCK_FILE" ]; then
         local OLD_PID
         OLD_PID="$(cat "$LOCK_FILE" 2>/dev/null)"
+
+        # Re-exec after an auto-update keeps the same PID. The existing lock
+        # is ours; keep it instead of treating it as a concurrent run.
+        if [ -n "$OLD_PID" ] && [ "$OLD_PID" = "$$" ]; then
+            return 0
+        fi
+
         if [ -n "$OLD_PID" ] && kill -0 "$OLD_PID" 2>/dev/null; then
             echo "[ERROR] Another agent run is already in progress (pid $OLD_PID). Aborting." >&2
             exit 1

@@ -32,9 +32,27 @@ cd icewarp-health-agent
 | `--technician="Name"` | Override technician name in reports |
 | `--company="Name"` | Override company name in reports |
 | `--config` / `--config --apply` | Preview or apply recommended IceWarp settings |
-| `--no-update` | Accepted for compatibility; currently a no-op |
+| `--check-update` | Check for a newer Git revision, then exit |
+| `--no-auto-update` | Skip the automatic Git update for this run |
+| `--auto-update` | Force an update check even if disabled in config |
+| `--no-update` | Deprecated no-op; use `--no-auto-update` |
 
-Current version: **0.4.0**.
+Current version: **0.5.0**.
+
+### Automatic updates
+
+The agent updates itself before every execution. It checks the configured Git
+branch (`origin/main` by default), fast-forwards only when the checkout is
+clean, validates the new shell files, and re-executes itself. Every attempt is
+written to `logs/auto_update.log`.
+
+The updater never merges, rebases, force-pulls, or overwrites local changes.
+Network and Git failures are logged and the current revision continues to run.
+See [`docs/auto-update.md`](docs/auto-update.md) for the full behavior,
+configuration, log statuses, and recovery steps.
+
+This only works from a Git clone. A ZIP/copied install runs the local files and
+skips the update check.
 
 ### Docker deployment (IceWarp server container)
 
@@ -52,24 +70,28 @@ committed to this repository, rotate them immediately.
 
 Architecture
 icewarp-health-agent/
-├── agent.sh                      # Entry point
+├── agent.sh                      # Entry point and self-update dispatch
 ├── lib/
+│   ├── auto_update.sh            # Git fetch / fast-forward / audit logging
 │   ├── common.sh                 # Shared utilities (collector_set, iw_get, etc.)
 │   ├── health.sh                 # Health evaluation rules
 │   ├── pdf.sh                    # Full technical PDF generator
 │   ├── management_report.sh      # Executive summary PDF generator
 │   ├── json.sh                   # JSON exporter
 │   └── transport.sh              # HTTP transport (disabled by default)
-├── collectors/                   # Data collectors organized in 12 categories
+├── collectors/                   # Data collectors organized by category
 ├── config/
-│   ├── agent.conf                # General agent settings
+│   ├── agent.conf                # General agent and auto-update settings
 │   ├── icewarp.conf              # IceWarp-specific paths
 │   └── checklist.conf.pdf        # Checklist definition (source of truth)
 ├── docs/
+│   ├── auto-update.md            # Auto-update behavior and recovery
 │   ├── checklist-map.md          # Mapping of checklist items to collectors
 │   ├── roadmap.md                # Project milestones and future plans
-│   └── tool-index.md             # IceWarp tool.sh API reference
-└── output/                       # Generated reports
+│   ├── tool-index.md             # IceWarp tool.sh API reference
+│   └── update-log.md             # Human-readable change/activity ledger
+├── logs/                         # Runtime logs (gitignored)
+└── output/                       # Generated reports (gitignored)
 
 Features
 Health Evaluation
@@ -125,9 +147,13 @@ ssh root@icewarp-server "/opt/icewarp-health-agent/agent.sh --report"
 scp root@icewarp-server:/opt/icewarp-health-agent/output/*.pdf .
 
 Dependencies
-Zero. Pure Bash plus standard Unix tools:
-curl, dig, openssl, awk, date, find, grep, sed,
-firewall-cmd.
+No runtime, package manager, database, or web server. Pure Bash plus standard
+Unix tools:
+
+curl, dig, openssl, awk, date, find, grep, sed, firewall-cmd.
+
+`git` is additionally required for automatic updates. Without it, the agent
+logs `git_missing` and continues with the local code.
 
 Checklist
 Based on IceWarp CheckList v1.12.
@@ -137,7 +163,9 @@ entries and collectors.
 Configuration
 Default settings work out of the box. Optional customization:
 
-config/agent.conf: General settings (timeouts, monitor URL).
+config/agent.conf: General settings (timeouts, monitor URL) and automatic
+update controls (`AUTO_UPDATE_ENABLED`, branch, origin, log path, and
+validation).
 
 config/icewarp.conf: IceWarp-specific paths.
 
@@ -161,7 +189,22 @@ remote-execution strategy.
 Transport (SEND_DATA=1) is implemented but not yet validated against
 a real monitoring endpoint.
 
+Automatic updates require a Git clone with the expected `origin` and no
+staged or unstaged code changes. Unstaged edits to `config/*.conf` are
+allowed and preserved; if an upstream commit touches the same config file,
+the fast-forward fails safely and is logged. A copied/ZIP install, a diverged
+branch, or a missing `git` binary causes the updater to skip with a logged
+reason. Because the
+updater follows a branch and runs as the agent user, protect that branch;
+anyone who can push to it can execute code on the mail server.
+
 Documentation
+docs/auto-update.md: Automatic update behavior, configuration, log statuses,
+and recovery.
+
+docs/update-log.md: Human-readable activity ledger; update it with every
+intentional change.
+
 docs/checklist-map.md: Mapping between checklist items and collectors.
 
 docs/roadmap.md: Project milestones and future work.
@@ -169,6 +212,8 @@ docs/roadmap.md: Project milestones and future work.
 docs/tool-index.md: Reference of tool.sh properties.
 
 CHANGELOG.md: Version history.
+
+CLAUDE.md: Guidance for AI agents and maintainers working in the repository.
 
 License
 See the LICENSE file.

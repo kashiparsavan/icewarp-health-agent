@@ -13,7 +13,7 @@ IceWarp Checklist (v1.12), and produces:
 - `output/report.pdf` — full technical report
 - `output/management_report.pdf` — non-technical executive summary
 
-Current version: **0.4.0** (`VERSION`, `config/agent.conf`). Target platform:
+Current version: **0.5.0** (`VERSION`, `config/agent.conf`). Target platform:
 Linux (RHEL/Rocky/AlmaLinux and Debian/Ubuntu families) with Bash 4+ and GNU
 coreutils. There is no runtime, package manager, database, or web server.
 
@@ -29,7 +29,10 @@ Run from the repository root **on the IceWarp server** (normally as root):
 ./agent.sh --technician="Name" --company="Company"
 ./agent.sh --config                         # show recommended-config diff (dry run)
 ./agent.sh --config --apply                 # apply changes with tool.sh set system
-./agent.sh --no-update                      # parsed but currently has no effect
+./agent.sh --check-update                   # fetch and report update availability, then exit
+./agent.sh --no-auto-update                 # skip self-update for this run
+./agent.sh --auto-update                    # force a self-update check
+./agent.sh --no-update                      # deprecated no-op
 ```
 
 Development / diagnostics (still Linux + IceWarp):
@@ -50,9 +53,11 @@ verified without exercising it on a lab server.
 
 ```
 agent.sh
+  ├─ sources config/agent.conf and config/icewarp.conf
+  ├─ sources lib/auto_update.sh → fetch origin/main, fast-forward, log
+  │    └─ on update: re-exec agent.sh with AGENT_UPDATE_REEXEC=1
   ├─ sources lib/common.sh, health.sh, pdf.sh, json.sh,
   │  management_report.sh, transport.sh, configurator.sh
-  ├─ sources config/agent.conf and config/icewarp.conf
   ├─ find collectors -name '*.sh' | sort → source + collector_run() for each
   │    └─ collectors write flat dotted keys into DATA[]
   ├─ evaluate_health()  → HEALTH[] + health.<item>.result/.message in DATA[]
@@ -62,8 +67,18 @@ agent.sh
   └─ build_management_pdf() → output/management_report.pdf
 ```
 
+The updater is the only code that runs before the normal library load. It
+must remain self-contained: it cannot rely on `common.sh`, `DATA`, or any
+collector helper.
+
 Key implementation details:
 
+- **Auto-update runs before the rest of the libraries are sourced.** It only
+  fast-forwards a checkout with no staged/code changes (unstaged `config/*.conf`
+  edits are preserved), validates all shell files with `bash -n`, reverts on
+  validation failure, and re-executes `agent.sh` after a successful update.
+  Update activity goes to `logs/auto_update.log`; it must never write into a
+  tracked file, because that would dirty the tree and block future updates.
 - **Collector discovery is dynamic and alphabetical by path.** Any `.sh` under
   `collectors/**` is sourced and run. Order matters: for example
   `collectors/icewarp/storage_paths.sh` runs before
@@ -145,7 +160,9 @@ reads the key.
 ## Configuration
 
 - `config/agent.conf` — `AGENT_VERSION`, `MONITOR_URL`, `SEND_DATA`,
-  `OUTPUT_JSON`, `TOOL_TIMEOUT`, `COMPANY_NAME`.
+  `OUTPUT_JSON`, `TOOL_TIMEOUT`, `COMPANY_NAME`, and the `AUTO_UPDATE_*`
+  settings (`ENABLED`, `REMOTE`, `BRANCH`, `TIMEOUT`, `EXPECTED_ORIGIN`,
+  `REEXEC`, `VALIDATE`, `LOG`, `LOG_MAX_BYTES`).
 - `config/icewarp.conf` — install paths (`IW_*`), `IW_SSL_CERT`, DNS resolver,
   and `MAIL_HOSTNAME` / `MAIL_PUBLIC_IP` (required for PTR/SPF/DKIM/DMARC
   collectors).
@@ -161,6 +178,32 @@ reads the key.
 
 `agent.sh` sources only `agent.conf` and `icewarp.conf` by basename; adding a
 new `.conf` requires updating that loading loop.
+
+## Automatic updates (v0.5.0)
+
+`lib/auto_update.sh` runs before `agent.sh` sources the normal libraries:
+
+1. Verify the checkout is a Git work tree and `origin` matches
+   `AUTO_UPDATE_EXPECTED_ORIGIN`.
+2. Refuse staged changes or unstaged code changes. Unstaged `config/*.conf`
+   edits are allowed and preserved; a same-file upstream change makes the
+   fast-forward fail safely.
+3. Fetch `AUTO_UPDATE_REMOTE` / `AUTO_UPDATE_BRANCH` with a timeout.
+4. Fast-forward only when the local HEAD is an ancestor of the remote.
+5. Run `bash -n` on `agent.sh` and every `*.sh`; revert to the old SHA if
+   validation fails.
+6. Log every attempt to `logs/auto_update.log` and re-exec `agent.sh` after a
+   successful update.
+
+It never merges, rebases, force-pulls, or overwrites local changes. Git/network
+failures are non-fatal: the agent logs the reason and continues with the local
+revision. Normal runs hold `.agent.lock` across the update and re-exec (the
+same PID keeps the lock valid); `.agent.update.lock` serializes concurrent
+checks, including `--check-update`.
+
+Configuration is in `config/agent.conf`. The detailed operator guide, status
+list, and recovery steps are in `docs/auto-update.md`. Every intentional
+project change must also be recorded in `docs/update-log.md`.
 
 ## Reports
 
@@ -206,6 +249,13 @@ long values, and empty strings. All PDF generation happens on every full run.
   (`.env.example` is the template). Plaintext credentials remain in the
   repository's git history from an earlier commit — treat them as compromised
   and rotate them. Never commit secrets.
+- Automatic updates require a clean Git clone. A copied/ZIP install logs
+  `not_git`; a dirty tree logs `dirty_tree` and keeps running the local code.
+  The updater follows `origin/main` by default, so branch protection is the
+  real security boundary: a push to that branch runs as the agent user.
+- `logs/auto_update.log` is runtime data and gitignored. Do not add runtime
+  update entries to `docs/update-log.md`; that file is the committed,
+  human-readable change ledger.
 
 ## Knowledge graph (Graphify)
 
@@ -249,3 +299,7 @@ For a collector change:
 6. Run the full agent and inspect `output/health.json` plus both PDFs.
 7. Verify the JSON remains valid and existing key names are unchanged unless
    intentionally breaking.
+8. Record the change in `docs/update-log.md` and `CHANGELOG.md`, and update
+   every affected guide (`README.md`, `CLAUDE.md`, `docs/auto-update.md`, or
+   the checklist docs). Replace the `pending` commit hash in the activity log
+   after committing.

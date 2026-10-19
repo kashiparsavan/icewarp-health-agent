@@ -2,6 +2,7 @@
 output/*
 logs/*
 .agent.lock
+.agent.update.lock/
 
 # Local secrets and deployment configuration
 .env

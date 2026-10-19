@@ -105,7 +105,7 @@ run_agent_full() {
     log_info "Running full agent to collect data..."
     
     local AGENT_OUTPUT
-    AGENT_OUTPUT=$(./agent.sh --report --technician="ValidityTest" --no-update 2>&1)
+    AGENT_OUTPUT=$(./agent.sh --report --technician="ValidityTest" --no-auto-update 2>&1)
     local EXIT_CODE=$?
 
     if [ $EXIT_CODE -ne 0 ]; then

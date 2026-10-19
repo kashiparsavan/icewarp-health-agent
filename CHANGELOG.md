@@ -3,6 +3,47 @@
 All notable changes to this project are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.5.0] - 2026-10-19
+
+### Added
+
+- Automatic self-update before every agent invocation. The updater follows
+  `origin/main` by default, fast-forwards only, and re-executes the agent so
+  the current run uses the new code (`lib/auto_update.sh`).
+- `--check-update` to report whether a newer revision is available without
+  changing files.
+- `--no-auto-update` to skip the update check for one run, and
+  `--auto-update` to force a check when disabled in configuration.
+- Append-only update audit log at `logs/auto_update.log`, with size-based
+  rotation and credential redaction.
+- Update lock (`.agent.update.lock`) to prevent concurrent Git operations.
+- Normal runs hold `.agent.lock` across the update and re-exec; lock ownership
+  is preserved by PID, so a second scheduled run cannot rewrite files under an
+  active run.
+- Pre-merge guards: expected-origin check, clean tracked working tree, and
+  fast-forward-only merge.
+- Post-update `bash -n` validation of `agent.sh` and all shell scripts. A
+  failed revision is automatically reverted to the previous commit.
+- `docs/auto-update.md` and `docs/update-log.md` for operating and auditing
+  automatic updates.
+
+### Fixed
+
+- Configurator property names now use canonical IceWarp v14.3 `tool.help`
+  keys instead of guessed/legacy names. This removes the large number of
+  `[SKIP] ... key not found` results during `./agent.sh --config`.
+- Configurator key matching is case-insensitive and tolerates leading
+  whitespace in `tool.sh display system` output.
+- Configurator calls honor `TOOL_TIMEOUT` instead of a hardcoded 5 seconds.
+
+### Changed
+
+- `VERSION` and `config/agent.conf` bumped to `0.5.0`.
+- `--no-update` remains a deprecated no-op; use `--no-auto-update` for agent
+  updates.
+- `maintenance/collectors_validity_checker.sh` disables auto-update during
+  validation runs.
+
 ## [0.4.0] - 2026-09-23
 
 ### Major Overhaul

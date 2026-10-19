@@ -1,6 +1,6 @@
 # Roadmap
 
-Last updated: 2026-09-23 (v0.4.0)
+Last updated: 2026-10-19 (v0.5.0)
 
 ## Current State
 
@@ -12,6 +12,20 @@ Last updated: 2026-09-23 (v0.4.0)
 | M3 - Mail Server and Advanced Checks | 100% | All SMTP, DNS, security, logging, watchdog, archive, backup collectors |
 | M4 - JSON and Transport | 70% | JSON solid, transport implemented but not validated against a real endpoint |
 | M5 - Health Rules and Reports | 95% | health.sh, pdf.sh, management_report.sh all working |
+| M6 - Operations and Auto-update | 100% | fast-forward updater, validation, locking, audit log, operator docs |
+
+## What Was Done in v0.5.0
+
+- Added automatic fast-forward Git updates before every agent invocation.
+- Added re-exec after update so the current run uses the new code.
+- Added clean-tree, expected-origin, timeout, and fast-forward-only guards.
+- Added post-update `bash -n` validation with automatic rollback.
+- Added `.agent.update.lock` to serialize concurrent update checks.
+- Added append-only `logs/auto_update.log` with rotation and credential
+  redaction.
+- Added `--check-update`, `--no-auto-update`, and `--auto-update`.
+- Fixed configurator property names to canonical v14.3 `tool.help` keys.
+- Added `docs/auto-update.md` and `docs/update-log.md`.
 
 ## What Was Done in v0.4.0
 
@@ -59,6 +73,7 @@ Last updated: 2026-09-23 (v0.4.0)
 
 | Version | Date | Highlights |
 |---|---|---|
+| 0.5.0 | 2026-10-19 | Automatic fast-forward updates, update audit log, validation/rollback, configurator key fixes |
 | 0.4.0 | 2026-09-23 | Complete overhaul of health rules, management report, license, backup, archive, watchdog |
 | 0.3.0 | 2026-07-11 | Initial Health Rules and PDF writer |
 | 0.2.0 | 2026-06-28 | Storage refactor |
