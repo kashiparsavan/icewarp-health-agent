@@ -33,6 +33,8 @@ For every change:
 | 2026-10-19 | `dd82f5d` | Docs / security | Added `CLAUDE.md`; moved Compose credentials to required `.env` variables; added `.env.example`; fixed backup DB summary keys in `lib/health.sh`. | `CLAUDE.md`, `README.md`, `.env.example`, `.gitignore`, `.gitattributes` |
 | 2026-10-19 | `92f711f` | Fix | Replaced guessed/legacy configurator properties with 78 canonical IceWarp v14.3 `tool.help` keys; added missing SMTP, security, login, watchdog, and monitor settings; made key matching case-insensitive. | `config/recommended.conf`, `lib/configurator.sh`, `CLAUDE.md` |
 | 2026-10-19 | `e15499d` | Feature | Added automatic fast-forward Git updates before every agent run, re-exec after update, shell syntax validation with rollback and config preservation, branch/origin/clean-tree guards, run/update locking, and append-only audit logging. | `agent.sh`, `lib/auto_update.sh`, `lib/common.sh`, `config/agent.conf`, `VERSION`, `README.md`, `CHANGELOG.md`, `CLAUDE.md`, `docs/auto-update.md`, `docs/update-log.md`, `docs/roadmap.md` |
+| 2026-10-19 | `b266ab7` | Fix | Required the checked-out branch to match `AUTO_UPDATE_BRANCH`; documented the branch guard and clarified clean-tree/config-edit behavior. | `lib/auto_update.sh`, `config/agent.conf`, `README.md`, `CHANGELOG.md`, `CLAUDE.md`, `docs/auto-update.md` |
+| 2026-10-19 | `b91d3ed` | Docs | Added first-time activation and customized-checkout upgrade instructions, including config backup/stash/pull/reapply steps. | `docs/auto-update.md` |
 
 ## Runtime update log format
 
