@@ -10,6 +10,20 @@ The updater is intentionally conservative. It will **never** merge, rebase,
 force-push, or overwrite staged/code changes. Unstaged per-server edits under
 `config/*.conf` are preserved; a same-file upstream change aborts the update.
 
+## First-time activation
+
+Auto-update cannot bootstrap itself into a checkout that does not already have
+this code. On an existing installation, pull this release once manually:
+
+```bash
+cd /root/iceauto
+git pull --ff-only origin main
+```
+
+After that, every invocation checks `origin/main` automatically. No cron or
+systemd change is needed if the agent is already scheduled; the updater runs at
+the start of each scheduled invocation.
+
 ## Requirements
 
 - The project must be a Git clone, not a downloaded ZIP or copied directory.

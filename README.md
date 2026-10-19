@@ -52,7 +52,8 @@ See [`docs/auto-update.md`](docs/auto-update.md) for the full behavior,
 configuration, log statuses, and recovery steps.
 
 This only works from a Git clone. A ZIP/copied install runs the local files and
-skips the update check.
+skips the update check. An existing clone must pull this release once manually
+(`git pull --ff-only origin main`); after that, every run checks automatically.
 
 ### Docker deployment (IceWarp server container)
 
