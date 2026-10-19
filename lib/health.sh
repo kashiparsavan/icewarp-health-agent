@@ -323,9 +323,9 @@ evaluate_health() {
         os_update
         password_policy
         backup.auto
-        backup.db.accounts.enabled
-        backup.db.as.enabled
-        backup.db.gw.enabled
+        backup.db.accounts
+        backup.db.as
+        backup.db.gw
         backup.last_time
     )
 

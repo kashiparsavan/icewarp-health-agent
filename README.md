@@ -19,18 +19,36 @@ defined checklist, and generates three output files.
 git clone https://github.com/kashiparsavan/icewarp-health-agent.git
 cd icewarp-health-agent
 ./agent.sh --report --technician="Your Name" --company="Your Company"
+```
 
-Command-Line Options
-Option	Description
-./agent.sh	Full run: collect, evaluate, JSON, PDF
-./agent.sh --report	Same, and print summary to stdout
-./agent.sh --list	List all available collectors
---only=<filter>	Run only collectors containing <filter> (comma-separated)
---technician="Name"	Override technician name in reports
---company="Name"	Override company name in reports
---no-update	Skip OS update check
-Current Version
-0.4.0
+### Command-Line Options
+
+| Option | Description |
+|--------|-------------|
+| `./agent.sh` | Full run: collect, evaluate, JSON, PDF |
+| `./agent.sh --report` | Same, and print summary to stdout |
+| `./agent.sh --list` | List all available collectors |
+| `--only=<filter>` | Run only collectors containing `<filter>` (comma-separated) |
+| `--technician="Name"` | Override technician name in reports |
+| `--company="Name"` | Override company name in reports |
+| `--config` / `--config --apply` | Preview or apply recommended IceWarp settings |
+| `--no-update` | Accepted for compatibility; currently a no-op |
+
+Current version: **0.4.0**.
+
+### Docker deployment (IceWarp server container)
+
+`docker-compose.yml` starts the IceWarp server container, not the health agent.
+Copy the example environment file, fill in real values, and start it:
+
+```bash
+cp .env.example .env
+# edit .env with your domain, hostname, and credentials
+docker compose up -d
+```
+
+`.env` is gitignored. Never commit credentials. If credentials were ever
+committed to this repository, rotate them immediately.
 
 Architecture
 icewarp-health-agent/

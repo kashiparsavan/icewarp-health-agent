@@ -2,3 +2,9 @@
 output/*
 logs/*
 .agent.lock
+
+# Local secrets and deployment configuration
+.env
+
+# Graphify code-graph artifacts (regenerate with `graphify extract . --code-only`)
+graphify-out/
