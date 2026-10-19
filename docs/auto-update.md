@@ -32,6 +32,7 @@ the start of each scheduled invocation.
   Unstaged per-server edits under `config/*.conf` are allowed; Git still
   aborts the fast-forward if an incoming commit touches the same config file.
 - The configured remote and branch must exist.
+- The checked-out local branch must be `AUTO_UPDATE_BRANCH` (`main` by default).
 - The remote URL must match `AUTO_UPDATE_EXPECTED_ORIGIN`.
 
 If any requirement is not met, the agent logs the reason and continues with the
@@ -42,7 +43,8 @@ current code. Auto-update failures are never fatal.
 1. Normal runs first acquire `.agent.lock`; `--check-update` skips the run
    lock. The updater then acquires `.agent.update.lock` so two update checks
    cannot overlap.
-2. Verify `PROJECT_ROOT` is a Git work tree.
+2. Verify `PROJECT_ROOT` is a Git work tree and the checked-out branch is
+   `AUTO_UPDATE_BRANCH`.
 3. Verify `origin` matches `AUTO_UPDATE_EXPECTED_ORIGIN`.
 4. Refuse to continue if there are staged changes or unstaged changes outside
    `config/*.conf`. Unstaged per-server config edits are preserved.
@@ -114,6 +116,7 @@ Possible statuses:
 | `git_missing` | `git` is not installed |
 | `locked` | Another update check is running |
 | `origin_mismatch` | Remote URL is not the expected repository |
+| `wrong_branch` | Checked-out branch is not `AUTO_UPDATE_BRANCH` |
 | `dirty_tree` | Staged changes or unstaged code changes are present |
 | `fetch_failed` | Network, authentication, or timeout failure |
 | `ahead` | Local branch is ahead of the remote |

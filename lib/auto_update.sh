@@ -205,6 +205,7 @@ _au_validate_checkout() {
 _au_update_locked() {
     local OLD_SHA
     local REMOTE_SHA
+    local LOCAL_BRANCH
     local FETCH_OUT
     local MERGE_OUT
     local NEW_SHA
@@ -229,6 +230,14 @@ _au_update_locked() {
         _au_log "origin_mismatch" "$OLD_SHA" "" \
             "Origin does not match AUTO_UPDATE_EXPECTED_ORIGIN=${AUTO_UPDATE_EXPECTED_ORIGIN}"
         echo "[WARN] Auto-update: git origin is not the expected repository; skipping"
+        return 0
+    fi
+
+    LOCAL_BRANCH="$(_au_git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+    if [ "$LOCAL_BRANCH" != "$AUTO_UPDATE_BRANCH" ]; then
+        _au_log "wrong_branch" "$OLD_SHA" "" \
+            "Checked-out branch is '${LOCAL_BRANCH}', not '${AUTO_UPDATE_BRANCH}'"
+        echo "[INFO] Auto-update: checked-out branch is not ${AUTO_UPDATE_BRANCH}; skipping"
         return 0
     fi
 

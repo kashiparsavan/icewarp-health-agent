@@ -183,8 +183,8 @@ new `.conf` requires updating that loading loop.
 
 `lib/auto_update.sh` runs before `agent.sh` sources the normal libraries:
 
-1. Verify the checkout is a Git work tree and `origin` matches
-   `AUTO_UPDATE_EXPECTED_ORIGIN`.
+1. Verify the checkout is a Git work tree, the checked-out branch matches
+   `AUTO_UPDATE_BRANCH`, and `origin` matches `AUTO_UPDATE_EXPECTED_ORIGIN`.
 2. Refuse staged changes or unstaged code changes. Unstaged `config/*.conf`
    edits are allowed and preserved; a same-file upstream change makes the
    fast-forward fail safely.

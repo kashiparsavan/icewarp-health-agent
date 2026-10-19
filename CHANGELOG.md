@@ -20,8 +20,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 - Normal runs hold `.agent.lock` across the update and re-exec; lock ownership
   is preserved by PID, so a second scheduled run cannot rewrite files under an
   active run.
-- Pre-merge guards: expected-origin check, clean tracked working tree, and
-  fast-forward-only merge.
+- Pre-merge guards: checked-out branch, expected origin, clean tracked working
+  tree, and fast-forward-only merge.
 - Post-update `bash -n` validation of `agent.sh` and all shell scripts. A
   failed revision is automatically reverted to the previous commit.
 - `docs/auto-update.md` and `docs/update-log.md` for operating and auditing

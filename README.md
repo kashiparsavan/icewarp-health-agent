@@ -42,9 +42,10 @@ Current version: **0.5.0**.
 ### Automatic updates
 
 The agent updates itself before every execution. It checks the configured Git
-branch (`origin/main` by default), fast-forwards only when the checkout is
-clean, validates the new shell files, and re-executes itself. Every attempt is
-written to `logs/auto_update.log`.
+branch (`origin/main` by default), fast-forwards only when there are no staged
+or code changes (unstaged `config/*.conf` edits are preserved), validates the
+new shell files, and re-executes itself. Every attempt is written to
+`logs/auto_update.log`.
 
 The updater never merges, rebases, force-pulls, or overwrites local changes.
 Network and Git failures are logged and the current revision continues to run.
@@ -193,9 +194,9 @@ a real monitoring endpoint.
 Automatic updates require a Git clone with the expected `origin` and no
 staged or unstaged code changes. Unstaged edits to `config/*.conf` are
 allowed and preserved; if an upstream commit touches the same config file,
-the fast-forward fails safely and is logged. A copied/ZIP install, a diverged
-branch, or a missing `git` binary causes the updater to skip with a logged
-reason. Because the
+the fast-forward fails safely and is logged. A copied/ZIP install, a different
+checked-out branch, a diverged branch, or a missing `git` binary causes the
+updater to skip with a logged reason. Because the
 updater follows a branch and runs as the agent user, protect that branch;
 anyone who can push to it can execute code on the mail server.
 
