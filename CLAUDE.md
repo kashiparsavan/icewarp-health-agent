@@ -7,13 +7,14 @@ Guidance for Claude Code (and other AI agents) working in this repository.
 **IceWarp Health Agent** is a dependency-free, Bash-based health-check and
 reporting tool for IceWarp mail servers. It runs on the mail server, collects
 data from `tool.sh`, OS commands, and DNS, evaluates the results against the
-IceWarp Checklist (v1.12), and produces:
+IceWarp Checklist (report label v1.14; item set still the v1.12-mapped 113
+items), and produces:
 
 - `output/health.json` — flat, type-aware JSON for monitoring systems
 - `output/report.pdf` — full technical report
 - `output/management_report.pdf` — non-technical executive summary
 
-Current version: **0.5.0** (`VERSION`, `config/agent.conf`). Target platform:
+Current version: **0.6.0** (`VERSION`, `config/agent.conf`). Target platform:
 Linux (RHEL/Rocky/AlmaLinux and Debian/Ubuntu families) with Bash 4+ and GNU
 coreutils. There is no runtime, package manager, database, or web server.
 
@@ -34,6 +35,10 @@ Run from the repository root **on the IceWarp server** (normally as root):
 ./agent.sh --auto-update                    # force a self-update check
 ./agent.sh --no-update                      # deprecated no-op
 ```
+
+If `--technician` is omitted the report uses `Parsavan`. If `--company` is
+omitted it uses `domain.primary.name`, then `MAIL_DOMAIN`, then the first
+`tool.sh` domain, then `MAIL_HOSTNAME`.
 
 Development / diagnostics (still Linux + IceWarp):
 
@@ -134,7 +139,7 @@ Actual thresholds in code (the README is partially stale):
 | Backup | auto backup and Accounts/AntiSpam/GroupWare DB backups critical if disabled; last run < 2 d pass, 2–7 d warn, > 7 d critical |
 | Watchdog | master + SMTP/POP3-IMAP/IM/VoIP/GroupWare critical if disabled |
 | OS update | ≤ 7 d pass, 8–30 d warn, > 30 d critical |
-| Summary | only a fixed `SUMMARY_KEYS` list feeds `health.summary.*` |
+| Summary | `SUMMARY_KEYS` is the nine-pillar list: backup, mail_flow, tls, access, threat, resources, os_update, monitoring, database |
 
 `SUMMARY_KEYS` must match the keys passed to `_health_set`. This was previously
 broken: the list referenced `backup.db.*.enabled` while the rules stored
@@ -159,10 +164,10 @@ reads the key.
 
 ## Configuration
 
-- `config/agent.conf` — `AGENT_VERSION`, `MONITOR_URL`, `SEND_DATA`,
-  `OUTPUT_JSON`, `TOOL_TIMEOUT`, `COMPANY_NAME`, and the `AUTO_UPDATE_*`
-  settings (`ENABLED`, `REMOTE`, `BRANCH`, `TIMEOUT`, `EXPECTED_ORIGIN`,
-  `REEXEC`, `VALIDATE`, `LOG`, `LOG_MAX_BYTES`).
+- `config/agent.conf` — `AGENT_VERSION`, `CHECKLIST_VERSION`, `MONITOR_URL`,
+  `SEND_DATA`, `OUTPUT_JSON`, `TOOL_TIMEOUT`, `COMPANY_NAME`, and the
+  `AUTO_UPDATE_*` settings (`ENABLED`, `REMOTE`, `BRANCH`, `TIMEOUT`,
+  `EXPECTED_ORIGIN`, `REEXEC`, `VALIDATE`, `LOG`, `LOG_MAX_BYTES`).
 - `config/icewarp.conf` — install paths (`IW_*`), `IW_SSL_CERT`, DNS resolver,
   and `MAIL_HOSTNAME` / `MAIL_PUBLIC_IP` (required for PTR/SPF/DKIM/DMARC
   collectors).
@@ -214,8 +219,20 @@ report) contain a small hand-written PDF writer:
 - Low-level helpers: `_pdf_rect`, `_pdf_text`, `_pdf_text_trunc`,
   `_layout_*` and `_mr_*`.
 - Text escaping strips non-ASCII; reports are English-only.
-- The management report shows only the 8 headline categories: backup,
-  RAM, CPU, HDD, login blocking, SSL, OS update, password policy.
+- The technical cover and both report footers use `CHECKLIST_VERSION` (v1.14
+  by default). The technical Health Summary uses the nine executive pillars:
+  backup, mail_flow, tls, access, threat, resources, os_update, monitoring,
+  database.
+- The technical appendix groups raw keys by subsystem into key/value tables;
+  table headers repeat when a group crosses a page boundary. Non-cover pages
+  carry the report name and page number.
+- The management report is a soft-cyberpunk executive summary: dark cover with
+  score arc, executive overview, control-area scorecards with stacked status
+  bars, and prioritized recommended actions. It evaluates the full checklist
+  but prints only management-level findings.
+- `--technician` defaults to `Parsavan`; `--company` falls back to the mail
+  domain (`domain.primary.name`, `MAIL_DOMAIN`, first `tool.sh` domain,
+  `MAIL_HOSTNAME`).
 
 When editing reports, use the existing layout helpers and check page breaks,
 long values, and empty strings. All PDF generation happens on every full run.

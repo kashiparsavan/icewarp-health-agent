@@ -1,6 +1,11 @@
-# IceWarp Checklist v1.12 - Complete Coverage Report
+# IceWarp Checklist v1.14 - Complete Coverage Report
 
-Last updated: 2026-10-19 (after Docker migration and configurator implementation)
+Last updated: 2026-10-20 (v0.6.0 report redesign)
+
+> **Edition note:** v1.14 is an internal IceWarp checklist edition label. The
+> repository still contains the v1.12-mapped 113-item checklist; only the
+> displayed report version changed. Item-level alignment to a future v1.14
+> source requires the internal diff.
 
 Legend:
 - FULL: fully collected and evaluated (PASS/WARN/CRITICAL)
@@ -9,7 +14,7 @@ Legend:
 - N/A: not applicable to this environment (e.g., SQLite install without remote MySQL)
 - INFO: collected but only displayed as informational
 
-## Original Checklist (99 items)
+## v1.12 Source Checklist (99 items)
 
 | # | Section | Item | Status | Collector / Key | Notes |
 |---|---------|------|--------|-----------------|-------|

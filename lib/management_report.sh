@@ -20,24 +20,38 @@
 
 MR_PAGE_W=612
 MR_PAGE_H=792
-MR_MARGIN=40
-MR_TOP_Y=752
-MR_BOTTOM_Y=44
+MR_MARGIN=44
+MR_TOP_Y=744
+MR_BOTTOM_Y=52
 MR_RIGHT=$((MR_PAGE_W - MR_MARGIN))
 MR_CONTENT_W=$((MR_RIGHT - MR_MARGIN))
 
-MR_C_TERRACOTTA="0.72 0.32 0.20"
-MR_C_TERRACOTTA_DARK="0.55 0.22 0.14"
-MR_C_AMBER="0.87 0.60 0.20"
-MR_C_CREAM="0.99 0.96 0.92"
-MR_C_CREAM_ROW="0.97 0.92 0.86"
-MR_C_BROWN_TEXT="0.30 0.19 0.13"
-MR_C_BROWN_SOFT="0.52 0.40 0.33"
+# "Soft cyberpunk" palette: deep ink surfaces, desaturated teal and violet
+# accents, and restrained status colours. All text pairings target WCAG AA
+# contrast on their respective backgrounds.
+MR_C_INK="0.043 0.063 0.102"
+MR_C_INK_2="0.075 0.102 0.153"
+MR_C_NAVY="0.075 0.118 0.196"
+MR_C_GRID="0.105 0.145 0.205"
+MR_C_SURFACE="0.965 0.973 0.984"
+MR_C_CARD="1 1 1"
+MR_C_BORDER="0.855 0.890 0.930"
+MR_C_TEXT="0.090 0.120 0.170"
+MR_C_MUTED="0.360 0.410 0.480"
+MR_C_TEAL="0.160 0.700 0.640"
+MR_C_TEAL_DARK="0.055 0.470 0.430"
+MR_C_TEAL_LIGHT="0.550 0.900 0.850"
+MR_C_VIOLET="0.480 0.420 0.850"
+MR_C_VIOLET_DARK="0.350 0.300 0.700"
+MR_C_ROSE="0.830 0.280 0.380"
+MR_C_ROSE_DARK="0.690 0.180 0.280"
+MR_C_AMBER="0.900 0.630 0.200"
+MR_C_AMBER_DARK="0.670 0.420 0.080"
+MR_C_GREEN="0.100 0.550 0.440"
+MR_C_GREEN_DARK="0.070 0.420 0.340"
+MR_C_SLATE="0.400 0.460 0.550"
 MR_C_WHITE="1 1 1"
-MR_C_GREEN="0.22 0.55 0.30"
-MR_C_RED="0.75 0.24 0.18"
-MR_C_GRAY="0.62 0.60 0.57"
-MR_C_INFO_BADGE="0.35 0.45 0.58"
+MR_CHECKLIST_VERSION="${CHECKLIST_VERSION:-1.14}"
 
 # =============================================================================
 # SECTION 3: HELPER FUNCTIONS
@@ -67,8 +81,180 @@ BT /${4} ${5} Tf ${1} ${2} Td (${ESC}) Tj ET
 
 _mr_text_trunc() {
     local MAXC="$7" TXT="$3"
-    [ "${#TXT}" -gt "$MAXC" ] && TXT="${TXT:0:$((MAXC-1))}."
+    if [ "${#TXT}" -gt "$MAXC" ]; then
+        TXT="${TXT:0:$((MAXC-3))}"
+        TXT="${TXT% }..."
+    fi
     _mr_text "$1" "$2" "$TXT" "$4" "$5" "$6"
+}
+
+_mr_text_center() {
+    local CX="$1" Y="$2" TXT="$3" FONT="$4" SIZE="$5" COLOR="$6"
+    local W
+    W="$(awk -v n="${#TXT}" -v s="$SIZE" 'BEGIN{printf "%.1f", n*s*0.52}')"
+    _mr_text "$(awk -v c="$CX" -v w="$W" 'BEGIN{printf "%.1f", c-w/2}')" "$Y" "$TXT" "$FONT" "$SIZE" "$COLOR"
+}
+
+_mr_text_right() {
+    local RX="$1" Y="$2" TXT="$3" FONT="$4" SIZE="$5" COLOR="$6"
+    local W
+    W="$(awk -v n="${#TXT}" -v s="$SIZE" 'BEGIN{printf "%.1f", n*s*0.52}')"
+    _mr_text "$(awk -v r="$RX" -v w="$W" 'BEGIN{printf "%.1f", r-w}')" "$Y" "$TXT" "$FONT" "$SIZE" "$COLOR"
+}
+
+_mr_line() {
+    local X1="$1" Y1="$2" X2="$3" Y2="$4" W="${5:-0.6}" COLOR="${6:-$MR_C_BORDER}"
+    _MR_CUR="${_MR_CUR}${COLOR} RG
+${W} w
+${X1} ${Y1} m ${X2} ${Y2} l S
+"
+}
+
+_mr_round_rect() {
+    local X="$1" Y="$2" W="$3" H="$4" R="$5" COLOR="$6"
+    local X2=$((X + W)) Y2=$((Y + H)) K=$((R * 55 / 100))
+    [ "$K" -lt 1 ] && K=1
+    _MR_CUR="${_MR_CUR}${COLOR} rg
+$((X + R)) ${Y} m
+$((X2 - R)) ${Y} l
+$((X2 - R + K)) ${Y} $((X2)) $((Y + R - K)) ${X2} $((Y + R)) c
+${X2} $((Y2 - R)) l
+${X2} $((Y2 - R + K)) $((X2 - R + K)) ${Y2} $((X2 - R)) ${Y2} c
+$((X + R)) ${Y2} l
+$((X + R - K)) ${Y2} ${X} $((Y2 - R + K)) ${X} $((Y2 - R)) c
+${X} $((Y + R)) l
+${X} $((Y + R - K)) $((X + R - K)) ${Y} $((X + R)) ${Y} c
+f
+"
+}
+
+_mr_card() {
+    local X="$1" Y="$2" W="$3" H="$4" R="${5:-6}"
+    _mr_round_rect "$X" "$Y" "$W" "$H" "$R" "$MR_C_BORDER"
+    _mr_round_rect "$((X + 1))" "$((Y + 1))" "$((W - 2))" "$((H - 2))" "$((R - 1))" "$MR_C_CARD"
+}
+
+_mr_dark_card() {
+    local X="$1" Y="$2" W="$3" H="$4" R="${5:-6}"
+    _mr_round_rect "$X" "$Y" "$W" "$H" "$R" "0.120 0.160 0.230"
+    _mr_round_rect "$((X + 1))" "$((Y + 1))" "$((W - 2))" "$((H - 2))" "$((R - 1))" "$MR_C_INK_2"
+}
+
+_mr_ring() {
+    local CX="$1" CY="$2" R="$3" WIDTH="$4" COLOR="$5"
+    local K X0 X1 Y0 Y1
+    K="$(awk -v r="$R" 'BEGIN{printf "%.3f", r*0.5523}')"
+    X0="$(awk -v c="$CX" -v r="$R" 'BEGIN{printf "%.2f", c-r}')"
+    X1="$(awk -v c="$CX" -v r="$R" 'BEGIN{printf "%.2f", c+r}')"
+    Y0="$(awk -v c="$CY" -v r="$R" 'BEGIN{printf "%.2f", c-r}')"
+    Y1="$(awk -v c="$CY" -v r="$R" 'BEGIN{printf "%.2f", c+r}')"
+    _MR_CUR="${_MR_CUR}${COLOR} RG
+${WIDTH} w
+${CX} ${Y1} m
+$(awk -v cx="$CX" -v k="$K" -v y1="$Y1" 'BEGIN{printf "%.2f %.2f", cx+k, y1}') $(awk -v x1="$X1" -v cy="$CY" -v k="$K" 'BEGIN{printf "%.2f %.2f", x1, cy+k}') ${X1} ${CY} c
+$(awk -v x1="$X1" -v cy="$CY" -v k="$K" 'BEGIN{printf "%.2f %.2f", x1, cy-k}') $(awk -v cx="$CX" -v k="$K" -v y0="$Y0" 'BEGIN{printf "%.2f %.2f", cx+k, y0}') ${CX} ${Y0} c
+$(awk -v cx="$CX" -v k="$K" -v y0="$Y0" 'BEGIN{printf "%.2f %.2f", cx-k, y0}') $(awk -v x0="$X0" -v cy="$CY" -v k="$K" 'BEGIN{printf "%.2f %.2f", x0, cy-k}') ${X0} ${CY} c
+$(awk -v x0="$X0" -v cy="$CY" -v k="$K" 'BEGIN{printf "%.2f %.2f", x0, cy+k}') $(awk -v cx="$CX" -v k="$K" -v y1="$Y1" 'BEGIN{printf "%.2f %.2f", cx-k, y1}') ${CX} ${Y1} c
+S
+"
+}
+
+_mr_arc() {
+    local CX="$1" CY="$2" R="$3" WIDTH="$4" COLOR="$5" PERCENT="$6"
+    [ "${PERCENT:-0}" -le 0 ] && return
+    local ARC
+    ARC="$(awk -v cx="$CX" -v cy="$CY" -v r="$R" -v p="$PERCENT" 'BEGIN{
+        n=72; pi=atan2(0,-1); a0=pi/2; sweep=-2*pi*p/100;
+        for (i=0; i<=n; i++) {
+            a=a0+sweep*i/n;
+            x=cx+r*cos(a); y=cy+r*sin(a);
+            if (i==0) printf "%.2f %.2f m\n", x, y;
+            else printf "%.2f %.2f l\n", x, y;
+        }
+    }')"
+    _MR_CUR="${_MR_CUR}${COLOR} RG
+${WIDTH} w
+${ARC}
+S
+"
+}
+
+_mr_paragraph() {
+    local X="$1" Y="$2" TEXT="$3" MAXC="$4" FONT="$5" SIZE="$6" COLOR="$7" LEAD="${8:-13}" MAXLINES="${9:-0}"
+    LEAD="${LEAD%%.*}"
+    local -a WORDS=()
+    read -ra WORDS <<< "$TEXT"
+    local LINE="" CAND="" COUNT=0 W
+    for W in "${WORDS[@]}"; do
+        if [ -z "$LINE" ]; then
+            CAND="$W"
+        else
+            CAND="${LINE} ${W}"
+        fi
+        if [ "${#CAND}" -le "$MAXC" ]; then
+            LINE="$CAND"
+        else
+            _mr_text "$X" "$Y" "$LINE" "$FONT" "$SIZE" "$COLOR"
+            Y=$((Y - LEAD))
+            COUNT=$((COUNT + 1))
+            if [ "$MAXLINES" -gt 0 ] && [ "$COUNT" -ge "$MAXLINES" ]; then
+                _MR_LAST_Y=$Y
+                return
+            fi
+            LINE="$W"
+        fi
+    done
+    if [ -n "$LINE" ]; then
+        _mr_text "$X" "$Y" "$LINE" "$FONT" "$SIZE" "$COLOR"
+        Y=$((Y - LEAD))
+    fi
+    _MR_LAST_Y=$Y
+}
+
+_mr_status_color() {
+    case "$1" in
+        PASS|pass)          echo "$MR_C_TEAL" ;;
+        WARN|warn)          echo "$MR_C_AMBER" ;;
+        CRITICAL|FAIL|fail) echo "$MR_C_ROSE" ;;
+        INFO|info)          echo "$MR_C_VIOLET" ;;
+        *)                  echo "$MR_C_SLATE" ;;
+    esac
+}
+
+_mr_status_fill() {
+    case "$1" in
+        PASS|pass)          echo "$MR_C_GREEN_DARK" ;;
+        WARN|warn)          echo "$MR_C_AMBER" ;;
+        CRITICAL|FAIL|fail) echo "$MR_C_ROSE_DARK" ;;
+        INFO|info)          echo "$MR_C_VIOLET_DARK" ;;
+        *)                  echo "$MR_C_SLATE" ;;
+    esac
+}
+
+_mr_status_text_color() {
+    case "$1" in
+        WARN|warn) echo "$MR_C_INK" ;;
+        *)         echo "$MR_C_WHITE" ;;
+    esac
+}
+
+_mr_status_word() {
+    case "$1" in
+        PASS|pass)          echo "Healthy" ;;
+        WARN|warn)          echo "Review" ;;
+        CRITICAL|FAIL|fail) echo "Action" ;;
+        INFO|info)          echo "Info" ;;
+        *)                  echo "N/A" ;;
+    esac
+}
+
+_mr_overall_word() {
+    case "$1" in
+        pass) echo "Healthy" ;;
+        warn) echo "Needs review" ;;
+        fail) echo "Action required" ;;
+        *)    echo "Not assessed" ;;
+    esac
 }
 
 _mr_circle() {
@@ -97,78 +283,169 @@ f
 _MR_PAGES=()
 _MR_CUR=""
 _MR_Y=$MR_TOP_Y
+_MR_BG="$MR_C_SURFACE"
+_MR_FOOTER=1
+_MR_PAGE_NO=0
+
+_mr_background() {
+    _MR_CUR="${_MR_BG} rg
+0 0 ${MR_PAGE_W} ${MR_PAGE_H} re f
+"
+}
+
+_mr_page_header() {
+    _mr_text "$MR_MARGIN" 766 "ICEWARP HEALTH ASSESSMENT" "F2" 6.8 "$MR_C_TEAL_DARK"
+    _mr_text_right "$MR_RIGHT" 766 "MANAGEMENT SUMMARY" "F1" 6.8 "$MR_C_MUTED"
+    _mr_line "$MR_MARGIN" 754 "$MR_RIGHT" 754 0.6 "$MR_C_BORDER"
+    _MR_Y=732
+}
+
+_mr_page_footer() {
+    _mr_line "$MR_MARGIN" 40 "$MR_RIGHT" 40 0.5 "$MR_C_BORDER"
+    _mr_text "$MR_MARGIN" 27 "PARSAVAN  |  ICEWARP HEALTH AGENT" "F1" 6.2 "$MR_C_MUTED"
+    _mr_text "$((MR_MARGIN + 190))" 27 "CONFIDENTIAL" "F1" 6.2 "$MR_C_MUTED"
+    _mr_text_right "$MR_RIGHT" 27 "Page ${_MR_PAGE_NO}" "F1" 6.2 "$MR_C_MUTED"
+}
 
 _mr_new_page() {
-    [ -n "$_MR_CUR" ] && _MR_PAGES+=("$_MR_CUR")
+    if [ -n "$_MR_CUR" ]; then
+        [ "$_MR_FOOTER" = "1" ] && _mr_page_footer
+        _MR_PAGES+=("$_MR_CUR")
+    fi
     _MR_CUR=""
-    _MR_Y=$MR_TOP_Y
+    _MR_PAGE_NO=$((_MR_PAGE_NO + 1))
+    _mr_background
+    if [ "$_MR_FOOTER" = "1" ]; then
+        _mr_page_header
+    else
+        _MR_Y=$MR_TOP_Y
+    fi
 }
 
 _mr_ensure() {
     if [ "$((_MR_Y - $1))" -lt "$MR_BOTTOM_Y" ]; then _mr_new_page; fi
 }
 
-_mr_finish() { [ -n "$_MR_CUR" ] && _MR_PAGES+=("$_MR_CUR"); }
-
-_mr_section_header() {
-    _mr_ensure 30
-    _MR_Y=$((_MR_Y - 4))
-    _mr_rect "$MR_MARGIN" "$((_MR_Y - 16))" "$MR_CONTENT_W" 20 "$MR_C_TERRACOTTA"
-    _mr_text "$((MR_MARGIN + 8))" "$((_MR_Y - 11))" "$1" "F2" 10.5 "$MR_C_WHITE"
-    _MR_Y=$((_MR_Y - 28))
+_mr_finish() {
+    if [ -n "$_MR_CUR" ]; then
+        [ "$_MR_FOOTER" = "1" ] && _mr_page_footer
+        _MR_PAGES+=("$_MR_CUR")
+    fi
 }
 
-# =============================================================================
-# SECTION 5: STATUS STYLING AND GRID
-# =============================================================================
+# Parser callback: records the active checklist section for collection.
+_mr_section_header() {
+    local SEC="$1"
+    _MR_CUR_SECTION="$SEC"
+    if [ -z "${_MR_SEC_SEEN[$SEC]:-}" ]; then
+        _MR_SEC_SEEN["$SEC"]=1
+        _MR_SECTION_ORDER+=("$SEC")
+        _MR_SEC_PASS["$SEC"]=0
+        _MR_SEC_WARN["$SEC"]=0
+        _MR_SEC_CRIT["$SEC"]=0
+        _MR_SEC_INFO["$SEC"]=0
+        _MR_SEC_NA["$SEC"]=0
+    fi
+}
 
-_mr_status_style() {
+_mr_section_title() {
+    local NUM="$1" TITLE="$2" SUB="${3:-}"
+    _mr_ensure 58
+    _mr_text "$MR_MARGIN" "$_MR_Y" "${NUM}  /  ${TITLE^^}" "F2" 7.2 "$MR_C_TEAL_DARK"
+    _MR_Y=$((_MR_Y - 22))
+    _mr_text "$MR_MARGIN" "$_MR_Y" "$TITLE" "F2" 19 "$MR_C_TEXT"
+    if [ -n "$SUB" ]; then
+        _MR_Y=$((_MR_Y - 16))
+        _mr_text "$MR_MARGIN" "$_MR_Y" "$SUB" "F1" 8.4 "$MR_C_MUTED"
+    fi
+    _MR_Y=$((_MR_Y - 12))
+    _mr_line "$MR_MARGIN" "$_MR_Y" "$MR_RIGHT" "$_MR_Y" 0.8 "$MR_C_BORDER"
+    _MR_Y=$((_MR_Y - 18))
+}
+
+
+# =============================================================================
+# SECTION 5: CHECKLIST COLLECTION
+# =============================================================================
+# The management report deliberately does not print the 100+ item checklist.
+# The same evaluator runs, but results are collected into section scorecards,
+# an executive distribution and a short priority list.
+
+_MR_CUR_SECTION=""
+_MR_TOTAL=0
+_MR_PASS=0
+_MR_WARN=0
+_MR_CRIT=0
+_MR_INFO=0
+_MR_NA=0
+_MR_SECTION_ORDER=()
+_MR_ISSUES=()
+declare -Ag _MR_SEC_SEEN
+declare -Ag _MR_SEC_PASS
+declare -Ag _MR_SEC_WARN
+declare -Ag _MR_SEC_CRIT
+declare -Ag _MR_SEC_INFO
+declare -Ag _MR_SEC_NA
+
+_mr_priority() {
     case "$1" in
-        OK) echo "$MR_C_GREEN:✔" ;;
-        PASS) echo "$MR_C_GREEN:✔" ;;
-        WARN) echo "$MR_C_AMBER:!" ;;
-        CRITICAL) echo "$MR_C_RED:X" ;;
-        FAIL) echo "$MR_C_RED:X" ;;
-        NA) echo "$MR_C_GRAY:-" ;;
-        INFO) echo "$MR_C_INFO_BADGE:i" ;;
-        *) echo "$MR_C_GRAY:?" ;;
+        "Backup, Watchdog and Monitoring")              echo 1 ;;
+        "DNS & Mail Flow Verification")                  echo 2 ;;
+        "Storage, Certificates and Services")            echo 3 ;;
+        "Intrusion Prevention - Block Rules")            echo 4 ;;
+        "Rejection Rules and Access")                    echo 5 ;;
+        "SMTP Protocol Hardening")                       echo 6 ;;
+        "Protocol and Access Hardening")                 echo 7 ;;
+        "SMTP Delivery Settings")                        echo 8 ;;
+        "APP OS / Infrastructure")                       echo 9 ;;
+        "Database"|"MySQL Server (Remote DB)")           echo 10 ;;
+        *)                                               echo 20 ;;
     esac
 }
 
-_MR_COL=0
-_mr_grid_reset() { _MR_COL=0; }
+_mr_grid_reset() { :; }
 
 _mr_grid_item() {
     local LABEL="$1" STATUS="$2"
-    local STYLE; STYLE="$(_mr_status_style "$STATUS")"
-    local COLOR="${STYLE%%:*}"
-    local LETTER="${STYLE#*:}"
+    local SEC="${_MR_CUR_SECTION:-Uncategorised}"
+    [ -z "${_MR_SEC_SEEN[$SEC]:-}" ] && _mr_section_header "$SEC"
 
-    local COL_W=$((MR_CONTENT_W / 2))
-    local X=$((MR_MARGIN + (_MR_COL * COL_W)))
-
-    if [ "$_MR_COL" -eq 0 ]; then
-        _mr_ensure 20
-    fi
-
-    local CY=$((_MR_Y - 7))
-    _mr_circle "$((X + 9))" "$CY" 6 "$COLOR"
-    _mr_text "$((X + 6))" "$((CY - 3))" "$LETTER" "F2" 6.5 "$MR_C_WHITE"
-    _mr_text_trunc "$((X + 22))" "$((_MR_Y - 9))" "$LABEL" "F1" 8.3 "$MR_C_BROWN_TEXT" 46
-
-    if [ "$_MR_COL" -eq 0 ]; then
-        _MR_COL=1
-    else
-        _MR_COL=0
-        _MR_Y=$((_MR_Y - 17))
-    fi
+    _MR_TOTAL=$((_MR_TOTAL + 1))
+    case "$STATUS" in
+        PASS)
+            _MR_PASS=$((_MR_PASS + 1))
+            _MR_SEC_PASS["$SEC"]=$(( ${_MR_SEC_PASS[$SEC]:-0} + 1 ))
+            ;;
+        WARN)
+            _MR_WARN=$((_MR_WARN + 1))
+            _MR_SEC_WARN["$SEC"]=$(( ${_MR_SEC_WARN[$SEC]:-0} + 1 ))
+            _MR_ISSUES+=("$(_mr_priority "$SEC")|2|${SEC}|${LABEL}|WARN")
+            ;;
+        CRITICAL|FAIL)
+            _MR_CRIT=$((_MR_CRIT + 1))
+            _MR_SEC_CRIT["$SEC"]=$(( ${_MR_SEC_CRIT[$SEC]:-0} + 1 ))
+            _MR_ISSUES+=("$(_mr_priority "$SEC")|1|${SEC}|${LABEL}|CRITICAL")
+            ;;
+        INFO)
+            _MR_INFO=$((_MR_INFO + 1))
+            _MR_SEC_INFO["$SEC"]=$(( ${_MR_SEC_INFO[$SEC]:-0} + 1 ))
+            ;;
+        *)
+            _MR_NA=$((_MR_NA + 1))
+            _MR_SEC_NA["$SEC"]=$(( ${_MR_SEC_NA[$SEC]:-0} + 1 ))
+            ;;
+    esac
 }
 
-_mr_grid_end_row() {
-    if [ "$_MR_COL" -ne 0 ]; then
-        _MR_COL=0
-        _MR_Y=$((_MR_Y - 17))
-    fi
+_mr_grid_end_row() { :; }
+
+_mr_section_status() {
+    local SEC="$1"
+    if [ "${_MR_SEC_CRIT[$SEC]:-0}" -gt 0 ]; then echo "CRITICAL"
+    elif [ "${_MR_SEC_WARN[$SEC]:-0}" -gt 0 ]; then echo "WARN"
+    elif [ "${_MR_SEC_PASS[$SEC]:-0}" -gt 0 ]; then echo "PASS"
+    elif [ "${_MR_SEC_INFO[$SEC]:-0}" -gt 0 ]; then echo "INFO"
+    else echo "NA"; fi
 }
 
 # =============================================================================
@@ -849,86 +1126,606 @@ _mr_render_checklist() {
 _mr_cover_letter() {
     local HOST="${DATA[agent.hostname]:-unknown}"
     local GEN="${DATA[agent.time]:-unknown}"
-    local COMPANY="${DATA[general.company]:-Unknown Host}"
-    local TECHNICIAN="${DATA[general.technician]:-Not Specified}"
-    local OVERALL="${DATA[health.summary.overall]:-n/a}"
-    local FAILED="${DATA[health.summary.failed]:-0}"
-    local WARNINGS="${DATA[health.summary.warnings]:-0}"
-    local CHECKED="${DATA[health.summary.total_checks]:-0}"
+    local COMPANY="${DATA[general.company]:-Unknown}"
+    local DOMAIN="${DATA[domain.primary.name]:-not returned}"
+    local TECHNICIAN="${DATA[general.technician]:-Parsavan}"
+    local DATE_TXT
+    DATE_TXT="$(date -d "$GEN" '+%d %B %Y' 2>/dev/null || echo "$GEN")"
+    local OVERALL="${_MR_OVERALL:-pass}"
+    local SCORE="${_MR_SCORE:-0}"
+    local AREAS="${#_MR_SECTION_ORDER[@]}"
 
-    _mr_rect 0 0 "$MR_PAGE_W" "$MR_PAGE_H" "$MR_C_CREAM"
-    _mr_rect 0 700 "$MR_PAGE_W" 92 "$MR_C_TERRACOTTA_DARK"
-    _mr_rect 0 692 "$MR_PAGE_W" 8 "$MR_C_AMBER"
-    _mr_text "$MR_MARGIN" 750 "IceWarp Health Check Report" "F2" 21 "$MR_C_WHITE"
-    _mr_text "$MR_MARGIN" 726 "Prepared for ${COMPANY}" "F3" 12 "$MR_C_WHITE"
-    _mr_text "$MR_MARGIN" 708 "Technician: ${TECHNICIAN}" "F1" 9.5 "$MR_C_WHITE"
+    _MR_FOOTER=0
+    _MR_BG="$MR_C_INK"
+    _MR_PAGE_NO=1
+    _MR_Y=$MR_TOP_Y
+    _mr_background
 
-    _MR_Y=650
-    _mr_text "$MR_MARGIN" "$_MR_Y" "$(date -d "$GEN" '+%B %d, %Y' 2>/dev/null || echo "$GEN")" "F1" 10 "$MR_C_BROWN_SOFT"
-    _MR_Y=$((_MR_Y - 30))
+    # Subtle technical grid and layered rings: cyberpunk structure, low noise.
+    local I
+    for ((I=0; I<=MR_PAGE_W; I+=36)); do
+        _mr_line "$I" 0 "$I" "$MR_PAGE_H" 0.3 "$MR_C_GRID"
+    done
+    for ((I=0; I<=MR_PAGE_H; I+=36)); do
+        _mr_line 0 "$I" "$MR_PAGE_W" "$I" 0.3 "$MR_C_GRID"
+    done
+    _mr_circle 512 604 192 "0.060 0.085 0.125"
+    _mr_ring 512 604 176 0.8 "0.100 0.180 0.220"
+    _mr_ring 512 604 132 0.6 "0.120 0.220 0.260"
 
-    local -a PARA=(
-        "This report summarizes the results of an automated health and security review"
-        "carried out on your IceWarp mail server (${HOST}). The review covers mail delivery"
-        "configuration, security hardening, backup and monitoring status, and certificate"
-        "validity, evaluated against our standard IceWarp deployment checklist."
-        ""
-        "Overall, ${CHECKED} checks were carried out. ${FAILED} required attention and ${WARNINGS} are"
-        "flagged as warnings worth reviewing; the rest are configured correctly."
-        ""
-        "The following pages summarize the results by category. A green mark means the"
-        "item is configured correctly; amber flags something worth reviewing; red items"
-        "need attention. A full technical report with detailed findings is available on"
-        "request."
-    )
-    local LINE
-    for LINE in "${PARA[@]}"; do
-        _mr_text "$MR_MARGIN" "$_MR_Y" "$LINE" "F1" 10.5 "$MR_C_BROWN_TEXT"
-        _MR_Y=$((_MR_Y - 17))
+    _mr_rect "$MR_MARGIN" 716 8 8 "$MR_C_TEAL"
+    _mr_text "$((MR_MARGIN + 14))" 716 "PARSAVAN" "F2" 8 "$MR_C_WHITE"
+    _mr_text "$((MR_MARGIN + 82))" 716 "ICEWARP HEALTH AGENT" "F1" 7 "$MR_C_MUTED"
+    _mr_text_right "$MR_RIGHT" 716 "CHECKLIST v${MR_CHECKLIST_VERSION}" "F1" 7 "$MR_C_TEAL_LIGHT"
+
+    _mr_text "$MR_MARGIN" 640 "MANAGEMENT SUMMARY" "F2" 8.5 "$MR_C_TEAL_LIGHT"
+    _mr_text "$MR_MARGIN" 600 "Health Check Report" "F2" 30 "$MR_C_WHITE"
+    _mr_text "$MR_MARGIN" 570 "Mail security, resilience and service health at a glance." "F1" 10.5 "$MR_C_MUTED"
+
+    _mr_line "$MR_MARGIN" 548 "$((MR_MARGIN + 112))" 548 2 "$MR_C_TEAL"
+
+    _mr_text "$MR_MARGIN" 518 "PREPARED FOR" "F2" 6.8 "$MR_C_TEAL_LIGHT"
+    _mr_text "$MR_MARGIN" 492 "$COMPANY" "F2" 19 "$MR_C_WHITE"
+    _mr_text "$MR_MARGIN" 472 "$DOMAIN" "F1" 10 "$MR_C_MUTED"
+    _mr_text "$MR_MARGIN" 452 "Server: ${HOST}   |   Generated: ${DATE_TXT}" "F1" 8 "$MR_C_MUTED"
+
+    _mr_text "$MR_MARGIN" 430 "OVERALL POSTURE" "F1" 6.8 "$MR_C_MUTED"
+    local PILL_FILL
+    PILL_FILL="$(_mr_status_fill "$OVERALL")"
+    _mr_round_rect "$MR_MARGIN" 398 196 30 8 "$PILL_FILL"
+    _mr_text "$((MR_MARGIN + 12))" 408 "$(_mr_overall_word "$OVERALL")  |  ${SCORE}% pass rate" "F2" 8.6 "$(_mr_status_text_color "$OVERALL")"
+
+    _mr_text "$MR_MARGIN" 366 "${_MR_TOTAL} controls assessed across ${AREAS} operational areas" "F1" 8.2 "$MR_C_MUTED"
+
+    # Score ring
+    _mr_ring 500 420 48 8 "$MR_C_INK_2"
+    _mr_arc 500 420 48 5 "$(_mr_status_color "$OVERALL")" "$SCORE"
+    _mr_circle 500 420 36 "$MR_C_INK"
+    _mr_text_center 500 424 "${SCORE}%" "F2" 18 "$MR_C_WHITE"
+    _mr_text_center 500 406 "CONTROL SCORE" "F1" 5.8 "$MR_C_MUTED"
+
+    # Four headline metrics
+    local KPI_Y=246 KPI_H=76 KPI_W=122 GAP=12
+    local KPI_X="$MR_MARGIN"
+    local -a KPI_LABELS=("CONTROLS" "HEALTHY" "REVIEW" "ACTION")
+    local -a KPI_VALUES=("$_MR_TOTAL" "$_MR_PASS" "$_MR_WARN" "$_MR_CRIT")
+    local -a KPI_COLORS=("$MR_C_TEAL" "$MR_C_GREEN" "$MR_C_AMBER" "$MR_C_ROSE")
+    local K
+    for K in 0 1 2 3; do
+        _mr_dark_card "$KPI_X" "$KPI_Y" "$KPI_W" "$KPI_H" 9
+        _mr_line "$KPI_X" "$((KPI_Y + KPI_H - 3))" "$((KPI_X + KPI_W))" "$((KPI_Y + KPI_H - 3))" 2 "${KPI_COLORS[$K]}"
+        _mr_text "$((KPI_X + 12))" "$((KPI_Y + 44))" "${KPI_VALUES[$K]}" "F2" 22 "$MR_C_WHITE"
+        _mr_text "$((KPI_X + 12))" "$((KPI_Y + 18))" "${KPI_LABELS[$K]}" "F1" 6.8 "$MR_C_MUTED"
+        KPI_X=$((KPI_X + KPI_W + GAP))
     done
 
-    _MR_Y=$((_MR_Y - 20))
-    local BANNER_COLOR="$MR_C_GREEN"
-    [ "$OVERALL" = "warn" ] && BANNER_COLOR="$MR_C_AMBER"
-    [ "$OVERALL" = "fail" ] && BANNER_COLOR="$MR_C_RED"
-    _mr_rect "$MR_MARGIN" "$((_MR_Y - 46))" "$MR_CONTENT_W" 46 "$BANNER_COLOR"
-    _mr_text "$((MR_MARGIN + 16))" "$((_MR_Y - 20))" "Overall Status: $(echo "$OVERALL" | tr '[:lower:]' '[:upper:]')" "F2" 15 "$MR_C_WHITE"
-    _mr_text "$((MR_MARGIN + 16))" "$((_MR_Y - 37))" "${CHECKED} checks  -  ${FAILED} need attention  -  ${WARNINGS} warnings" "F1" 9.5 "$MR_C_WHITE"
-    _MR_Y=$((_MR_Y - 70))
+    _mr_line "$MR_MARGIN" 96 "$MR_RIGHT" 96 0.5 "0.120 0.170 0.230"
+    _mr_text "$MR_MARGIN" 76 "Technician: ${TECHNICIAN}" "F1" 7 "$MR_C_MUTED"
+    _mr_text "$((MR_MARGIN + 220))" 76 "Based on IceWarp CheckList v${MR_CHECKLIST_VERSION}" "F1" 7 "$MR_C_MUTED"
+    _mr_text_right "$MR_RIGHT" 76 "CONFIDENTIAL" "F2" 7 "$MR_C_TEAL_LIGHT"
+    _mr_text "$MR_MARGIN" 58 "This report is a management summary. The technical report contains item-level evidence and raw data." "F1" 6.4 "$MR_C_MUTED"
 
-    _mr_text "$MR_MARGIN" "$_MR_Y" "Legend:" "F2" 8.5 "$MR_C_BROWN_TEXT"
-    local LX=$((MR_MARGIN + 46))
-    local LY="$_MR_Y"
-    local ITEMS=("PASS:Configured correctly" "WARN:Needs review" "CRITICAL:Needs attention" "NA:Not applicable" "INFO:Informational value")
-    local IT
-    for IT in "${ITEMS[@]}"; do
-        local ST="${IT%%:*}" LBL="${IT#*:}"
-        local ITEM_W=$((18 + 6*${#LBL} + 16))
-        if [ "$((LX + ITEM_W))" -gt "$MR_RIGHT" ]; then
-            LX=$((MR_MARGIN + 46))
-            LY=$((LY - 18))
-        fi
-        local STYLE; STYLE="$(_mr_status_style "$ST")"
-        _mr_circle "$((LX + 6))" "$((LY + 3))" 6 "${STYLE%%:*}"
-        _mr_text "$((LX + 6 - 3))" "$LY" "${STYLE#*:}" "F2" 6.5 "$MR_C_WHITE"
-        _mr_text "$((LX + 18))" "$LY" "$LBL" "F1" 8 "$MR_C_BROWN_TEXT"
-        LX=$((LX + ITEM_W))
-    done
-    _MR_Y="$LY"
-
+    _MR_FOOTER=0
+    _MR_BG="$MR_C_SURFACE"
     _mr_new_page
+    _MR_FOOTER=1
+    _mr_page_header
 }
 
 # =============================================================================
-# SECTION 10: MAIN BUILDER
+# SECTION 10: MANAGEMENT DASHBOARD RENDERERS
+# =============================================================================
+
+_mr_display_label() {
+    case "$1" in
+        "Enable System Backup")                         echo "Automatic System Backup" ;;
+        "Last Backup Date and Time")                    echo "Backup Freshness" ;;
+        "Check DMARC")                                  echo "DMARC Record" ;;
+        "Check SPF")                                    echo "SPF Record" ;;
+        "Check DKIM")                                   echo "DKIM Record" ;;
+        "Check PTR")                                    echo "PTR Record" ;;
+        "Check TLS and Start TLS")                      echo "STARTTLS Support" ;;
+        "Use TLS/SSL (Secured Delivery)")               echo "TLS for Delivery" ;;
+        "Check for Certificates")                       echo "Certificate Validity" ;;
+        "Password Policy Min Length")                   echo "Password Policy" ;;
+        "2FA")                                          echo "2FA Bypass" ;;
+        "Disable VRFY")                                 echo "SMTP VRFY" ;;
+        "Block Outgoing Port 9001")                     echo "Outbound Port 9001" ;;
+        "Hide Server Version")                          echo "SMTP Banner Version" ;;
+        "Disable DIGEST-MD5")                           echo "DIGEST-MD5 Authentication" ;;
+        "Disable Cloud Features")                       echo "Cloud Features" ;;
+        "Disable AntiSpam Live")                        echo "AntiSpam Live" ;;
+        "Process POP3/IMAP")                            echo "POP3/IMAP Intrusion Rules" ;;
+        "Remove Old AntiSpam Folders")                  echo "Legacy AntiSpam Folders" ;;
+        "Set Directory Cache Schedule")                 echo "Directory Cache Schedule" ;;
+        "Change Admin URL")                             echo "Admin URL" ;;
+        "Change Admin Port")                            echo "Admin Port" ;;
+        "Set customers-stat@parsavan.com"|"Set Admin Email") echo "Alert Mailbox" ;;
+        "Database Type")                                echo "Database Platform" ;;
+        "APP OS Last Update")                           echo "OS Patch Level" ;;
+        "Repository Access")                            echo "Package Repository Access" ;;
+        "Time Sync (OS-level NTP)")                     echo "Time Synchronisation" ;;
+        "Swap Usage (7 days)")                          echo "Swap Usage" ;;
+        "CPU Usage")                                    echo "CPU Load" ;;
+        "RAM (Total KB / Available KB)")                echo "Memory Headroom" ;;
+        "Disk (Total GB / Used %)")                     echo "Disk Headroom" ;;
+        "MySQL Service Active")                         echo "MySQL Service" ;;
+        "MySQL Reachable (port 3306)")                  echo "MySQL Connectivity" ;;
+        "Enable Full Text Search Services")             echo "Full-Text Search" ;;
+        "Use DNSBL")                                    echo "DNSBL Checking" ;;
+        "Use IP Reputation")                            echo "IP Reputation" ;;
+        "Reject if Originators IP has no rDNS")         echo "Reject Missing rDNS" ;;
+        "Reject if Originators Domain Does Not Exist")  echo "Reject Invalid Sender Domains" ;;
+        "Reject if Originators Domain is Local and Not Authorized") echo "Reject Unauthorised Local Domains" ;;
+        "Integrate Archive with IMAP Folder")           echo "Archive IMAP Integration" ;;
+        "Archive Active")                               echo "Mail Archiving" ;;
+        "Migration Active")                             echo "Migration Mode" ;;
+        "Enable System Monitor (Mem/Disk/CPU)")         echo "System Monitor" ;;
+        "Watchdog - SMTP")                              echo "SMTP Watchdog" ;;
+        "Watchdog - POP3/IMAP")                         echo "POP3/IMAP Watchdog" ;;
+        "Watchdog - IM/VoIP")                           echo "IM/VoIP Watchdog" ;;
+        "Watchdog - GroupWare")                         echo "GroupWare Watchdog" ;;
+        "RBL Valli Check (is our IP blacklisted)")      echo "RBL Blacklist Check" ;;
+        *)                                              echo "$1" ;;
+    esac
+}
+
+_mr_short_section() {
+    case "$1" in
+        "Backup, Watchdog and Monitoring")   echo "Backup & Recovery" ;;
+        "DNS & Mail Flow Verification")       echo "Mail Flow" ;;
+        "Storage, Certificates and Services") echo "Storage & Certificates" ;;
+        "SMTP Protocol Hardening")            echo "SMTP Hardening" ;;
+        "Rejection Rules and Access")         echo "Access Controls" ;;
+        "Protocol and Access Hardening")      echo "Protocol Hardening" ;;
+        "APP OS / Infrastructure")            echo "OS & Infrastructure" ;;
+        "Intrusion Prevention - Block Rules") echo "Intrusion Prevention" ;;
+        "SMTP Delivery Settings")             echo "SMTP Delivery" ;;
+        "Database"|"MySQL Server (Remote DB)") echo "Database" ;;
+        *)                                    echo "$1" ;;
+    esac
+}
+
+_mr_join_sections() {
+    local -a ITEMS=("$@")
+    local N="${#ITEMS[@]}" I S OUT=""
+    [ "$N" -eq 0 ] && return
+    for I in "${!ITEMS[@]}"; do
+        S="$(_mr_short_section "${ITEMS[$I]}")"
+        if [ "$I" -eq 0 ]; then
+            OUT="$S"
+        elif [ "$I" -eq "$((N - 1))" ]; then
+            OUT="$OUT and $S"
+        else
+            OUT="$OUT, $S"
+        fi
+    done
+    printf '%s' "$OUT"
+}
+
+_mr_action_text() {
+    local LABEL="$1" SECTION="$2"
+    case "$LABEL" in
+        "Enable System Backup")
+            echo "Enable automatic backups and verify a recent restore point." ;;
+        "Last Backup Date and Time")
+            echo "Restore a daily backup schedule; the latest backup is stale." ;;
+        "Enable Database Backup - Accounts")
+            echo "Enable the Accounts database backup; it is the core recovery set." ;;
+        "Enable Database Backup - AntiSpam")
+            echo "Enable AntiSpam database backups to preserve filtering data." ;;
+        "Enable Database Backup - GroupWare")
+            echo "Enable GroupWare database backups to preserve collaboration data." ;;
+        "Enable System Watchdog")
+            echo "Enable the System Watchdog so failed services recover automatically." ;;
+        "Enable System Monitor (Mem/Disk/CPU)")
+            echo "Enable System Monitor and confirm alert thresholds." ;;
+        "Watchdog - SMTP"|"Watchdog - POP3/IMAP"|"Watchdog - IM/VoIP"|"Watchdog - GroupWare")
+            echo "Enable this service watchdog and verify that it can restart the service." ;;
+        "Watchdog Interval")
+            echo "Reduce the watchdog interval to one hour or less." ;;
+        "Enable Daytime Clock Synchronization")
+            echo "Enable time synchronisation for consistent logs and TLS." ;;
+        "Check SPF")
+            echo "Publish an SPF record for this server's sending IPs." ;;
+        "Check DKIM")
+            echo "Configure DKIM signing and publish the selector record in DNS." ;;
+        "Check DMARC")
+            echo "Publish a DMARC policy and route aggregate reports." ;;
+        "Check PTR")
+            echo "Create a matching PTR record for the public sending IP." ;;
+        "Check TLS and Start TLS")
+            echo "Enable STARTTLS on port 25 and verify a trusted certificate chain." ;;
+        "Use TLS/SSL (Secured Delivery)"|"Enable SSL/TLS")
+            echo "Enforce TLS for inbound and outbound mail delivery." ;;
+        "Check for Certificates")
+            echo "Replace the certificate before expiry and verify the full chain." ;;
+        "Password Policy Min Length")
+            echo "Enable the password policy and require at least eight characters." ;;
+        "2FA")
+            echo "Disable the 2FA bypass for administrative and user accounts." ;;
+        "Disable VRFY")
+            echo "Disable the SMTP VRFY command to reduce address harvesting." ;;
+        "Block Outgoing Port 9001")
+            echo "Block outbound port 9001 at the host firewall." ;;
+        "Hide Server Version")
+            echo "Hide the IceWarp version in SMTP banners." ;;
+        "Disable DIGEST-MD5")
+            echo "Remove DIGEST-MD5 from the enabled authentication schemes." ;;
+        "Disable Cloud Features")
+            echo "Disable unused cloud features to reduce external exposure." ;;
+        "Disable AntiSpam Live")
+            echo "Disable AntiSpam Live unless it is explicitly required." ;;
+        "Process POP3/IMAP")
+            echo "Enable intrusion processing for POP3 and IMAP." ;;
+        "Remove Old AntiSpam Folders")
+            echo "Remove or archive the legacy AntiSpam folders." ;;
+        "Set Directory Cache Schedule")
+            echo "Schedule the Directory Cache rebuild during a low-traffic window." ;;
+        "Change Admin URL")
+            echo "Move the admin interface off the default URL." ;;
+        "Change Admin Port")
+            echo "Move the admin interface off the default port." ;;
+        "Set customers-stat@parsavan.com"|"Set Admin Email")
+            echo "Set a monitored admin mailbox for alerts." ;;
+        "Database Type")
+            echo "Migrate production data to MySQL for reliability." ;;
+        "RBL Valli Check (is our IP blacklisted)")
+            echo "Request delisting and correct the sending-reputation issue." ;;
+        "APP OS Last Update")
+            echo "Apply pending operating-system security updates." ;;
+        "Repository Access")
+            echo "Restore package repository access for security updates." ;;
+        "Time Sync (OS-level NTP)")
+            echo "Enable NTP time synchronisation on the operating system." ;;
+        "Swap Usage (7 days)")
+            echo "Investigate sustained swap use; add RAM or reduce memory pressure." ;;
+        "CPU Usage")
+            echo "Investigate CPU pressure and reduce the load or add capacity." ;;
+        "RAM (Total KB / Available KB)")
+            echo "Investigate memory pressure; add RAM if usage remains sustained." ;;
+        "Disk (Total GB / Used %)")
+            echo "Free disk space or expand the volume before it reaches capacity." ;;
+        "MySQL Service Active")
+            echo "Start the MySQL service and verify that it starts at boot." ;;
+        "MySQL Reachable (port 3306)")
+            echo "Restore network access to the remote MySQL host on port 3306." ;;
+        "Enable Full Text Search Services")
+            echo "Disable full-text search if it is not required for this deployment." ;;
+        "Use DNSBL")
+            echo "Enable DNSBL checking in the mail security policy." ;;
+        "Use IP Reputation")
+            echo "Enable IP reputation screening in the mail security policy." ;;
+        "Reject if Originators IP has no rDNS")
+            echo "Reject senders without reverse DNS to reduce spoofed traffic." ;;
+        "Reject if Originators Domain Does Not Exist")
+            echo "Reject mail from non-existent sender domains." ;;
+        "Reject if Originators Domain is Local and Not Authorized")
+            echo "Reject unauthorised use of local domains." ;;
+        "Integrate Archive with IMAP Folder")
+            echo "Enable archive integration so users can search retained mail." ;;
+        "Archive Active")
+            echo "Enable archiving to meet retention and legal-hold requirements." ;;
+        *)
+            if [ "$SECTION" = "Backup, Watchdog and Monitoring" ]; then
+                echo "Restore this resilience control and verify it during the next maintenance window."
+            elif [ "$SECTION" = "DNS & Mail Flow Verification" ]; then
+                echo "Correct the DNS or mail-flow record and re-test from an external resolver."
+            else
+                echo "Bring this control in line with the IceWarp hardening baseline."
+            fi
+            ;;
+    esac
+}
+
+_mr_legend_item() {
+    local X="$1" Y="$2" STATUS="$3" LABEL="$4" COUNT="$5"
+    _mr_circle "$((X + 4))" "$((Y + 3))" 4 "$(_mr_status_color "$STATUS")"
+    _mr_text "$((X + 13))" "$Y" "${LABEL}  ${COUNT}" "F1" 7.4 "$MR_C_MUTED"
+}
+
+_mr_executive_overview() {
+    local SCORED=$((_MR_PASS + _MR_WARN + _MR_CRIT))
+    local AREAS="${#_MR_SECTION_ORDER[@]}"
+    local NARRATIVE TOP_TEXT=""
+    local -a TOP_SECS=()
+    local ISSUE PRI RANK SEC LABEL STATUS S
+
+    if [ "${#_MR_SORTED_ISSUES[@]}" -gt 0 ]; then
+        for ISSUE in "${_MR_SORTED_ISSUES[@]}"; do
+            IFS='|' read -r PRI RANK SEC LABEL STATUS <<< "$ISSUE"
+            [ "$STATUS" = "CRITICAL" ] || continue
+            local SEEN=0
+            for S in "${TOP_SECS[@]}"; do [ "$S" = "$SEC" ] && SEEN=1; done
+            [ "$SEEN" -eq 0 ] && TOP_SECS+=("$SEC")
+            [ "${#TOP_SECS[@]}" -ge 2 ] && break
+        done
+    fi
+    if [ "${#TOP_SECS[@]}" -eq 0 ] && [ "$_MR_WARN" -gt 0 ]; then
+        for ISSUE in "${_MR_SORTED_ISSUES[@]}"; do
+            IFS='|' read -r PRI RANK SEC LABEL STATUS <<< "$ISSUE"
+            local SEEN2=0
+            for S in "${TOP_SECS[@]}"; do [ "$S" = "$SEC" ] && SEEN2=1; done
+            [ "$SEEN2" -eq 0 ] && TOP_SECS+=("$SEC")
+            [ "${#TOP_SECS[@]}" -ge 2 ] && break
+        done
+    fi
+    if [ "${#TOP_SECS[@]}" -gt 0 ]; then
+        TOP_TEXT="$(_mr_join_sections "${TOP_SECS[@]}")"
+    fi
+    [ -z "$TOP_TEXT" ] && TOP_TEXT="multiple operational areas"
+
+    if [ "$_MR_CRIT" -gt 0 ]; then
+        NARRATIVE="The assessment covered ${_MR_TOTAL} controls across ${AREAS} operational areas. ${_MR_CRIT} controls require action and ${_MR_WARN} need review; the highest-impact gaps are in ${TOP_TEXT}."
+    elif [ "$_MR_WARN" -gt 0 ]; then
+        NARRATIVE="The assessment covered ${_MR_TOTAL} controls across ${AREAS} operational areas. No critical gaps were found, but ${_MR_WARN} controls are worth reviewing; most findings are in ${TOP_TEXT}."
+    else
+        NARRATIVE="The assessment covered ${_MR_TOTAL} controls across ${AREAS} operational areas. All evaluated controls passed; no corrective action is required at this review."
+    fi
+
+    _mr_section_title "01" "Executive overview" "What the assessment found and where to focus first."
+    _mr_paragraph "$MR_MARGIN" "$_MR_Y" "$NARRATIVE" 84 "F1" 9.4 "$MR_C_TEXT" 13 3
+    _MR_Y=$((_MR_LAST_Y - 10))
+
+    _mr_text "$MR_MARGIN" "$_MR_Y" "CONTROL DISTRIBUTION" "F2" 6.6 "$MR_C_MUTED"
+    _MR_Y=$((_MR_Y - 14))
+
+    local BAR_W="$MR_CONTENT_W"
+    local BAR_H=8
+    local BAR_X="$MR_MARGIN"
+    local BAR_Y=$((_MR_Y - BAR_H))
+    local TOTAL_ALL=$((_MR_PASS + _MR_WARN + _MR_CRIT + _MR_INFO + _MR_NA))
+    _mr_round_rect "$BAR_X" "$BAR_Y" "$BAR_W" "$BAR_H" 4 "0.890 0.910 0.940"
+    if [ "$TOTAL_ALL" -gt 0 ]; then
+        local PW WW CW IW NW PX="$BAR_X"
+        PW=$(awk -v w="$BAR_W" -v n="$_MR_PASS" -v t="$TOTAL_ALL" 'BEGIN{printf "%d", (w*n/t)}')
+        WW=$(awk -v w="$BAR_W" -v n="$_MR_WARN" -v t="$TOTAL_ALL" 'BEGIN{printf "%d", (w*n/t)}')
+        CW=$(awk -v w="$BAR_W" -v n="$_MR_CRIT" -v t="$TOTAL_ALL" 'BEGIN{printf "%d", (w*n/t)}')
+        IW=$(awk -v w="$BAR_W" -v n="$_MR_INFO" -v t="$TOTAL_ALL" 'BEGIN{printf "%d", (w*n/t)}')
+        NW=$((BAR_W - PW - WW - CW - IW))
+        [ "$PW" -gt 0 ] && _mr_rect "$PX" "$BAR_Y" "$PW" "$BAR_H" "$MR_C_GREEN"
+        PX=$((PX + PW))
+        [ "$WW" -gt 0 ] && _mr_rect "$PX" "$BAR_Y" "$WW" "$BAR_H" "$MR_C_AMBER"
+        PX=$((PX + WW))
+        [ "$CW" -gt 0 ] && _mr_rect "$PX" "$BAR_Y" "$CW" "$BAR_H" "$MR_C_ROSE"
+        PX=$((PX + CW))
+        [ "$IW" -gt 0 ] && _mr_rect "$PX" "$BAR_Y" "$IW" "$BAR_H" "$MR_C_VIOLET"
+        PX=$((PX + IW))
+        [ "$NW" -gt 0 ] && _mr_rect "$PX" "$BAR_Y" "$NW" "$BAR_H" "$MR_C_SLATE"
+    fi
+    _MR_Y=$((BAR_Y - 16))
+
+    _mr_legend_item "$MR_MARGIN" "$_MR_Y" PASS "Healthy" "$_MR_PASS"
+    _mr_legend_item "$((MR_MARGIN + 104))" "$_MR_Y" WARN "Review" "$_MR_WARN"
+    _mr_legend_item "$((MR_MARGIN + 208))" "$_MR_Y" CRITICAL "Action" "$_MR_CRIT"
+    _mr_legend_item "$((MR_MARGIN + 312))" "$_MR_Y" INFO "Info" "$_MR_INFO"
+    _mr_legend_item "$((MR_MARGIN + 416))" "$_MR_Y" NA "N/A" "$_MR_NA"
+    _MR_Y=$((_MR_Y - 30))
+
+    local LEFT_W=316 RIGHT_W=190 GAP=18 RIGHT_X=$((MR_MARGIN + 316 + 18))
+    _mr_text "$MR_MARGIN" "$_MR_Y" "PRIORITY ACTIONS" "F2" 6.6 "$MR_C_MUTED"
+    _mr_text "$RIGHT_X" "$_MR_Y" "KEY SIGNALS" "F2" 6.6 "$MR_C_MUTED"
+    _MR_Y=$((_MR_Y - 12))
+
+    local CARD_Y=$((_MR_Y - 64))
+    local N=0
+    if [ "${#_MR_SORTED_ISSUES[@]}" -gt 0 ]; then
+        for ISSUE in "${_MR_SORTED_ISSUES[@]}"; do
+            N=$((N + 1))
+            [ "$N" -gt 4 ] && break
+            IFS='|' read -r PRI RANK SEC LABEL STATUS <<< "$ISSUE"
+            _mr_card "$MR_MARGIN" "$CARD_Y" "$LEFT_W" 64 6
+            _mr_rect "$MR_MARGIN" "$CARD_Y" 3 64 "$(_mr_status_color "$STATUS")"
+            _mr_circle "$((MR_MARGIN + 18))" "$((CARD_Y + 48))" 4 "$(_mr_status_color "$STATUS")"
+            _mr_text_trunc "$((MR_MARGIN + 28))" "$((CARD_Y + 44))" "$(_mr_display_label "$LABEL")" "F2" 8.8 "$MR_C_TEXT" 42
+            local CHIP_W=54
+            local CHIP_X=$((MR_MARGIN + LEFT_W - CHIP_W - 10))
+            _mr_round_rect "$CHIP_X" "$((CARD_Y + 42))" "$CHIP_W" 14 7 "$(_mr_status_fill "$STATUS")"
+            _mr_text_center "$((CHIP_X + CHIP_W / 2))" "$((CARD_Y + 45))" "$(_mr_status_word "$STATUS")" "F2" 6.2 "$(_mr_status_text_color "$STATUS")"
+            _mr_text_trunc "$((MR_MARGIN + 12))" "$((CARD_Y + 28))" "$SEC" "F1" 6.3 "$MR_C_MUTED" 52
+            _mr_text_trunc "$((MR_MARGIN + 12))" "$((CARD_Y + 13))" "$(_mr_action_text "$LABEL" "$SEC")" "F1" 7.1 "$MR_C_TEXT" 72
+            CARD_Y=$((CARD_Y - 72))
+        done
+    else
+        _mr_card "$MR_MARGIN" "$CARD_Y" "$LEFT_W" 64 6
+        _mr_circle "$((MR_MARGIN + 18))" "$((CARD_Y + 32))" 5 "$MR_C_GREEN"
+        _mr_text "$((MR_MARGIN + 30))" "$((CARD_Y + 36))" "No corrective actions required" "F2" 9 "$MR_C_TEXT"
+        _mr_text "$((MR_MARGIN + 30))" "$((CARD_Y + 22))" "All evaluated controls passed at this review." "F1" 7.2 "$MR_C_MUTED"
+    fi
+
+    local SIGNAL_Y=$((_MR_Y - 62))
+    local -a SIG_LABELS=("BACKUP & RECOVERY" "TRANSPORT SECURITY" "MAIL FLOW & DNS" "OS & PATCHING")
+    local -a SIG_KEYS=("backup" "tls" "mail_flow" "os_update")
+    local K
+    for K in 0 1 2 3; do
+        local SK="${SIG_KEYS[$K]}"
+        local SRES="${HEALTH[$SK]:-skip}"
+        [ "$SRES" = "critical" ] && SRES="fail"
+        local SCOLOR SSTATUS
+        SCOLOR="$(_mr_status_color "$SRES")"
+        SSTATUS="$(_mr_status_word "$SRES")"
+        _mr_card "$RIGHT_X" "$SIGNAL_Y" "$RIGHT_W" 58 6
+        _mr_circle "$((RIGHT_X + 12))" "$((SIGNAL_Y + 42))" 4 "$SCOLOR"
+        _mr_text "$((RIGHT_X + 22))" "$((SIGNAL_Y + 39))" "${SIG_LABELS[$K]}" "F1" 5.9 "$MR_C_MUTED"
+        _mr_text "$((RIGHT_X + 12))" "$((SIGNAL_Y + 26))" "$SSTATUS" "F2" 8.6 "$MR_C_TEXT"
+        _mr_paragraph "$((RIGHT_X + 12))" "$((SIGNAL_Y + 15))" "${HEALTH_MSG[$SK]:-No data returned}" 38 "F1" 5.8 "$MR_C_MUTED" 7.2 2
+        SIGNAL_Y=$((SIGNAL_Y - 66))
+    done
+
+    local TAKEAWAY
+    if [ "$_MR_CRIT" -gt 0 ]; then
+        TAKEAWAY="The platform is largely healthy, but the material risk sits in ${TOP_TEXT}. Resolve those actions first, then re-run the assessment to confirm closure."
+    elif [ "$_MR_WARN" -gt 0 ]; then
+        TAKEAWAY="The platform is broadly healthy. The review items are not urgent, but closing them will reduce avoidable operational risk."
+    else
+        TAKEAWAY="All evaluated controls passed. Maintain the current configuration and repeat the assessment at the next scheduled review."
+    fi
+    _mr_card "$MR_MARGIN" 150 "$MR_CONTENT_W" 72 7
+    _mr_rect "$MR_MARGIN" 150 3 72 "$MR_C_TEAL"
+    _mr_text "$((MR_MARGIN + 16))" 208 "MANAGEMENT TAKEAWAY" "F2" 6.6 "$MR_C_TEAL_DARK"
+    _mr_paragraph "$((MR_MARGIN + 16))" 194 "$TAKEAWAY" 96 "F1" 8.2 "$MR_C_TEXT" 10 3
+}
+
+_mr_render_control_areas() {
+    _mr_section_title "02" "Control areas" "How each operational area performed across the full checklist."
+    local COL_W=254 GAP=16 CARD_H=60 ROW_GAP=8
+    local COL=0 ROW_Y="$_MR_Y" X SEC STATUS TOTAL SECN COLOR
+    for SEC in "${_MR_SECTION_ORDER[@]}"; do
+        if [ "$COL" -eq 0 ]; then
+            _mr_ensure "$((CARD_H + ROW_GAP))"
+            ROW_Y="$_MR_Y"
+        fi
+        X=$((MR_MARGIN + COL * (COL_W + GAP)))
+        STATUS="$(_mr_section_status "$SEC")"
+        COLOR="$(_mr_status_color "$STATUS")"
+        _mr_card "$X" "$((ROW_Y - CARD_H))" "$COL_W" "$CARD_H" 6
+        _mr_circle "$((X + 14))" "$((ROW_Y - 16))" 4 "$COLOR"
+        _mr_text_trunc "$((X + 25))" "$((ROW_Y - 19))" "$SEC" "F2" 8.2 "$MR_C_TEXT" 34
+        _mr_text_right "$((X + COL_W - 10))" "$((ROW_Y - 19))" "$(_mr_status_word "$STATUS")" "F2" 6.4 "$COLOR"
+        if [ "$STATUS" = "NA" ]; then
+            _mr_text "$((X + 14))" "$((ROW_Y - 35))" "No applicable controls" "F1" 6.1 "$MR_C_MUTED"
+        else
+            local COUNT_LINE="${_MR_SEC_PASS[$SEC]:-0} healthy  |  ${_MR_SEC_WARN[$SEC]:-0} review  |  ${_MR_SEC_CRIT[$SEC]:-0} action"
+            [ "${_MR_SEC_INFO[$SEC]:-0}" -gt 0 ] && COUNT_LINE="$COUNT_LINE  |  ${_MR_SEC_INFO[$SEC]:-0} info"
+            _mr_text "$((X + 14))" "$((ROW_Y - 35))" "$COUNT_LINE" "F1" 6.0 "$MR_C_MUTED"
+            TOTAL=$(( ${_MR_SEC_PASS[$SEC]:-0} + ${_MR_SEC_WARN[$SEC]:-0} + ${_MR_SEC_CRIT[$SEC]:-0} + ${_MR_SEC_INFO[$SEC]:-0} ))
+            _mr_rect "$((X + 14))" "$((ROW_Y - 50))" "$((COL_W - 28))" 4 "0.900 0.920 0.950"
+            if [ "$TOTAL" -gt 0 ]; then
+                local TRACK_W=$((COL_W - 28))
+                local PW WW CW IW PX=$((X + 14))
+                PW=$(awk -v w="$TRACK_W" -v n="${_MR_SEC_PASS[$SEC]:-0}" -v t="$TOTAL" 'BEGIN{printf "%d", (w*n/t)}')
+                WW=$(awk -v w="$TRACK_W" -v n="${_MR_SEC_WARN[$SEC]:-0}" -v t="$TOTAL" 'BEGIN{printf "%d", (w*n/t)}')
+                CW=$(awk -v w="$TRACK_W" -v n="${_MR_SEC_CRIT[$SEC]:-0}" -v t="$TOTAL" 'BEGIN{printf "%d", (w*n/t)}')
+                IW=$((TRACK_W - PW - WW - CW))
+                [ "$PW" -gt 0 ] && _mr_rect "$PX" "$((ROW_Y - 50))" "$PW" 4 "$MR_C_GREEN"
+                PX=$((PX + PW))
+                [ "$WW" -gt 0 ] && _mr_rect "$PX" "$((ROW_Y - 50))" "$WW" 4 "$MR_C_AMBER"
+                PX=$((PX + WW))
+                [ "$CW" -gt 0 ] && _mr_rect "$PX" "$((ROW_Y - 50))" "$CW" 4 "$MR_C_ROSE"
+                PX=$((PX + CW))
+                [ "$IW" -gt 0 ] && _mr_rect "$PX" "$((ROW_Y - 50))" "$IW" 4 "$MR_C_VIOLET"
+            fi
+        fi
+        if [ "$COL" -eq 1 ]; then
+            COL=0
+            _MR_Y=$((ROW_Y - CARD_H - ROW_GAP))
+        else
+            COL=1
+        fi
+    done
+    if [ "$COL" -eq 1 ]; then
+        _MR_Y=$((ROW_Y - CARD_H - ROW_GAP))
+    fi
+
+    _mr_ensure 84
+    _mr_text "$MR_MARGIN" "$_MR_Y" "STATUS KEY" "F2" 6.6 "$MR_C_MUTED"
+    _MR_Y=$((_MR_Y - 12))
+    local LEG_Y=$((_MR_Y - 58))
+    _mr_card "$MR_MARGIN" "$LEG_Y" "$MR_CONTENT_W" 58 6
+    local -a LEG_STATUS=("PASS" "WARN" "CRITICAL" "INFO")
+    local -a LEG_TITLE=("Healthy" "Review" "Action" "Info / N/A")
+    local -a LEG_DESC=("Meets the baseline" "Worth reviewing" "Needs remediation" "Context only")
+    local LI LX
+    for LI in 0 1 2 3; do
+        LX=$((MR_MARGIN + 16 + LI * 126))
+        _mr_circle "$((LX + 4))" "$((LEG_Y + 36))" 4 "$(_mr_status_color "${LEG_STATUS[$LI]}")"
+        _mr_text "$((LX + 14))" "$((LEG_Y + 33))" "${LEG_TITLE[$LI]}" "F2" 7.6 "$MR_C_TEXT"
+        _mr_text "$((LX + 14))" "$((LEG_Y + 20))" "${LEG_DESC[$LI]}" "F1" 6.4 "$MR_C_MUTED"
+    done
+    _MR_Y=$((LEG_Y - 8))
+}
+
+_mr_render_actions() {
+    _mr_section_title "03" "Recommended actions" "Ordered by operational impact. The technical report lists every finding."
+    local N=0 ISSUE PRI RANK SEC LABEL STATUS CARD_H=56 CARD_Y
+    if [ "${#_MR_SORTED_ISSUES[@]}" -eq 0 ]; then
+        _mr_card "$MR_MARGIN" "$((_MR_Y - 64))" "$MR_CONTENT_W" 64 6
+        _mr_circle "$((MR_MARGIN + 22))" "$((_MR_Y - 32))" 5 "$MR_C_GREEN"
+        _mr_text "$((MR_MARGIN + 36))" "$((_MR_Y - 28))" "No corrective actions are required" "F2" 10 "$MR_C_TEXT"
+        _mr_text "$((MR_MARGIN + 36))" "$((_MR_Y - 43))" "All evaluated controls passed at this review." "F1" 7.4 "$MR_C_MUTED"
+        _MR_Y=$((_MR_Y - 78))
+    else
+        for ISSUE in "${_MR_SORTED_ISSUES[@]}"; do
+            N=$((N + 1))
+            [ "$N" -gt 6 ] && break
+            IFS='|' read -r PRI RANK SEC LABEL STATUS <<< "$ISSUE"
+            _mr_ensure "$((CARD_H + 8))"
+            CARD_Y=$((_MR_Y - CARD_H))
+            _mr_card "$MR_MARGIN" "$CARD_Y" "$MR_CONTENT_W" "$CARD_H" 6
+            _mr_rect "$MR_MARGIN" "$CARD_Y" 3 "$CARD_H" "$(_mr_status_color "$STATUS")"
+            _mr_text "$((MR_MARGIN + 12))" "$((CARD_Y + 38))" "$(printf '%02d' "$N")" "F2" 7.2 "$MR_C_TEAL_DARK"
+            _mr_text_trunc "$((MR_MARGIN + 38))" "$((CARD_Y + 36))" "$(_mr_display_label "$LABEL")" "F2" 8.8 "$MR_C_TEXT" 52
+            local CHIP_W=54
+            local CHIP_X=$((MR_RIGHT - CHIP_W - 10))
+            _mr_round_rect "$CHIP_X" "$((CARD_Y + 34))" "$CHIP_W" 14 7 "$(_mr_status_fill "$STATUS")"
+            _mr_text_center "$((CHIP_X + CHIP_W / 2))" "$((CARD_Y + 37))" "$(_mr_status_word "$STATUS")" "F2" 6.2 "$(_mr_status_text_color "$STATUS")"
+            _mr_text_trunc "$((MR_MARGIN + 38))" "$((CARD_Y + 23))" "$SEC" "F1" 6.3 "$MR_C_MUTED" 60
+            _mr_text_trunc "$((MR_MARGIN + 38))" "$((CARD_Y + 9))" "$(_mr_action_text "$LABEL" "$SEC")" "F1" 7.1 "$MR_C_TEXT" 84
+            _MR_Y=$((CARD_Y - 8))
+        done
+        _MR_Y=$((_MR_Y - 14))
+    fi
+
+    if [ "$_MR_Y" -gt 140 ]; then
+        _mr_text "$MR_MARGIN" "$_MR_Y" "ASSESSMENT SCOPE" "F2" 6.6 "$MR_C_MUTED"
+        _MR_Y=$((_MR_Y - 12))
+        local PANEL_Y=$((_MR_Y - 58))
+        _mr_card "$MR_MARGIN" "$PANEL_Y" "$MR_CONTENT_W" 58 6
+        local COL1=$((MR_MARGIN + 14)) COL2=$((MR_MARGIN + 182)) COL3=$((MR_MARGIN + 350))
+        _mr_text "$COL1" "$((PANEL_Y + 36))" "STANDARD" "F1" 5.8 "$MR_C_MUTED"
+        _mr_text "$COL1" "$((PANEL_Y + 20))" "IceWarp CheckList v${MR_CHECKLIST_VERSION}" "F2" 7.8 "$MR_C_TEXT"
+        _mr_text "$COL2" "$((PANEL_Y + 36))" "EVIDENCE" "F1" 5.8 "$MR_C_MUTED"
+        _mr_text "$COL2" "$((PANEL_Y + 20))" "Live collector data" "F2" 7.8 "$MR_C_TEXT"
+        _mr_text "$COL3" "$((PANEL_Y + 36))" "NEXT REVIEW" "F1" 5.8 "$MR_C_MUTED"
+        _mr_text "$COL3" "$((PANEL_Y + 20))" "Next scheduled assessment" "F2" 7.8 "$MR_C_TEXT"
+
+        if [ "$PANEL_Y" -gt 92 ]; then
+            _mr_text "$MR_MARGIN" "$((PANEL_Y - 18))" "NEXT STEP" "F2" 6.4 "$MR_C_TEAL_DARK"
+            _mr_paragraph "$MR_MARGIN" "$((PANEL_Y - 32))" "Review the action list with the service owner, schedule the remediation window, then re-run the assessment to confirm closure." 100 "F1" 7.8 "$MR_C_TEXT" 10 2
+        fi
+    fi
+}
+
+# =============================================================================
+# SECTION 11: MAIN BUILDER
 # =============================================================================
 
 build_management_pdf() {
     local OUT_PDF="${OUTPUT_MANAGEMENT_PDF:-${PROJECT_ROOT}/output/management_report.pdf}"
-    _MR_PAGES=(); _MR_CUR=""; _MR_Y=$MR_TOP_Y
+    _MR_PAGES=()
+    _MR_CUR=""
+    _MR_PAGE_NO=0
+    _MR_FOOTER=0
+    _MR_Y=$MR_TOP_Y
+
+    # Evaluate first so the cover, score and priority list use final counts.
+    _mr_render_checklist
+
+    local SCORED=$((_MR_PASS + _MR_WARN + _MR_CRIT))
+    _MR_SCORE=0
+    [ "$SCORED" -gt 0 ] && _MR_SCORE=$((_MR_PASS * 100 / SCORED))
+    if [ "$_MR_CRIT" -gt 0 ]; then
+        _MR_OVERALL="fail"
+    elif [ "$_MR_WARN" -gt 0 ]; then
+        _MR_OVERALL="warn"
+    else
+        _MR_OVERALL="pass"
+    fi
+
+    _MR_SORTED_ISSUES=()
+    if [ "${#_MR_ISSUES[@]}" -gt 0 ]; then
+        local ISSUE_LINE
+        while IFS= read -r ISSUE_LINE; do
+            [ -n "$ISSUE_LINE" ] && _MR_SORTED_ISSUES+=("$ISSUE_LINE")
+        done < <(printf '%s\n' "${_MR_ISSUES[@]}" | sort -t'|' -k1,1n -k2,2n)
+    fi
 
     _mr_cover_letter
-    _mr_render_checklist
+    _mr_executive_overview
+    _mr_new_page
+    _mr_render_control_areas
+    _mr_new_page
+    _mr_render_actions
 
     _mr_finish
     _mr_write_file "$OUT_PDF"

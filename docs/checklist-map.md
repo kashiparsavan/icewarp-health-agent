@@ -6,15 +6,18 @@ Legend:
 - Not implemented
 - Syntax unverified
 
-Last updated: 2026-09-23 (v0.4.0)
+Last updated: 2026-10-20 (v0.6.0)
+
+Report metadata references IceWarp CheckList v1.14. The item set is still the
+v1.12-mapped 113-item checklist; v1.14 is the internal edition label.
 
 ## General Information
 
 | Checklist Item | Collector | Status | Notes |
 |---|---|---|---|
-| Company name | CLI parameter or `icewarp/company.sh` | OK | via `--company` flag or `COMPANY_NAME` in agent.conf |
+| Company name | CLI parameter or `icewarp/company.sh` | OK | via `--company`; default falls back to the mail domain |
 | Date | `general/date.sh` | OK | |
-| Technician | CLI parameter | OK | via `--technician` flag |
+| Technician | CLI parameter | OK | via `--technician`; defaults to `Parsavan` |
 | IceWarp Version | `icewarp/version.sh` | OK | `c_version` |
 | Antispam Last Update | `icewarp/antispam.sh` | Fallback | file mtime |
 | Antivirus Last Update | `icewarp/antivirus.sh` | Fallback | file mtime |

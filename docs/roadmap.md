@@ -1,6 +1,6 @@
 # Roadmap
 
-Last updated: 2026-10-19 (v0.5.0)
+Last updated: 2026-10-20 (v0.6.0)
 
 ## Current State
 
@@ -13,6 +13,19 @@ Last updated: 2026-10-19 (v0.5.0)
 | M4 - JSON and Transport | 70% | JSON solid, transport implemented but not validated against a real endpoint |
 | M5 - Health Rules and Reports | 95% | health.sh, pdf.sh, management_report.sh all working |
 | M6 - Operations and Auto-update | 100% | fast-forward updater, validation, locking, audit log, operator docs |
+
+## What Was Done in v0.6.0
+
+- Redesigned the management report with a modern soft-cyberpunk cover,
+  executive overview, control-area scorecards, stacked status bars, and
+  prioritized recommended actions.
+- Added a nine-pillar Health Summary to the technical report.
+- Replaced the flat raw-data appendix with grouped technical tables and
+  repeating headers.
+- Added page numbers and the report name to technical pages.
+- Added company fallback to the mail domain and technician default `Parsavan`.
+- Set the report checklist label to v1.14 (internal edition; item set unchanged).
+- Bumped `VERSION` and `config/agent.conf` to `0.6.0`.
 
 ## What Was Done in v0.5.0
 
@@ -73,6 +86,7 @@ Last updated: 2026-10-19 (v0.5.0)
 
 | Version | Date | Highlights |
 |---|---|---|
+| 0.6.0 | 2026-10-20 | Modern management report, nine-pillar Health Summary, grouped technical appendix, v1.14 report label, domain/technician defaults |
 | 0.5.0 | 2026-10-19 | Automatic fast-forward updates, update audit log, validation/rollback, configurator key fixes |
 | 0.4.0 | 2026-09-23 | Complete overhaul of health rules, management report, license, backup, archive, watchdog |
 | 0.3.0 | 2026-07-11 | Initial Health Rules and PDF writer |

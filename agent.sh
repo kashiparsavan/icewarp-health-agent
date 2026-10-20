@@ -152,7 +152,7 @@ agent_init
 if [ -n "$ARG_TECHNICIAN" ]; then
     DATA["general.technician"]="$ARG_TECHNICIAN"
 else
-    DATA["general.technician"]="Not Specified"
+    DATA["general.technician"]="Parsavan"
 fi
 
 # ---------- Run all collectors ----------
@@ -176,7 +176,15 @@ done < <(find "$COLLECTOR_DIR" -type f -name "*.sh" | sort)
 if [ -n "$ARG_COMPANY" ]; then
     DATA["general.company"]="$ARG_COMPANY"
 elif [ -z "${DATA[general.company]:-}" ]; then
-    DATA["general.company"]="${DATA[domain.primary.name]:-${DATA[agent.hostname]:-Unknown Host}}"
+    DOMAIN_FALLBACK="$(resolve_mail_domain)"
+    DATA["general.company"]="${DOMAIN_FALLBACK:-${DATA[agent.hostname]:-Unknown Host}}"
+fi
+
+# Keep one stable key for the domain that carries mail. Some collectors set it
+# late; the fallback makes reports and JSON consistent even on partial runs.
+if [ -z "${DATA[domain.primary.name]:-}" ]; then
+    DOMAIN_FALLBACK="$(resolve_mail_domain)"
+    [ -n "$DOMAIN_FALLBACK" ] && DATA["domain.primary.name"]="$DOMAIN_FALLBACK"
 fi
 
 echo "[INFO] Evaluating health..."

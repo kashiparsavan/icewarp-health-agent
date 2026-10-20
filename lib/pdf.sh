@@ -30,6 +30,9 @@ PDF_C_RED="0.753 0.224 0.169"
 PDF_C_AMBER="0.83 0.53 0.06"
 PDF_C_BLUEGRAY="0.30 0.42 0.55"
 PDF_C_GRAY="0.5 0.53 0.56"
+PDF_C_VALUE="0.30 0.33 0.36"
+
+PDF_CHECKLIST_VERSION="${CHECKLIST_VERSION:-1.14}"
 
 # =============================================================================
 # SECTION 3: HELPER FUNCTIONS
@@ -90,7 +93,7 @@ _layout_finish() {
 
 _layout_section_header() {
     local TITLE="$1"
-    _layout_ensure 46
+    _layout_ensure 100
     _PDF_Y=$((_PDF_Y - 6))
     _pdf_rect "$PDF_MARGIN" "$((_PDF_Y - 18))" "$PDF_CONTENT_W" 22 "$PDF_C_NAVY"
     _pdf_text "$((PDF_MARGIN + 8))" "$((_PDF_Y - 12))" "$TITLE" "F2" 11 "$PDF_C_WHITE"
@@ -125,7 +128,7 @@ _layout_row() {
     _pdf_rect "$PDF_MARGIN" "$((ROW_TOP - ROW_H + 4))" "$PDF_CONTENT_W" "$ROW_H" "$BG"
     local TEXT_Y=$((ROW_TOP - 11))
     _pdf_text_trunc "$((PDF_MARGIN + 8))" "$TEXT_Y" "$LABEL" "F1" 9 "$PDF_C_TEXT" 46
-    _pdf_text_trunc "$((PDF_MARGIN + 240))" "$TEXT_Y" "$VALUE" "F1" 9 "$PDF_C_GRAY" 34
+    _pdf_text_trunc "$((PDF_MARGIN + 240))" "$TEXT_Y" "$VALUE" "F1" 9 "$PDF_C_VALUE" 34
     local BADGE_W=76 BADGE_H=13
     local BADGE_X=$((PDF_CONTENT_RIGHT - BADGE_W - 4))
     local BADGE_Y=$((ROW_TOP - 12))
@@ -143,6 +146,69 @@ _layout_plain_line() {
     _PDF_Y=$((_PDF_Y - 12))
 }
 
+# ---------- Appendix table helpers ----------
+
+_pdf_clean_value() {
+    printf '%s' "$1" | tr '\r\n\t' '   ' | sed 's/  */ /g; s/^ //; s/ $//'
+}
+
+_appendix_category() {
+    case "$1" in
+        agent.*|general.*)                 echo "Agent & General" ;;
+        dns.*)                             echo "DNS & Mail Flow" ;;
+        icewarp.*)                         echo "IceWarp Server" ;;
+        smtp.*|queue.*)                    echo "SMTP & Delivery" ;;
+        security.*|antispam.*)             echo "Security & Intrusion Prevention" ;;
+        backup.*|archive.*)                echo "Backup & Archive" ;;
+        watchdog.*|monitor.*)              echo "Watchdog & Monitoring" ;;
+        os.*|storage.*|system.*)           echo "OS, Storage & Resources" ;;
+        database.*|mysql.*)                echo "Database" ;;
+        fulltext.*|logging.*|admin.*|directory_cache.*) echo "Services, Logging & Admin" ;;
+        domain.*)                          echo "Domains" ;;
+        health.*)                          echo "Health Evaluation" ;;
+        http.*)                            echo "HTTP / API" ;;
+        *)                                 echo "Other" ;;
+    esac
+}
+
+_layout_appendix_header() {
+    local TITLE="$1"
+    _layout_ensure 34
+    _PDF_Y=$((_PDF_Y - 8))
+    _pdf_rect "$PDF_MARGIN" "$((_PDF_Y - 16))" "$PDF_CONTENT_W" 16 "0.93 0.95 0.97"
+    _pdf_rect "$PDF_MARGIN" "$((_PDF_Y - 16))" 3 16 "$PDF_C_BLUEGRAY"
+    _pdf_text "$((PDF_MARGIN + 7))" "$((_PDF_Y - 11))" "$TITLE" "F2" 8.5 "$PDF_C_NAVY"
+    _PDF_Y=$((_PDF_Y - 19))
+}
+
+_layout_kv_header() {
+    _layout_ensure 16
+    _pdf_rect "$PDF_MARGIN" "$((_PDF_Y - 14))" "$PDF_CONTENT_W" 14 "$PDF_C_NAVY"
+    _pdf_text "$((PDF_MARGIN + 5))" "$((_PDF_Y - 10))" "KEY" "F2" 6.8 "$PDF_C_WHITE"
+    _pdf_text "$((PDF_MARGIN + 225))" "$((_PDF_Y - 10))" "VALUE" "F2" 6.8 "$PDF_C_WHITE"
+    _PDF_Y=$((_PDF_Y - 14))
+}
+
+_APPENDIX_CAT=""
+
+_layout_kv_row() {
+    local KEY="$1" VALUE="$2"
+    local ROW_H=14
+    local BEFORE=${#_PDF_PAGES[@]}
+    _layout_ensure "$ROW_H"
+    if [ "${#_PDF_PAGES[@]}" -ne "$BEFORE" ] && [ -n "$_APPENDIX_CAT" ]; then
+        _layout_appendix_header "$_APPENDIX_CAT"
+        _layout_kv_header
+    fi
+    local BG="$PDF_C_WHITE"
+    [ $(( _layout_row_index % 2 )) -eq 1 ] && BG="$PDF_C_GRAY_LIGHT"
+    _layout_row_index=$((_layout_row_index + 1))
+    _pdf_rect "$PDF_MARGIN" "$((_PDF_Y - ROW_H + 3))" "$PDF_CONTENT_W" "$ROW_H" "$BG"
+    _pdf_text_trunc "$((PDF_MARGIN + 5))" "$((_PDF_Y - 7))" "$KEY" "F1" 7.2 "$PDF_C_TEXT" 54
+    _pdf_text_trunc "$((PDF_MARGIN + 225))" "$((_PDF_Y - 7))" "$(_pdf_clean_value "$VALUE")" "F1" 7.2 "$PDF_C_VALUE" 82
+    _PDF_Y=$((_PDF_Y - ROW_H))
+}
+
 # =============================================================================
 # SECTION 6: COVER PAGE
 # =============================================================================
@@ -158,13 +224,14 @@ _layout_cover() {
 
     _pdf_rect 0 692 "$PDF_PAGE_W" 100 "$PDF_C_NAVY"
     _pdf_text "$PDF_MARGIN" 754 "IceWarp Health Check Report" "F2" 22 "$PDF_C_WHITE"
-    _pdf_text "$PDF_MARGIN" 730 "Based on IceWarp CheckList v1.12" "F3" 12 "$PDF_C_WHITE"
+    _pdf_text "$PDF_MARGIN" 730 "Based on IceWarp CheckList v${PDF_CHECKLIST_VERSION}" "F3" 12 "$PDF_C_WHITE"
     _pdf_text "$PDF_MARGIN" 706 "Host: ${HOST}   Generated: ${GEN}   Agent v${VER}" "F1" 9.5 "$PDF_C_WHITE"
 
     _PDF_Y=660
     local INFO_ROWS=(
-        "Company Name|${DATA[general.company]:-Unknown Host}"
-        "Technician|${DATA[general.technician]:-Not Specified}"
+        "Company Name|${DATA[general.company]:-Unknown}"
+        "Mail Domain|${DATA[domain.primary.name]:-not returned}"
+        "Technician|${DATA[general.technician]:-Parsavan}"
         "IceWarp Version|${DATA[icewarp.version]:-unknown}"
         "Antispam Last Update|${DATA[icewarp.antispam.last_update]:-unknown}"
         "Antivirus Last Update|${DATA[icewarp.antivirus.last_update]:-unknown}"
@@ -221,20 +288,18 @@ _layout_cover() {
 _render_health_summary() {
     _layout_section_header "Health Summary"
     _layout_row_index=0
+    _layout_plain_line "Nine executive control areas. Detailed evidence follows in the checklist."
 
     local -a SUMMARY_ITEMS=(
-        "backup.auto|Backup"
-        "memory|Resource - RAM"
-        "cpu|Resource - CPU"
-        "disk.root_fs|Resource - HDD"
-        "disk.install|Resource - HDD"
-        "disk.mail|Resource - HDD"
-        "disk.archive|Resource - HDD"
-        "disk.root_home|Resource - HDD"
-        "login_blocking|Login Blocking"
-        "tls_delivery|SSL"
-        "os_update|OS Update"
-        "password_policy|Password Policy"
+        "backup|Backup & Recovery"
+        "mail_flow|Mail Flow & DNS"
+        "tls|Transport Security"
+        "access|Access & Authentication"
+        "threat|Threat Protection"
+        "resources|Server Resources"
+        "os_update|OS & Patching"
+        "monitoring|Monitoring & Watchdog"
+        "database|Database Platform"
     )
 
     for ITEM in "${SUMMARY_ITEMS[@]}"; do
@@ -1051,6 +1116,15 @@ endobj
         local PAGE_NUM=$((2+i))
         local CONTENT_NUM=$((2+P+i))
         local STREAM="${_PDF_PAGES[$((i-1))]}"
+        if [ "$i" -gt 1 ]; then
+            STREAM="${STREAM}0.80 0.83 0.87 RG
+0.5 w
+36 34 m 576 34 l S
+${PDF_C_GRAY} rg
+BT /F1 6.5 Tf 36 24 Td (IceWarp Health Check Report) Tj ET
+BT /F1 6.5 Tf 536 24 Td (Page ${i} of ${P}) Tj ET
+"
+        fi
         local STREAM_LEN="$(printf '%s' "$STREAM" | wc -c)"
 
         _pdf_obj "$PAGE_NUM" "${PAGE_NUM} 0 obj
@@ -1112,7 +1186,7 @@ build_pdf() {
     _layout_new_page
     _render_checklist
 
-    _layout_new_page
+    _layout_ensure 80
     _layout_section_header "Collector Status"
     local K
     local FAILED_COLLECTORS=0
@@ -1125,9 +1199,44 @@ build_pdf() {
     [ "$FAILED_COLLECTORS" -eq 0 ] && _layout_plain_line "All collectors ran OK"
 
     _layout_new_page
-    _layout_section_header "Appendix: Full Raw Data (${#DATA[@]} keys)"
-    for K in $(printf '%s\n' "${!DATA[@]}" | sort); do
-        _layout_plain_line "$(printf '%-42s %s' "$K" "${DATA[$K]}")"
+    _layout_section_header "Appendix: Technical Data (${#DATA[@]} keys)"
+    _layout_plain_line "Grouped by subsystem and sorted alphabetically. Raw keys are preserved for traceability."
+    _layout_plain_line "Long values are truncated in this appendix; the JSON export contains the complete values."
+    _APPENDIX_CAT=""
+
+    local -a APPENDIX_CATS=(
+        "Agent & General"
+        "DNS & Mail Flow"
+        "IceWarp Server"
+        "SMTP & Delivery"
+        "Security & Intrusion Prevention"
+        "Backup & Archive"
+        "Watchdog & Monitoring"
+        "OS, Storage & Resources"
+        "Database"
+        "Services, Logging & Admin"
+        "Domains"
+        "HTTP / API"
+        "Health Evaluation"
+        "Other"
+    )
+    local APP_CAT APP_KEY
+    for APP_CAT in "${APPENDIX_CATS[@]}"; do
+        local -a APP_KEYS=()
+        while IFS= read -r APP_KEY; do
+            [ "$(_appendix_category "$APP_KEY")" = "$APP_CAT" ] || continue
+            APP_KEYS+=("$APP_KEY")
+        done < <(printf '%s\n' "${!DATA[@]}" | sort)
+        [ "${#APP_KEYS[@]}" -eq 0 ] && continue
+
+        _APPENDIX_CAT="$APP_CAT"
+        _layout_appendix_header "${APP_CAT}  (${#APP_KEYS[@]} keys)"
+        _layout_row_index=0
+        _layout_kv_header
+        for APP_KEY in "${APP_KEYS[@]}"; do
+            _layout_kv_row "$APP_KEY" "${DATA[$APP_KEY]}"
+        done
+        _PDF_Y=$((_PDF_Y - 6))
     done
 
     _layout_finish

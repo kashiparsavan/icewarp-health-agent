@@ -3,6 +3,56 @@
 All notable changes to this project are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.6.0] - 2026-10-20
+
+### Added
+
+- Modern management report with a soft-cyberpunk dark cover, score arc,
+  executive overview, control-area scorecards, stacked status bars, status
+  key, management takeaway, and prioritized recommended actions.
+- Management report evaluates all 113 checklist items while printing only
+  management-level findings and display-friendly action labels.
+- Nine-pillar technical Health Summary: Backup & Recovery, Mail Flow & DNS,
+  Transport Security, Access & Authentication, Threat Protection, Server
+  Resources, OS & Patching, Monitoring & Watchdog, and Database Platform.
+- Grouped technical appendix tables. Raw keys are organized by subsystem,
+  sorted, and rendered with repeating table headers on page breaks instead of
+  a flat key dump.
+- Running report name and page numbers on non-cover technical pages.
+- `CHECKLIST_VERSION` setting in `config/agent.conf`; both PDFs reference
+  IceWarp CheckList v1.14.
+- Company fallback to the domain that carries mail when `--company` is omitted.
+- Technician default `Parsavan` when `--technician` is omitted.
+
+### Changed
+
+- `VERSION` and `config/agent.conf` bumped to `0.6.0`.
+- Technical report cover now shows Mail Domain and the v1.14 checklist label.
+- Management distribution bar and legend include informational and N/A
+  controls alongside healthy, review, and action; the score is labelled as a
+  pass rate of scored controls.
+- Technical section headers keep a minimum block of rows together to avoid
+  orphan headers and near-empty pages; Collector Status no longer forces a new
+  page.
+- Appendix values use a darker, higher-contrast gray for small table text.
+- README, CLAUDE.md, checklist coverage/map, roadmap, and update log updated
+  for the report redesign and v1.14 label.
+
+### Fixed
+
+- Bash `local` initialization failures in management layout helpers under
+  `set -u`.
+- Management paragraph line-height arithmetic with decimal values.
+- Malformed management score-arc stream output that produced literal `\n` and
+  invalid path operators.
+- Duplicate management cover footer.
+
+### Notes
+
+- v1.14 is an internal IceWarp checklist edition. The item set remains the
+  existing v1.12-mapped 113-item set; only the displayed report version changed.
+  No item-level v1.14 diff was available in the repository.
+
 ## [0.5.0] - 2026-10-19
 
 ### Added

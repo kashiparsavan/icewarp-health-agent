@@ -41,6 +41,26 @@ resolve_mail_hostname() {
     printf '%s' "$DOMAIN"
 }
 
+# Domain that carries user mail. Used as the default company name in reports
+# when --company is not supplied. Prefers the first real domain returned by
+# IceWarp, then an operator override, then the configured public hostname.
+resolve_mail_domain() {
+    if [ -n "${DATA[domain.primary.name]:-}" ]; then
+        printf '%s' "${DATA[domain.primary.name]}"
+        return
+    fi
+    if [ -n "${MAIL_DOMAIN:-}" ]; then
+        printf '%s' "$MAIL_DOMAIN"
+        return
+    fi
+    local DOMAIN
+    DOMAIN="$(iw_list_domains | head -n1)"
+    if [ -z "$DOMAIN" ] && [ -n "${MAIL_HOSTNAME:-}" ]; then
+        DOMAIN="$MAIL_HOSTNAME"
+    fi
+    printf '%s' "$DOMAIN"
+}
+
 _RESOLVED_PUBLIC_IP=""
 resolve_public_ip() {
     if [ -n "${MAIL_PUBLIC_IP:-}" ]; then

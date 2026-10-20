@@ -31,6 +31,33 @@ _days_ago() {
     echo $(( ( $(date +%s) - date_epoch ) / 86400 ))
 }
 
+_health_worst() {
+    local WORST="pass" ANY=0 R
+    for R in "$@"; do
+        case "$R" in
+            fail|critical) printf 'fail'; return ;;
+            warn) WORST="warn"; ANY=1 ;;
+            pass|info) ANY=1 ;;
+        esac
+    done
+    if [ "$ANY" -eq 0 ]; then printf 'skip'; else printf '%s' "$WORST"; fi
+}
+
+_health_messages_for() {
+    local RESULT="$1"; shift
+    local -a MSGS=()
+    local K R M
+    for K in "$@"; do
+        R="${HEALTH[$K]:-skip}"
+        [ "$R" = "critical" ] && R="fail"
+        [ "$R" = "$RESULT" ] || continue
+        M="${HEALTH_MSG[$K]:-}"
+        [ -n "$M" ] && MSGS+=("$M")
+    done
+    local IFS='; '
+    printf '%s' "${MSGS[*]}"
+}
+
 evaluate_health() {
 
     # --- Memory (percentage based) ---
@@ -93,7 +120,13 @@ evaluate_health() {
             _health_set "disk.${MOUNT_NAME}" "pass" "Free space (${FREE_GB}GB) OK"
         fi
     done
-    collector_set "health.disk.overall" "$WORST"
+    if [ "$WORST" = "fail" ]; then
+        _health_set "disk.overall" "fail" "One or more monitored disks are below the configured free-space threshold"
+    elif [ "$WORST" = "warn" ]; then
+        _health_set "disk.overall" "warn" "Disk alert thresholds need review"
+    else
+        _health_set "disk.overall" "pass" "All monitored disks have adequate free space"
+    fi
 
     # --- CPU ---
     local LOAD1="${DATA[os.cpu.load1]:-}"
@@ -307,26 +340,211 @@ evaluate_health() {
         _health_set "directory_cache" "pass" "Directory Cache schedule is configured (${CACHE_SCHED})"
     fi
 
-    # --- Roll-up (ONLY for items in summary) ---
+    # --- Report Health Summary roll-ups ---
+    # The technical and management reports show nine executive pillars rather
+    # than every low-level rule. Each pillar is derived from the detailed
+    # checks above so the summary reflects the overall service, not one metric.
+
+    # Backup & recovery
+    local BKP_RES BKP_MSG
+    BKP_RES="$(_health_worst "${HEALTH[backup.auto]:-skip}" "${HEALTH[backup.db]:-skip}" "${HEALTH[backup.last_time]:-skip}")"
+    BKP_MSG="$(_health_messages_for "$BKP_RES" backup.auto backup.db backup.last_time)"
+    [ -z "$BKP_MSG" ] && BKP_MSG="System, database and recent-backup checks are in place"
+    _health_set "backup" "$BKP_RES" "$BKP_MSG"
+
+    # Mail flow & DNS
+    local MF_RES="pass" MF_ANY=0 MF_SPEC MF_KEY MF_LABEL MF_SEV MF_VAL
+    local -a MF_ISSUES=()
+    for MF_SPEC in \
+        "dns.spf.found|SPF record|fail" \
+        "dns.dkim.found|DKIM record|fail" \
+        "dns.dmarc.found|DMARC record|warn" \
+        "dns.ptr.exists|PTR record|warn" \
+        "smtp.starttls_live_test|STARTTLS|fail" \
+        "dns.lookup_test.ok|DNS lookup|fail"
+    do
+        IFS='|' read -r MF_KEY MF_LABEL MF_SEV <<< "$MF_SPEC"
+        MF_VAL="${DATA[$MF_KEY]:-}"
+        [ -z "$MF_VAL" ] && continue
+        MF_ANY=1
+        if [ "$MF_VAL" != "true" ] && [ "$MF_VAL" != "1" ]; then
+            MF_ISSUES+=("$MF_LABEL")
+            if [ "$MF_SEV" = "fail" ]; then
+                MF_RES="fail"
+            elif [ "$MF_RES" != "fail" ]; then
+                MF_RES="warn"
+            fi
+        fi
+    done
+    if [ "${DATA[dns.ptr.exists]:-}" = "true" ] && [ "${DATA[dns.ptr.matches_hostname]:-}" = "false" ]; then
+        MF_ISSUES+=("PTR does not match the mail hostname")
+        [ "$MF_RES" != "fail" ] && MF_RES="warn"
+    fi
+    if [ "${DATA[dns.spf.found]:-}" = "true" ] && [ "${DATA[dns.spf.includes_server_ip]:-}" = "false" ]; then
+        MF_ISSUES+=("SPF does not include this server's IP")
+        [ "$MF_RES" != "fail" ] && MF_RES="warn"
+    fi
+    if [ "$MF_ANY" -eq 0 ]; then
+        _health_set "mail_flow" "skip" "Mail-flow DNS and STARTTLS checks did not return data"
+    elif [ "${#MF_ISSUES[@]}" -gt 0 ]; then
+        local MF_JOINED
+        MF_JOINED="$(IFS=', '; printf '%s' "${MF_ISSUES[*]}")"
+        _health_set "mail_flow" "$MF_RES" "Needs attention: ${MF_JOINED}"
+    else
+        _health_set "mail_flow" "pass" "SPF, DKIM, DMARC, PTR and STARTTLS checks passed"
+    fi
+
+    # Transport security (delivery TLS + certificate expiry)
+    local TLS_RES="${HEALTH[tls_delivery]:-skip}"
+    local TLS_MSG="${HEALTH_MSG[tls_delivery]:-}"
+    local CERT_DAYS="${DATA[icewarp.ssl.days_left]:-}"
+    if _is_num "$CERT_DAYS"; then
+        if [ "$CERT_DAYS" -lt 0 ]; then
+            TLS_RES="fail"
+            TLS_MSG="The TLS certificate has expired"
+        elif [ "$CERT_DAYS" -lt 30 ]; then
+            TLS_RES="fail"
+            TLS_MSG="The TLS certificate expires in ${CERT_DAYS} days"
+        elif [ "$CERT_DAYS" -lt 90 ]; then
+            [ "$TLS_RES" != "fail" ] && TLS_RES="warn"
+            TLS_MSG="${TLS_MSG}; certificate expires in ${CERT_DAYS} days"
+        elif [ "$TLS_RES" = "pass" ]; then
+            TLS_MSG="TLS delivery is enabled; certificate valid for ${CERT_DAYS} days"
+        fi
+    else
+        [ -n "$TLS_MSG" ] && TLS_MSG="${TLS_MSG}; certificate expiry unavailable"
+        [ -z "$TLS_MSG" ] && TLS_MSG="TLS certificate expiry is not available"
+    fi
+    [ -z "$TLS_MSG" ] && TLS_MSG="TLS delivery and certificate validity are in order"
+    _health_set "tls" "$TLS_RES" "$TLS_MSG"
+
+    # Access & authentication
+    local ACC_RES ACC_MSG
+    ACC_RES="$(_health_worst "${HEALTH[login_blocking]:-skip}" "${HEALTH[password_policy]:-skip}" "${HEALTH[digest_md5]:-skip}")"
+    ACC_MSG="$(_health_messages_for "$ACC_RES" login_blocking password_policy digest_md5)"
+    local TWOFA_RAW="${DATA[security.login.2fa_bypass_enabled]:-}"
+    if [[ "$TWOFA_RAW" == "1" ]] || [[ "$TWOFA_RAW" == "true" ]] || [[ "$TWOFA_RAW" == "TRUE" ]] || [[ "$TWOFA_RAW" == "True" ]]; then
+        [ "$ACC_RES" = "pass" ] || [ "$ACC_RES" = "skip" ] && ACC_RES="warn"
+        ACC_MSG="${ACC_MSG}${ACC_MSG:+; }2FA bypass is enabled"
+    fi
+    [ -z "$ACC_MSG" ] && ACC_MSG="Login lockout, password policy and authentication controls are in order"
+    _health_set "access" "$ACC_RES" "$ACC_MSG"
+
+    # Threat protection (definitions freshness + RBL)
+    local TH_RES="pass" TH_ANY=0 TH_DAYS TH_DATE
+    local -a TH_ISSUES=()
+    TH_DATE="${DATA[icewarp.antispam.last_update]:-}"
+    if [ -n "$TH_DATE" ] && [ "$TH_DATE" != "N/A" ] && [ "$TH_DATE" != "null" ]; then
+        TH_ANY=1
+        TH_DAYS="$(_days_ago "$TH_DATE")"
+        if [ "$TH_DAYS" -gt 30 ]; then
+            TH_RES="fail"; TH_ISSUES+=("antispam definitions are ${TH_DAYS} days old")
+        elif [ "$TH_DAYS" -gt 7 ]; then
+            [ "$TH_RES" != "fail" ] && TH_RES="warn"; TH_ISSUES+=("antispam definitions are ${TH_DAYS} days old")
+        fi
+    else
+        TH_ANY=1; [ "$TH_RES" != "fail" ] && TH_RES="warn"; TH_ISSUES+=("antispam update date unavailable")
+    fi
+    TH_DATE="${DATA[icewarp.antivirus.last_update]:-}"
+    if [ -n "$TH_DATE" ] && [ "$TH_DATE" != "N/A" ] && [ "$TH_DATE" != "null" ]; then
+        TH_ANY=1
+        TH_DAYS="$(_days_ago "$TH_DATE")"
+        if [ "$TH_DAYS" -gt 30 ]; then
+            TH_RES="fail"; TH_ISSUES+=("antivirus definitions are ${TH_DAYS} days old")
+        elif [ "$TH_DAYS" -gt 7 ]; then
+            [ "$TH_RES" != "fail" ] && TH_RES="warn"; TH_ISSUES+=("antivirus definitions are ${TH_DAYS} days old")
+        fi
+    else
+        TH_ANY=1; [ "$TH_RES" != "fail" ] && TH_RES="warn"; TH_ISSUES+=("antivirus update date unavailable")
+    fi
+    if [ "${DATA[security.rbl_self_check.checked]:-}" = "true" ]; then
+        TH_ANY=1
+        if [ "${DATA[security.rbl_self_check.listed]:-}" = "true" ]; then
+            TH_RES="fail"
+            TH_ISSUES+=("server IP is listed on ${DATA[security.rbl_self_check.listed_on]:-an RBL}")
+        fi
+    fi
+    if [ "${DATA[security.cyren_folder.status]:-}" = "WARN" ]; then
+        TH_ANY=1
+        [ "$TH_RES" != "fail" ] && TH_RES="warn"
+        TH_ISSUES+=("old AntiSpam folders need cleanup")
+    fi
+    if [ "$TH_ANY" -eq 0 ]; then
+        _health_set "threat" "skip" "Threat-protection freshness could not be determined"
+    elif [ "${#TH_ISSUES[@]}" -gt 0 ]; then
+        local TH_JOINED
+        TH_JOINED="$(IFS=', '; printf '%s' "${TH_ISSUES[*]}")"
+        _health_set "threat" "$TH_RES" "Needs attention: ${TH_JOINED}"
+    else
+        _health_set "threat" "pass" "Antispam and antivirus definitions are current; IP is not listed on the checked RBLs"
+    fi
+
+    # Server resources
+    local RES_RES RES_MSG
+    RES_RES="$(_health_worst "${HEALTH[memory]:-skip}" "${HEALTH[cpu]:-skip}" "${HEALTH[disk.overall]:-skip}")"
+    if [ "$RES_RES" = "pass" ]; then
+        RES_MSG="CPU, RAM and disk headroom are within configured thresholds"
+    else
+        RES_MSG="$(_health_messages_for "$RES_RES" memory cpu disk.overall)"
+        [ -z "$RES_MSG" ] && RES_MSG="One or more resource thresholds need attention"
+    fi
+    _health_set "resources" "$RES_RES" "$RES_MSG"
+
+    # Monitoring & watchdog
+    local MON_RES MON_MSG
+    MON_RES="$(_health_worst "${HEALTH[monitor.enabled]:-skip}" "${HEALTH[watchdog.control]:-skip}" "${HEALTH[watchdog.interval]:-skip}")"
+    if [ "$MON_RES" = "pass" ]; then
+        MON_MSG="System Monitor, Watchdog and the watchdog interval are configured"
+    else
+        MON_MSG="$(_health_messages_for "$MON_RES" monitor.enabled watchdog.control watchdog.interval)"
+        [ -z "$MON_MSG" ] && MON_MSG="Monitoring or watchdog coverage is incomplete"
+    fi
+    _health_set "monitoring" "$MON_RES" "$MON_MSG"
+
+    # Database platform
+    local DB_TYPE="${DATA[database.type]:-}"
+    local DB_RES="skip" DB_MSG="Database type could not be determined"
+    case "$DB_TYPE" in
+        sqlite)
+            DB_RES="warn"
+            DB_MSG="SQLite is in use; MySQL is recommended for production"
+            ;;
+        mysql)
+            if [ "${DATA[mysql.applicable]:-false}" = "true" ] && [ "${DATA[mysql.service_active]:-1}" != "1" ]; then
+                DB_RES="fail"
+                DB_MSG="MySQL is configured but the database service is not active"
+            elif [ "${DATA[database.scope]:-}" = "remote" ] && [ "${DATA[mysql.reachable]:-1}" != "1" ]; then
+                DB_RES="fail"
+                DB_MSG="Remote MySQL is not reachable on port 3306"
+            else
+                DB_RES="pass"
+                DB_MSG="MySQL database platform is active"
+            fi
+            ;;
+        unknown|"")
+            DB_RES="skip"
+            DB_MSG="Database type could not be determined"
+            ;;
+        *)
+            DB_RES="warn"
+            DB_MSG="Unrecognised database type: ${DB_TYPE}"
+            ;;
+    esac
+    _health_set "database" "$DB_RES" "$DB_MSG"
+
+    # --- Roll-up (nine executive pillars) ---
     local TOTAL=0 FAIL=0 WARN=0
 
     local -a SUMMARY_KEYS=(
-        memory
-        disk.root_fs
-        disk.install
-        disk.mail
-        disk.archive
-        disk.root_home
-        cpu
-        login_blocking
-        tls_delivery
+        backup
+        mail_flow
+        tls
+        access
+        threat
+        resources
         os_update
-        password_policy
-        backup.auto
-        backup.db.accounts
-        backup.db.as
-        backup.db.gw
-        backup.last_time
+        monitoring
+        database
     )
 
     for K in "${SUMMARY_KEYS[@]}"; do

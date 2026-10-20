@@ -11,7 +11,7 @@ defined checklist, and generates three output files.
 |------|---------|
 | `output/health.json` | Raw structured data (type-aware JSON) for monitoring systems |
 | `output/report.pdf` | Full technical report with all checklist items, values, and notes |
-| `output/management_report.pdf` | Non-technical executive summary with visual status grid |
+| `output/management_report.pdf` | Non-technical executive summary with scorecards and prioritized actions |
 
 ## Quick Start
 
@@ -29,15 +29,20 @@ cd icewarp-health-agent
 | `./agent.sh --report` | Same, and print summary to stdout |
 | `./agent.sh --list` | List all available collectors |
 | `--only=<filter>` | Run only collectors containing `<filter>` (comma-separated) |
-| `--technician="Name"` | Override technician name in reports |
-| `--company="Name"` | Override company name in reports |
+| `--technician="Name"` | Override technician name in reports (default: `Parsavan`) |
+| `--company="Name"` | Override company name in reports (default: the domain that carries mail) |
 | `--config` / `--config --apply` | Preview or apply recommended IceWarp settings |
 | `--check-update` | Check for a newer Git revision, then exit |
 | `--no-auto-update` | Skip the automatic Git update for this run |
 | `--auto-update` | Force an update check even if disabled in config |
 | `--no-update` | Deprecated no-op; use `--no-auto-update` |
 
-Current version: **0.5.0**.
+Current version: **0.6.0**.
+
+When `--company` is omitted, the agent uses `domain.primary.name`, then
+`MAIL_DOMAIN`, then the first domain returned by `tool.sh`, then the configured
+mail hostname. When `--technician` is omitted, it uses `Parsavan`. Both defaults
+are overridden by the command-line flags.
 
 ### Automatic updates
 
@@ -130,15 +135,22 @@ days CRITICAL).
 Swap Monitoring: Checks swap usage in the last 7 days.
 
 Health Summary (Cover Page)
-Only 8 key categories are shown for quick overview:
-Backup, Resource - RAM, Resource - CPU, Resource - HDD, Login Blocking,
-SSL, OS Update, Password Policy.
+The cover rolls detailed checks into nine executive control areas: Backup &
+Recovery, Mail Flow & DNS, Transport Security, Access & Authentication, Threat
+Protection, Server Resources, OS & Patching, Monitoring & Watchdog, and
+Database Platform. The overall Health Summary status is based on these
+pillars; the full checklist remains available in the technical report.
 
 Reports
-Technical PDF (report.pdf): All checklist items with values and notes.
+Technical PDF (report.pdf): All checklist items with values and notes. The
+cover carries the v1.14 checklist label and the nine-pillar Health Summary;
+the appendix groups raw keys by subsystem into readable tables. Pages carry
+report name and page numbers.
 
-Management PDF (management_report.pdf): Visual status grid only,
-non-technical.
+Management PDF (management_report.pdf): Modern management summary with a
+score arc, executive overview, control-area scorecards, stacked status bars,
+and prioritized recommended actions. It evaluates the full checklist but does
+not print every item.
 
 Both PDFs are generated natively in Bash. No wkhtmltopdf, no
 pdflatex, no additional dependencies.
@@ -158,16 +170,18 @@ curl, dig, openssl, awk, date, find, grep, sed, firewall-cmd.
 logs `git_missing` and continues with the local code.
 
 Checklist
-Based on IceWarp CheckList v1.12.
-See docs/checklist-map.md for item-by-item mapping between checklist
-entries and collectors.
+Reports reference IceWarp CheckList **v1.14** (the internal edition label
+configured by `CHECKLIST_VERSION`). The item set is still the v1.12-mapped
+113-item checklist; the v1.14 label changes the report metadata, not the
+collector coverage. See docs/checklist-map.md for item-by-item mapping between
+checklist entries and collectors.
 
 Configuration
 Default settings work out of the box. Optional customization:
 
-config/agent.conf: General settings (timeouts, monitor URL) and automatic
-update controls (`AUTO_UPDATE_ENABLED`, branch, origin, log path, and
-validation).
+config/agent.conf: General settings (timeouts, monitor URL), the report
+`CHECKLIST_VERSION` label, and automatic update controls
+(`AUTO_UPDATE_ENABLED`, branch, origin, log path, and validation).
 
 config/icewarp.conf: IceWarp-specific paths.
 
