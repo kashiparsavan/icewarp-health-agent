@@ -46,9 +46,9 @@ show_help() {
     echo "  --technician=\"Name\"     Override technician name in reports"
     echo "  --company=\"Name\"        Override company name in reports"
     echo "  --check-update          Check for a newer git revision, then exit"
-    echo "  --no-auto-update        Skip the automatic git update for this run"
+    echo "  --no-update             Skip the automatic git update for this run"
+    echo "  --no-auto-update        Alias for --no-update"
     echo "  --auto-update           Force an update check even if disabled in config"
-    echo "  --no-update             Deprecated no-op (use --no-auto-update)"
     echo "  --help                  Show this help message"
     echo ""
     exit 0
@@ -72,9 +72,8 @@ for ARG in "$@"; do
         --company=*) ARG_COMPANY="${ARG#--company=}" ;;
         --technician=*) ARG_TECHNICIAN="${ARG#--technician=}" ;;
         --check-update) AUTO_UPDATE_CHECK_ONLY=1 ;;
-        --no-auto-update) AUTO_UPDATE_DISABLED=1; AUTO_UPDATE_ENABLED=0 ;;
+        --no-update|--no-auto-update) AUTO_UPDATE_DISABLED=1; AUTO_UPDATE_ENABLED=0 ;;
         --auto-update) AUTO_UPDATE_ENABLED=1 ;;
-        --no-update) ;;
     esac
 done
 

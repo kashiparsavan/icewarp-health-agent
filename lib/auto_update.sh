@@ -362,8 +362,8 @@ auto_update_run() {
     fi
 
     if [ "${AUTO_UPDATE_DISABLED:-0}" = "1" ]; then
-        _au_log "disabled" "" "" "Disabled by --no-auto-update"
-        echo "[INFO] Auto-update: disabled by --no-auto-update"
+        _au_log "disabled" "" "" "Disabled by --no-update/--no-auto-update"
+        echo "[INFO] Auto-update: disabled by --no-update/--no-auto-update"
         return 0
     fi
 

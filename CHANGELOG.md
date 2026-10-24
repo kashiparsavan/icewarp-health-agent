@@ -3,6 +3,14 @@
 All notable changes to this project are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Fixed
+
+- Restored `--no-update` as the opt-out for the automatic Git self-update.
+  Auto-update remains enabled by default before every run; `--no-auto-update`
+  is kept as an alias.
+
 ## [0.6.0] - 2026-10-20
 
 ### Added
@@ -89,8 +97,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 ### Changed
 
 - `VERSION` and `config/agent.conf` bumped to `0.5.0`.
-- `--no-update` remains a deprecated no-op; use `--no-auto-update` for agent
-  updates.
+- `--no-update` was a deprecated no-op in this release; it is restored as the
+  self-update opt-out in Unreleased. `--no-auto-update` remains an alias.
 - `maintenance/collectors_validity_checker.sh` disables auto-update during
   validation runs.
 

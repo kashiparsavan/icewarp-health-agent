@@ -33,9 +33,9 @@ cd icewarp-health-agent
 | `--company="Name"` | Override company name in reports (default: the domain that carries mail) |
 | `--config` / `--config --apply` | Preview or apply recommended IceWarp settings |
 | `--check-update` | Check for a newer Git revision, then exit |
-| `--no-auto-update` | Skip the automatic Git update for this run |
+| `--no-update` | Skip the automatic Git update for this run |
+| `--no-auto-update` | Alias for `--no-update` |
 | `--auto-update` | Force an update check even if disabled in config |
-| `--no-update` | Deprecated no-op; use `--no-auto-update` |
 
 Current version: **0.6.0**.
 
@@ -46,8 +46,9 @@ are overridden by the command-line flags.
 
 ### Automatic updates
 
-The agent updates itself before every execution. It checks the configured Git
-branch (`origin/main` by default), fast-forwards only when there are no staged
+The agent updates itself before every execution by default. Pass
+`--no-update` to skip the check for one run. It checks the configured Git branch
+(`origin/main` by default), fast-forwards only when there are no staged
 or code changes (unstaged `config/*.conf` edits are preserved), validates the
 new shell files, and re-executes itself. Every attempt is written to
 `logs/auto_update.log`.

@@ -36,6 +36,7 @@ For every change:
 | 2026-10-19 | `b266ab7` | Fix | Required the checked-out branch to match `AUTO_UPDATE_BRANCH`; documented the branch guard and clarified clean-tree/config-edit behavior. | `lib/auto_update.sh`, `config/agent.conf`, `README.md`, `CHANGELOG.md`, `CLAUDE.md`, `docs/auto-update.md` |
 | 2026-10-19 | `b91d3ed` | Docs | Added first-time activation and customized-checkout upgrade instructions, including config backup/stash/pull/reapply steps. | `docs/auto-update.md` |
 | 2026-10-20 | `6f84ea6` | Feature / reports | Redesigned the management report; added nine-pillar Health Summary, grouped technical appendix tables, page footer/page numbers, company domain fallback, Parsavan technician default, and v1.14 checklist label. Bumped release to 0.6.0. | `README.md`, `CLAUDE.md`, `CHANGELOG.md`, `VERSION`, `config/agent.conf`, `lib/health.sh`, `lib/pdf.sh`, `lib/management_report.sh`, `lib/common.sh`, `agent.sh`, `docs/checklist-coverage.md`, `docs/checklist-map.md`, `docs/roadmap.md`, `docs/update-log.md` |
+| 2026-10-24 | `pending` | Fix | Restored `--no-update` as the automatic Git self-update opt-out; auto-update remains enabled by default and `--no-auto-update` remains an alias. | `agent.sh`, `lib/auto_update.sh`, `README.md`, `CLAUDE.md`, `CHANGELOG.md`, `docs/auto-update.md`, `docs/update-log.md` |
 
 ## Runtime update log format
 

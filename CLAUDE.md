@@ -31,9 +31,9 @@ Run from the repository root **on the IceWarp server** (normally as root):
 ./agent.sh --config                         # show recommended-config diff (dry run)
 ./agent.sh --config --apply                 # apply changes with tool.sh set system
 ./agent.sh --check-update                   # fetch and report update availability, then exit
-./agent.sh --no-auto-update                 # skip self-update for this run
+./agent.sh --no-update                      # skip self-update for this run
+./agent.sh --no-auto-update                 # alias for --no-update
 ./agent.sh --auto-update                    # force a self-update check
-./agent.sh --no-update                      # deprecated no-op
 ```
 
 If `--technician` is omitted the report uses `Parsavan`. If `--company` is

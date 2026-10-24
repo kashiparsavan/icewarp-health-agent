@@ -2,9 +2,10 @@
 
 Starting with **v0.5.0**, the agent checks the configured Git branch before
 every execution and fast-forwards itself when a newer revision is available.
-The update happens before `agent.sh` loads the rest of its libraries, and the
-agent re-executes itself after a successful update so the current run uses the
-new code.
+This is the default behavior; pass `--no-update` (or its alias
+`--no-auto-update`) to skip the check for one run. The update happens before
+`agent.sh` loads the rest of its libraries, and the agent re-executes itself
+after a successful update so the current run uses the new code.
 
 The updater is intentionally conservative. It will **never** merge, rebase,
 force-push, or overwrite staged/code changes. Unstaged per-server edits under
@@ -98,9 +99,9 @@ collector run, and a second scheduled run aborts before updating.
 | Option | Behavior |
 |---|---|
 | `--check-update` | Fetch and report whether an update is available, then exit without changing files |
-| `--no-auto-update` | Skip the update check for this run only |
+| `--no-update` | Skip the update check for this run only |
+| `--no-auto-update` | Alias for `--no-update` |
 | `--auto-update` | Force a check even when disabled in config |
-| `--no-update` | Deprecated no-op, kept for backward compatibility |
 
 ## Configuration
 
@@ -143,7 +144,7 @@ Possible statuses:
 | `updated` | Fast-forward completed |
 | `check_up_to_date` | `--check-update` found no update |
 | `check_available` | `--check-update` found an update |
-| `disabled` | Auto-update disabled by config or `--no-auto-update` |
+| `disabled` | Auto-update disabled by config or `--no-update` |
 | `not_git` | `PROJECT_ROOT` is not a Git checkout |
 | `git_missing` | `git` is not installed |
 | `locked` | Another update check is running |
