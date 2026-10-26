@@ -178,6 +178,33 @@ Each file under `windows/collectors/<Area>/<Name>.ps1` must:
 Windows dependencies: Windows PowerShell 5.1, IceWarp `tool.exe`, and Pester
 3.4+ for tests. Do not introduce a Bash dependency or call the Linux agent.
 
+### Windows API reference
+
+The authoritative Windows-side API reference is
+`tool.v14.3.0.13.windows.help` (IceWarp 14.3.0.13 `APIConst.pas` from the
+Windows server). It is **not** the same file as the Linux reference
+`tool.v14.3.0.13.help`, and it must not be used as a substitute for it.
+
+- Keep both files. Use the Windows reference when writing or reviewing
+  Windows collectors.
+- All Linux keys are present on Windows. Windows adds 4 keys:
+  `C_API_DomainList_DefaultLimit`, `U_MailingLists`, `U_MailingListsList`,
+  and `U_SlaveDomain`.
+- `U_GROUPS` / `U_GROUPSLIST` are spelled `U_Groups` / `U_GroupsList` on
+  Windows. The IDs and descriptions are the same.
+- `U_MasterDomain` is `String [R]` on Windows and `String` on Linux. Read
+  only on Windows.
+- `C_OS` is `0` for Windows and `1` for Linux on both platforms.
+- `C_Accounts_Policies_Auth_Schemes` is present; the incorrect
+  `C_Mail_Security_AuthScheme` is absent.
+
+The full comparison is in `docs/api-windows-vs-linux-v14.3.0.13.md`.
+
+The API reference defines key names and IDs. It is not a substitute for
+validating `tool.exe` output formatting, value semantics, service names, and
+Windows-only behavior on the lab server. A Windows `tool.exe` search/list
+export is still needed to confirm the property listing.
+
 ## Health rules (`lib/health.sh`)
 
 `_health_set <name> <result> <message>` stores the result and exposes

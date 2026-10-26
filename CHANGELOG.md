@@ -17,12 +17,23 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 - `docs/checklist-coverage.md` now records that the Linux 14.3.0.13 API
   reference is unchanged, so the existing 113-item mapping still applies.
+- `docs/api-update-v14.3.0.12-to-14.3.0.13.md` and `windows/README.md` now
+  point to the Windows-vs-Linux comparison.
+
+### Added
+
+- `tool.v14.3.0.13.windows.help`, the IceWarp 14.3.0.13 Windows
+  `APIConst.pas`. Kept alongside the Linux reference; the two files are not
+  byte-identical.
+- `docs/api-windows-vs-linux-v14.3.0.13.md` with the Windows-vs-Linux key,
+  ID, type, description, and read-only comparison.
 
 ### Notes
 
 - The Windows 14.3.0.13 `APIConst.pas` has a different SHA-256 from the Linux
-  file. No key-level Windows comparison was performed because only the
-  Windows hash was supplied.
+  file. A key-level comparison has since been completed: all Linux keys are
+  present on Windows, Windows adds 4 keys, and 2 keys differ in
+  capitalization. No collector or checklist changes are required.
 
 ## [windows-0.1.0] - 2026-10-26
 
