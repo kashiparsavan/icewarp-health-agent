@@ -3,6 +3,20 @@
 All notable changes to this project are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+
+- `tool.v14.3.0.13.help`, the IceWarp 14.3.0.13 `APIConst.pas` API reference.
+  The supplied file is byte-identical to 14.3.0.12; no API keys changed.
+- `docs/api-update-v14.3.0.12-to-14.3.0.13.md` with the comparison,
+  Windows-specific key checks, and verification commands.
+
+### Changed
+
+- `docs/checklist-coverage.md` now records that the 14.3.0.13 API reference is
+  unchanged, so the existing 113-item mapping still applies.
+
 ## [windows-0.1.0] - 2026-10-26
 
 ### Added

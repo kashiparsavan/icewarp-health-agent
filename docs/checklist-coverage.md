@@ -126,7 +126,7 @@ Legend:
 
 ## New Items Added During Development (beyond original 99)
 
-These items were added based on the IceWarp 14.3.0.12 API and are evaluated in the reports.
+These items were added based on the IceWarp 14.3.0.12 API and are evaluated in the reports. The 14.3.0.13 `APIConst.pas` reference is unchanged, so the same mapping applies.
 
 | # | Section | Item | Status | Collector / Key | Notes |
 |---|---------|------|--------|-----------------|-------|
