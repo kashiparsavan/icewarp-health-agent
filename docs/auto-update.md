@@ -10,6 +10,9 @@ The updater is intentionally conservative. It will **never** merge, rebase,
 force-push, or overwrite staged/code changes. Unstaged per-server edits under
 `config/*.conf` are preserved; a same-file upstream change aborts the update.
 
+> **Windows:** automatic update is not implemented in the Windows 0.1.0
+> scaffold. This document and the updater apply to the Linux agent only.
+
 ## First-time activation
 
 Auto-update cannot bootstrap itself into a checkout that does not already have

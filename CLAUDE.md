@@ -14,9 +14,16 @@ items), and produces:
 - `output/report.pdf` — full technical report
 - `output/management_report.pdf` — non-technical executive summary
 
-Current version: **0.6.0** (`VERSION`, `config/agent.conf`). Target platform:
-Linux (RHEL/Rocky/AlmaLinux and Debian/Ubuntu families) with Bash 4+ and GNU
-coreutils. There is no runtime, package manager, database, or web server.
+Linux version: **0.6.0** (`VERSION`, `config/agent.conf`). Windows scaffold
+version: **0.1.0** (`windows/VERSION`). Linux target: RHEL/Rocky/AlmaLinux and
+Debian/Ubuntu families with Bash 4+ and GNU coreutils. There is no runtime,
+package manager, database, or web server.
+
+A separate Windows implementation lives under `windows/` and targets Windows
+PowerShell 5.1. It is independent: it does not call `agent.sh`, does not source
+anything from the Linux `lib/`, and does not share Linux configuration. See
+`windows/README.md`. Windows target: Windows Server 2012 R2 or later with
+Windows PowerShell 5.1 and IceWarp `tool.exe`.
 
 ## Commands
 
@@ -49,10 +56,24 @@ bash -n agent.sh lib/*.sh collectors/**/*.sh    # syntax check
 ./maintenance/collectors_validity_checker.sh --list
 ```
 
-There is no unit-test framework and no CI. A meaningful test requires
+The Linux tree has no unit-test framework and no CI. A meaningful test requires
 `/opt/icewarp/tool.sh` and a live IceWarp installation; on a plain dev machine
 collectors will mostly return empty/skip values. Do not claim a runtime fix was
 verified without exercising it on a lab server.
+
+Windows commands (from the `windows/` directory, Windows PowerShell 5.1):
+
+```powershell
+.\agent.ps1                                  # collect + write output\health.json
+.\agent.ps1 -Report                          # same, plus console summary
+.\agent.ps1 -List                            # list collectors
+.\agent.ps1 -Only General -Report            # filter by relative collector path
+.\agent.ps1 -ConfigPath .\config\agent.local.psd1
+.\tests\Run-Tests.ps1                        # Pester smoke tests
+```
+
+The Windows tests do not need a live IceWarp server. A live `tool.exe` is needed
+to validate the actual IceWarp values.
 
 ## Architecture and data flow
 
@@ -75,6 +96,23 @@ agent.sh
 The updater is the only code that runs before the normal library load. It
 must remain self-contained: it cannot rely on `common.sh`, `DATA`, or any
 collector helper.
+
+Windows flow (independent):
+
+```
+windows/agent.ps1
+  -> dot-sources windows/lib/Common.ps1, Logging.ps1, Config.ps1,
+     IceWarpTool.ps1, Json.ps1
+  -> loads config/agent.local.psd1, falling back to agent.example.psd1
+  -> discovers collectors/**/*.ps1 in sorted order
+  -> runs each collector in a child scope with -Context
+  -> merges one ordered dictionary per collector into DATA
+  -> writes output/health.json and logs/agent.log
+```
+
+Windows collectors must not call the Linux entry point or libraries. The
+Windows data contract is flat dotted keys, matching the Linux names where a
+collector is ported.
 
 Key implementation details:
 
@@ -120,6 +158,24 @@ Dependency rules: standard Unix tools only (`curl`, `dig`, `openssl`, `awk`,
 `date`, `find`, `grep`, `sed`, `df`, `firewall-cmd`). Do not add `jq`, `bc`,
 Python, or a package dependency. Use `awk` for floating-point math and GNU
 `grep -P`/`date -d` where already used.
+
+### Windows collector contract
+
+Each file under `windows/collectors/<Area>/<Name>.ps1` must:
+
+1. Declare `param([Parameter(Mandatory = $true)][hashtable]$Context)`.
+2. Return exactly one `IDictionary` (prefer `[ordered]@{}`) and write nothing
+   else to the pipeline.
+3. Use `Get-IceWarpSetting` or `Invoke-IceWarpTool` for `tool.exe` calls so the
+   configured timeout applies.
+4. Use namespaced dotted keys and keep names compatible with the Linux key
+   contract when porting an existing collector.
+5. Let failures throw; `Invoke-AgentCollector` isolates them, records `error`
+   or `empty`, and continues.
+6. Avoid `exit` and global state. Put reusable logic in `windows/lib/`.
+
+Windows dependencies: Windows PowerShell 5.1, IceWarp `tool.exe`, and Pester
+3.4+ for tests. Do not introduce a Bash dependency or call the Linux agent.
 
 ## Health rules (`lib/health.sh`)
 
@@ -248,6 +304,14 @@ long values, and empty strings. All PDF generation happens on every full run.
   matching against the collector path.
 - Configuration is authoritative for paths, but collectors should prefer live
   `DATA` values when an earlier collector resolved them (see `storage.sh`).
+- Windows: PowerShell 5.1 syntax, 4-space indentation, approved verbs where
+  practical, ASCII-only script files, and PSD1 configuration read through
+  `Import-PowerShellDataFile`. Do not use PowerShell 7-only syntax.
+- Windows and Linux are independent trees. Never make `windows/agent.ps1` call
+  `agent.sh` or source `lib/*.sh`, and never make the Linux agent depend on
+  Windows files.
+- Windows runtime state belongs under `windows/output/` and `windows/logs/`;
+  per-server config is `windows/config/agent.local.psd1` and is gitignored.
 
 ## Known issues / documentation drift
 
@@ -273,6 +337,9 @@ long values, and empty strings. All PDF generation happens on every full run.
 - `logs/auto_update.log` is runtime data and gitignored. Do not add runtime
   update entries to `docs/update-log.md`; that file is the committed,
   human-readable change ledger.
+- Windows 0.1.0 is a scaffold. It has one collector, no health evaluation, no
+  PDFs, and no automatic update. Do not describe it as Linux feature parity or
+  claim v1.14 item-level coverage on Windows.
 
 ## Knowledge graph (Graphify)
 
@@ -320,3 +387,16 @@ For a collector change:
    every affected guide (`README.md`, `CLAUDE.md`, `docs/auto-update.md`, or
    the checklist docs). Replace the `pending` commit hash in the activity log
    after committing.
+
+For a Windows change:
+
+1. Edit only the `windows/` tree unless a repository-wide document or ignore
+   rule must change.
+2. Keep Windows PowerShell 5.1 compatibility and ASCII-only script files.
+3. Run `windows\tests\Run-Tests.ps1` and a manual `windows\agent.ps1` smoke
+   run. A live `tool.exe` check is still required for real values.
+4. Do not invoke `agent.sh` or source Linux libraries from Windows code.
+5. Keep `windows/VERSION`, `windows/CHANGELOG.md`, and Windows tags
+   independent of Linux.
+6. Update `windows/README.md`, `windows/docs/deployment.md`, and the root
+   platform notes when behavior changes.

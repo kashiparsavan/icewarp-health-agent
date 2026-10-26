@@ -3,6 +3,31 @@
 All notable changes to this project are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [windows-0.1.0] - 2026-10-26
+
+### Added
+
+- Independent Windows PowerShell 5.1 scaffold under `windows/` with its own
+  `VERSION`, PSD1 configuration, logging, IceWarp `tool.exe` wrapper, flat JSON
+  output, and collector runner.
+- `windows/collectors/General/Version.ps1` as the first sample collector.
+- Pester smoke tests with a Pester 3.4/5-compatible runner.
+- Windows setup, deployment, and troubleshooting documentation.
+
+### Changed
+
+- Added PowerShell line-ending rules and Windows runtime/config exclusions to
+  `.gitattributes` and `.gitignore`.
+- Added the Windows platform status and usage section to `README.md`.
+
+### Notes
+
+- The Linux agent and its auto-updater are unchanged. The Windows tree does not
+  call `agent.sh` or source anything from the Linux `lib/` directory.
+- Windows releases use independent `windows-v*` tags.
+- The Windows scaffold is not feature parity: the full checklist, health rules,
+  PDF reports, DNS collectors, and automatic updates are not ported yet.
+
 ## [0.6.0] - 2026-10-20
 
 ### Added

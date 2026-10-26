@@ -4,6 +4,12 @@ logs/*
 .agent.lock
 .agent.update.lock/
 
+# Windows runtime artifacts - independent of the Linux runtime paths
+windows/output/*
+windows/logs/*
+windows/.agent.lock
+windows/config/agent.local.psd1
+
 # Local secrets and deployment configuration
 .env
 

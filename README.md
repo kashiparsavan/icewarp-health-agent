@@ -1,11 +1,22 @@
 # IceWarp Health Agent
 
-A dependency-free, Bash-based health checking and reporting tool for IceWarp
-mail servers. It runs locally on the mail server, collects data via
-`tool.sh`, OS commands, and DNS lookups, evaluates the results against a
+The Linux agent is a dependency-free, Bash-based health checking and reporting
+tool for IceWarp mail servers. It runs locally on the mail server, collects data
+via `tool.sh`, OS commands, and DNS lookups, evaluates the results against a
 defined checklist, and generates three output files.
 
+A separate Windows implementation lives under `windows/` and uses Windows
+PowerShell. It is independent: it does not call `agent.sh` and does not source
+anything from the Linux `lib/` directory.
+
+| Platform | Entry point | Version | Status |
+|---|---|---|---|
+| Linux | `./agent.sh` | 0.6.0 | Production |
+| Windows | `windows/agent.ps1` | 0.1.0 | Scaffold |
+
 ## Output Files
+
+The Linux agent generates these files:
 
 | File | Purpose |
 |------|---------|
@@ -13,7 +24,10 @@ defined checklist, and generates three output files.
 | `output/report.pdf` | Full technical report with all checklist items, values, and notes |
 | `output/management_report.pdf` | Non-technical executive summary with scorecards and prioritized actions |
 
-## Quick Start
+The Windows 0.1.0 scaffold currently writes flat JSON only. PDF and management
+report output are not ported yet.
+
+## Quick Start (Linux)
 
 ```bash
 git clone https://github.com/kashiparsavan/icewarp-health-agent.git
@@ -37,7 +51,8 @@ cd icewarp-health-agent
 | `--auto-update` | Force an update check even if disabled in config |
 | `--no-update` | Deprecated no-op; use `--no-auto-update` |
 
-Current version: **0.6.0**.
+Current Linux version: **0.6.0**. Current Windows scaffold version: **0.1.0**
+(`windows/VERSION`).
 
 When `--company` is omitted, the agent uses `domain.primary.name`, then
 `MAIL_DOMAIN`, then the first domain returned by `tool.sh`, then the configured
@@ -61,7 +76,35 @@ This only works from a Git clone. A ZIP/copied install runs the local files and
 skips the update check. An existing clone must pull this release once manually
 (`git pull --ff-only origin main`); after that, every run checks automatically.
 
-### Docker deployment (IceWarp server container)
+## Windows Agent (scaffold)
+
+The Windows implementation is additive and independent. It targets Windows
+PowerShell 5.1 and does not use Bash, `agent.sh`, or the Linux libraries.
+
+```powershell
+cd windows
+Copy-Item .\config\agent.example.psd1 .\config\agent.local.psd1
+notepad .\config\agent.local.psd1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\agent.ps1 -Report
+```
+
+What works in 0.1.0:
+
+- CLI entry point with `-Report`, `-List`, `-Only`, `-Company`, `-Technician`,
+  `-ConfigPath`, and `-Help`.
+- PSD1 configuration with a tracked example and ignored per-server file.
+- Timeout-bounded `tool.exe` wrapper and isolated collector execution.
+- Flat, type-aware `windows/output/health.json`.
+- One sample collector: `windows/collectors/General/Version.ps1`.
+- Pester smoke tests.
+
+What is not ported yet: the full 113-item checklist, health rules, PDF and
+management reports, DNS collectors, and automatic updates. See
+[`windows/README.md`](windows/README.md) and
+[`windows/docs/deployment.md`](windows/docs/deployment.md) for setup and
+scheduling. The Linux updater remains Linux-only and follows `origin/main`.
+
+## Docker deployment (Linux / IceWarp server container)
 
 `docker-compose.yml` starts the IceWarp server container, not the health agent.
 Copy the example environment file, fill in real values, and start it:
@@ -99,6 +142,8 @@ icewarp-health-agent/
 │   └── update-log.md             # Human-readable change/activity ledger
 ├── logs/                         # Runtime logs (gitignored)
 └── output/                       # Generated reports (gitignored)
+
+The independent Windows tree is under `windows/`; see `windows/README.md`.
 
 Features
 Health Evaluation
@@ -161,13 +206,16 @@ ssh root@icewarp-server "/opt/icewarp-health-agent/agent.sh --report"
 scp root@icewarp-server:/opt/icewarp-health-agent/output/*.pdf .
 
 Dependencies
-No runtime, package manager, database, or web server. Pure Bash plus standard
-Unix tools:
+The Linux agent has no runtime, package manager, database, or web server. It is
+pure Bash plus standard Unix tools:
 
 curl, dig, openssl, awk, date, find, grep, sed, firewall-cmd.
 
 `git` is additionally required for automatic updates. Without it, the agent
 logs `git_missing` and continues with the local code.
+
+The Windows agent requires Windows PowerShell 5.1 and IceWarp `tool.exe`. Pester
+3.4+ is needed only to run its tests.
 
 Checklist
 Reports reference IceWarp CheckList **v1.14** (the internal edition label
@@ -205,6 +253,10 @@ remote-execution strategy.
 Transport (SEND_DATA=1) is implemented but not yet validated against
 a real monitoring endpoint.
 
+The Windows 0.1.0 scaffold does not yet implement the full checklist, health
+rules, PDF reports, DNS collectors, or automatic updates. It writes JSON and
+one sample collector only.
+
 Automatic updates require a Git clone with the expected `origin` and no
 staged or unstaged code changes. Unstaged edits to `config/*.conf` are
 allowed and preserved; if an upstream commit touches the same config file,
@@ -227,7 +279,15 @@ docs/roadmap.md: Project milestones and future work.
 
 docs/tool-index.md: Reference of tool.sh properties.
 
-CHANGELOG.md: Version history.
+windows/README.md: Windows scaffold, configuration, collector contract, and
+tests.
+
+windows/docs/deployment.md: Windows Task Scheduler, permissions,
+troubleshooting, and update guidance.
+
+CHANGELOG.md: Linux version history.
+
+windows/CHANGELOG.md: Windows version history.
 
 CLAUDE.md: Guidance for AI agents and maintainers working in the repository.
 

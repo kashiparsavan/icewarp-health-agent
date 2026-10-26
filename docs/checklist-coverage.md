@@ -1,11 +1,15 @@
 # IceWarp Checklist v1.14 - Complete Coverage Report
 
-Last updated: 2026-10-20 (v0.6.0 report redesign)
+Last updated: 2026-10-26 (Windows scaffold note; Linux coverage still v0.6.0)
 
 > **Edition note:** v1.14 is an internal IceWarp checklist edition label. The
 > repository still contains the v1.12-mapped 113-item checklist; only the
 > displayed report version changed. Item-level alignment to a future v1.14
 > source requires the internal diff.
+>
+> **Windows note:** the Windows 0.1.0 scaffold has one sample collector and is
+> not mapped to this checklist yet. This coverage table describes the Linux
+> agent.
 
 Legend:
 - FULL: fully collected and evaluated (PASS/WARN/CRITICAL)

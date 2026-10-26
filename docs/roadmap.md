@@ -1,6 +1,6 @@
 # Roadmap
 
-Last updated: 2026-10-20 (v0.6.0)
+Last updated: 2026-10-26 (Windows 0.1.0 scaffold)
 
 ## Current State
 
@@ -13,6 +13,7 @@ Last updated: 2026-10-20 (v0.6.0)
 | M4 - JSON and Transport | 70% | JSON solid, transport implemented but not validated against a real endpoint |
 | M5 - Health Rules and Reports | 95% | health.sh, pdf.sh, management_report.sh all working |
 | M6 - Operations and Auto-update | 100% | fast-forward updater, validation, locking, audit log, operator docs |
+| W1 - Windows Agent Scaffold | 20% | Independent PowerShell 5.1 entry point, PSD1 config, tool wrapper, JSON, one collector, Pester tests |
 
 ## What Was Done in v0.6.0
 
@@ -26,6 +27,26 @@ Last updated: 2026-10-20 (v0.6.0)
 - Added company fallback to the mail domain and technician default `Parsavan`.
 - Set the report checklist label to v1.14 (internal edition; item set unchanged).
 - Bumped `VERSION` and `config/agent.conf` to `0.6.0`.
+
+## What Was Done in Windows 0.1.0
+
+- Added an independent PowerShell 5.1 entry point under `windows/`.
+- Added PSD1 configuration, logging, timeout-bounded `tool.exe` calls, a
+  collector runner, and flat UTF-8 JSON output.
+- Added the `General/Version` sample collector for the IceWarp version and
+  basic Windows host details.
+- Added Pester smoke tests and a Pester 3.4/5-compatible runner.
+- Added Windows setup, deployment, and troubleshooting documentation.
+- Kept Linux paths, behavior, and update flow unchanged.
+
+### Windows Remaining Work
+
+1. Port the collector set and map it to the 113-item checklist.
+2. Port health evaluation and the JSON key contract.
+3. Build technical and management reports on Windows.
+4. Add DNS and mail-flow collectors that use Windows networking tools.
+5. Add a safe Windows updater and a supported Task Scheduler/service install.
+6. Validate against a real IceWarp Windows lab server.
 
 ## What Was Done in v0.5.0
 
@@ -56,7 +77,7 @@ Last updated: 2026-10-20 (v0.6.0)
 - Removed bc dependency. Using awk only.
 - All core files have English section banners.
 
-## Remaining Work
+## Remaining Work (Linux)
 
 ### High Priority
 
@@ -86,6 +107,7 @@ Last updated: 2026-10-20 (v0.6.0)
 
 | Version | Date | Highlights |
 |---|---|---|
+| windows-0.1.0 | 2026-10-26 | Independent Windows PowerShell scaffold: PSD1 config, tool wrapper, JSON, sample collector, Pester tests |
 | 0.6.0 | 2026-10-20 | Modern management report, nine-pillar Health Summary, grouped technical appendix, v1.14 report label, domain/technician defaults |
 | 0.5.0 | 2026-10-19 | Automatic fast-forward updates, update audit log, validation/rollback, configurator key fixes |
 | 0.4.0 | 2026-09-23 | Complete overhaul of health rules, management report, license, backup, archive, watchdog |
