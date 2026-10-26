@@ -1,33 +1,39 @@
-# API Update Note: IceWarp 14.3.0.12 to 14.3.0.13
+# API Update Note: IceWarp 14.3.0.12 to 14.3.0.13 (Linux)
 
 **Date:** 2026-10-26
-**Scope:** API Reference Comparison (APIConst.pas, Windows side)
-**Impact:** None on existing collectors
+**Scope:** Linux API Reference Comparison (APIConst.pas); Windows hash check
+**Impact:** None on existing Linux collectors; Windows key comparison not performed
 
 ---
 
 ## Summary
 
 IceWarp was upgraded from version **14.3.0.12** to **14.3.0.13**. The
-supplied Windows-side `APIConst.pas` was added as `tool.v14.3.0.13.help` and
-compared against `tool.v14.3.0.12.help`.
+supplied Linux `APIConst.pas` was added as `tool.v14.3.0.13.help` and compared
+against the existing Linux `tool.v14.3.0.12.help`.
 
-**Result:** No API-layer changes were detected. The two files are
-byte-for-byte identical (same SHA-256), with 1,914 assignment lines
-(1,892 API variables plus 22 constants) in both. No keys were added,
-removed, renamed, or changed. No collector, health-rule, checklist, or report
-modifications are required.
+**Linux result:** No API-layer changes. The two Linux files are byte-for-byte
+identical (same SHA-256), with 1,914 assignment lines (1,892 API variables
+plus 22 constants) in both. No keys were added, removed, renamed, or changed.
+No Linux collector, health-rule, checklist, or report modifications are
+required.
 
-> **Verification note:** This conclusion depends on the supplied
-> `APIConst.pas` genuinely coming from the 14.3.0.13 installation. Confirm the
-> server file hash matches the value in [Source Verification](#source-verification)
-> before relying on this note for a different installation.
+**Windows check:** The Windows 14.3.0.13 `APIConst.pas` has a different
+SHA-256 from the Linux file. The files are therefore not byte-identical. Only
+the Windows hash was supplied, so a key-level Windows-vs-Linux comparison was
+not performed. See [Windows Hash Check](#windows-hash-check).
+
+> **Scope note:** This note does not claim that the Windows API keys are the
+> same as Linux. A hash comparison can only show whether the files are
+> identical; it cannot identify which keys differ.
 
 ---
 
 ## Comparison Overview
 
-| Metric | Version 14.3.0.12 | Version 14.3.0.13 |
+### Linux 14.3.0.12 vs Linux 14.3.0.13
+
+| Metric | Linux 14.3.0.12 | Linux 14.3.0.13 |
 |---|---:|---:|
 | File size | 267,707 bytes | 267,707 bytes |
 | Lines | 2,721 | 2,721 |
@@ -46,14 +52,15 @@ codes) from the 1,892 API variables.
 
 ---
 
-## Source Verification
+## Source Verification (Linux)
 
-- Supplied source: `C:\Users\mrkashi\Desktop\apiconst.pas`
+- Supplied Linux source: `C:\Users\mrkashi\Desktop\apiconst.pas`
 - Repository reference: `tool.v14.3.0.13.help`
 - SHA-256:
   `51EE702640A3B08CC0AF77805E3D54E143709E91DCEEF190BF880DEF11287E5D`
 - Encoding: ASCII, LF line endings, no BOM (the file starts with `//`).
-- `Compare-Object` on the complete v12 and v13 files returns zero differences.
+- `Compare-Object` on the complete Linux v12 and Linux v13 files returns
+  zero differences.
 
 Windows PowerShell verification:
 
@@ -67,19 +74,9 @@ $v13 = Get-Content .\tool.v14.3.0.13.help
 
 Expected result: two matching hashes and a count of `0`.
 
-To confirm the file on the Windows server, adjust the IceWarp installation
-path if necessary:
-
-```powershell
-Get-FileHash '<InstallDirectory>\API\Delphi\APIConst.pas' -Algorithm SHA256
-```
-
-If the server hash differs, replace `tool.v14.3.0.13.help` and rerun the
-comparison. Do not assume this no-change result for a different build.
-
 ---
 
-## Key-Set Comparison
+## Key-Set Comparison (Linux)
 
 The extraction method matches the previous note: each line matching
 `^\s*[A-Za-z_]\w*\s*=` counts as one assignment. The comparison covered key
@@ -87,8 +84,8 @@ names, numeric IDs, declared types, and trailing descriptions.
 
 | Check | Result |
 |---|---|
-| Key names present only in 14.3.0.13 | 0 |
-| Key names present only in 14.3.0.12 | 0 |
+| Key names present only in Linux 14.3.0.13 | 0 |
+| Key names present only in Linux 14.3.0.12 | 0 |
 | Renamed keys | 0 |
 | Changed numeric IDs | 0 |
 | Changed types or descriptions | 0 |
@@ -114,42 +111,37 @@ Expected result: no output.
 
 ---
 
-## Windows-Specific Checks
+## Windows Hash Check
 
-The supplied file is the Windows-side reference. The following entries that
-affect Windows behavior were checked and are unchanged:
+The Windows server file was checked separately:
 
-| Key | Value | Finding |
-|---|---|---|
-| `C_OS` | `$1002` | `0 = Windows`, `1 = Linux`; Windows collectors still expect `0` |
-| `C_Accounts_Policies_Auth_Schemes` | `$435` | Canonical SASL authentication key present |
-| `C_Mail_Security_AuthScheme` | absent | Confirms the incorrect/legacy key is still not defined |
-| `C_Accounts_Global_LDAP_UseWindowsDLL` | `$344` | Unchanged; marked `[NO EFFECT]` because Windows always uses the Windows LDAP library |
-| `C_Accounts_Global_LDAP_UseNTLMAuth` | `$449` | Unchanged; depends on the Windows LDAP setting above |
+| File | SHA-256 |
+|---|---|
+| Linux 14.3.0.13 (`tool.v14.3.0.13.help`) | `51EE702640A3B08CC0AF77805E3D54E143709E91DCEEF190BF880DEF11287E5D` |
+| Windows 14.3.0.13 (`C:\Program Files\IceWarp\api\delphi\APIConst.pas`) | `5102C041514887DEC81A428B05EB9D6D930EA38B3F423B350EE790EDA31D9D36` |
 
-Linux-only entries remain in the reference but are not used by the Windows
-agent:
+The hashes differ, so the Linux and Windows files are not byte-identical.
+This result does **not** show which API keys differ, and it does not show that
+the keys are all different. A key-level comparison requires the Windows
+`APIConst.pas` file itself.
 
-- `C_System_Adv_Ext_SSLSelfKillControlOnDecryptError` (`$71C`)
-- `C_System_Adv_Exit_On_Signal` (`$499`)
-- `C_AV_SentinelOne_Timeout` (`$791`)
-- `C_System_LibreOfficeBinary` (`$6AD`)
-
-No Windows-only keys were added or removed. A byte-level Windows-to-Linux
-comparison was not performed because no Linux 14.3.0.13 `APIConst.pas` was
-supplied. The platform-gated entries above are unchanged.
+No key-level Windows comparison was performed. The Linux comparison above is
+complete and unaffected by the Windows hash difference. If a Windows-vs-Linux
+key comparison is needed, provide the Windows file and the same key, ID, type,
+and description checks can be run against it.
 
 ---
 
 ## Impact Analysis
 
-- **Collectors:** No changes. All existing key names and IDs remain valid.
-- **Health rules:** No changes.
-- **Checklist:** The 113-item mapping remains based on the 14.3.0.12 API;
-  the v1.14 label remains display-only.
-- **Reports:** No changes.
-- **Windows agent:** No changes. The new reference is available for future
-  Windows collectors.
+- **Linux collectors:** No changes. All existing Linux key names and IDs
+  remain valid.
+- **Linux health rules:** No changes.
+- **Checklist:** The 113-item mapping remains based on the 14.3.0.12 API; the
+  v1.14 label remains display-only.
+- **Linux reports:** No changes.
+- **Windows agent:** No changes. Windows key parity with Linux is unverified;
+  the hash difference is a file-level difference only.
 - **`tool.help`:** Not refreshed, because no 14.3.0.13 `tool.exe` search
   export was supplied. `tool.v14.3.0.13.help` is the `APIConst.pas`
   reference, not a `tool.sh` property listing.
@@ -158,15 +150,18 @@ supplied. The platform-gated entries above are unchanged.
 
 ## Conclusion
 
-The IceWarp Health Agent is **fully compatible** with IceWarp version
-**14.3.0.13**. The supplied API reference is identical to 14.3.0.12, so no
-changes were required in any of the following:
+The Linux IceWarp Health Agent is **fully compatible** with IceWarp version
+**14.3.0.13**. The supplied Linux API reference is identical to Linux
+14.3.0.12, so no Linux changes were required in any of the following:
 
-- Collectors (`collectors/` and `windows/collectors/`)
+- Collectors (`collectors/`)
 - Health rules (`lib/health.sh`)
 - Checklist definition (`config/checklist.conf.pdf`)
 - Report generators (`lib/pdf.sh`, `lib/management_report.sh`)
-- Windows configuration or collector contracts
+
+The Windows API key comparison is **not completed**. The Windows file hash
+differs from Linux, but only the Windows file can establish which keys, if
+any, differ. This is a separate follow-up, not a failure of the Linux update.
 
 ---
 
@@ -174,25 +169,19 @@ changes were required in any of the following:
 
 | File | Change |
 |---|---|
-| `tool.v14.3.0.13.help` | Added (14.3.0.13 `APIConst.pas`; byte-identical to 14.3.0.12) |
+| `tool.v14.3.0.13.help` | Added (Linux 14.3.0.13 `APIConst.pas`; byte-identical to Linux 14.3.0.12) |
 | `docs/api-update-v14.3.0.12-to-14.3.0.13.md` | Added (this note) |
-| `docs/checklist-coverage.md` | Noted that the 14.3.0.13 API reference is unchanged |
+| `docs/checklist-coverage.md` | Noted that the Linux 14.3.0.13 API reference is unchanged |
 | `docs/update-log.md` | Added activity row |
 | `CHANGELOG.md` | Added API reference entry |
 
 `tool.help` and the collector configuration were intentionally left unchanged
-because the API did not change and no 14.3.0.13 `tool.sh` export was supplied.
+because the Linux API did not change and no 14.3.0.13 `tool.sh` export was
+supplied.
 
 ---
 
 ## Reference Commands
-
-PowerShell (Windows):
-
-```powershell
-Get-FileHash .\tool.v14.3.0.12.help, .\tool.v14.3.0.13.help -Algorithm SHA256
-Compare-Object (Get-Content .\tool.v14.3.0.12.help) (Get-Content .\tool.v14.3.0.13.help)
-```
 
 POSIX shell (Linux):
 
@@ -204,4 +193,18 @@ comm -13 /tmp/keys_v12.txt /tmp/keys_v13.txt
 comm -23 /tmp/keys_v12.txt /tmp/keys_v13.txt
 
 diff -u tool.v14.3.0.12.help tool.v14.3.0.13.help
+```
+
+Windows hash check (run on the IceWarp Windows server):
+
+```powershell
+Get-FileHash '<InstallDirectory>\API\Delphi\APIConst.pas' -Algorithm SHA256
+```
+
+To compare the Windows file at key level once available:
+
+```powershell
+$linux = Get-Content .\tool.v14.3.0.13.help
+$windows = Get-Content '<InstallDirectory>\API\Delphi\APIConst.pas'
+Compare-Object $linux $windows
 ```

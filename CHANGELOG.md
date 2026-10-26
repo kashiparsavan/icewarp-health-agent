@@ -7,15 +7,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
-- `tool.v14.3.0.13.help`, the IceWarp 14.3.0.13 `APIConst.pas` API reference.
-  The supplied file is byte-identical to 14.3.0.12; no API keys changed.
-- `docs/api-update-v14.3.0.12-to-14.3.0.13.md` with the comparison,
-  Windows-specific key checks, and verification commands.
+- `tool.v14.3.0.13.help`, the IceWarp 14.3.0.13 Linux `APIConst.pas` API
+  reference. The supplied Linux file is byte-identical to the Linux 14.3.0.12
+  reference; no Linux API keys changed.
+- `docs/api-update-v14.3.0.12-to-14.3.0.13.md` with the Linux comparison,
+  Windows hash check, and verification commands.
 
 ### Changed
 
-- `docs/checklist-coverage.md` now records that the 14.3.0.13 API reference is
-  unchanged, so the existing 113-item mapping still applies.
+- `docs/checklist-coverage.md` now records that the Linux 14.3.0.13 API
+  reference is unchanged, so the existing 113-item mapping still applies.
+
+### Notes
+
+- The Windows 14.3.0.13 `APIConst.pas` has a different SHA-256 from the Linux
+  file. No key-level Windows comparison was performed because only the
+  Windows hash was supplied.
 
 ## [windows-0.1.0] - 2026-10-26
 
