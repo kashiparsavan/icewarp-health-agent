@@ -19,7 +19,17 @@ function Write-AgentJson {
         New-Item -ItemType Directory -Path $directory -Force | Out-Null
     }
 
-    $json = ConvertTo-Json -InputObject $Data -Depth 10
+    $serializable = [ordered]@{}
+    foreach ($key in $Data.Keys) {
+        $value = $Data[$key]
+        if ($value -is [string] -and $value.Length -eq 0) {
+            $serializable[$key] = $null
+        } else {
+            $serializable[$key] = $value
+        }
+    }
+
+    $json = ConvertTo-Json -InputObject $serializable -Depth 10
     if ($null -eq $json) {
         $json = '{}'
     }

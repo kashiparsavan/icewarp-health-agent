@@ -112,7 +112,8 @@ windows/agent.ps1
 
 Windows collectors must not call the Linux entry point or libraries. The
 Windows data contract is flat dotted keys, matching the Linux names where a
-collector is ported.
+collector is ported. Windows JSON keeps native booleans and numbers and maps
+empty strings to `null`.
 
 Key implementation details:
 

@@ -80,6 +80,7 @@ Describe 'Windows agent scaffold' {
             'number'        = 5
             'enabled'       = $true
             'missing'       = $null
+            'empty'         = ''
         }
 
         Write-AgentJson -Path $path -Data $data
@@ -89,6 +90,7 @@ Describe 'Windows agent scaffold' {
         Assert-Equal -Expected 5 -Actual $json.number
         Assert-Equal -Expected $true -Actual $json.enabled
         Assert-True -Condition ($null -eq $json.missing) -Because 'JSON null should remain null.'
+        Assert-True -Condition ($null -eq $json.empty) -Because 'Empty strings should become null, matching the Linux JSON contract.'
     }
 
     It 'invokes a collector and merges its dictionary into agent data' {

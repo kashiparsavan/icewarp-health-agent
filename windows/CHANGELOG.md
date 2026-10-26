@@ -14,6 +14,8 @@ The Linux agent keeps its own changelog in the repository root.
   `tool.exe` calls with timeouts, and flat JSON output.
 - Sample `General/Version` collector for the IceWarp version and basic Windows
   host details.
+- Flat JSON output preserves booleans and numbers and converts empty string
+  values to `null`, matching the Linux JSON contract.
 - Pester smoke tests compatible with Pester 3.4 and later, plus a version-aware
   test runner.
 - Windows setup, deployment, and troubleshooting documentation.

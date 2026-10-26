@@ -109,8 +109,10 @@ Example JSON:
 }
 ```
 
-The JSON is UTF-8 without a BOM. PDF generation is not implemented on Windows
-yet; this scaffold is focused on a stable data path first.
+The JSON is UTF-8 without a BOM. Empty string values are emitted as `null`,
+matching the Linux JSON contract; booleans and numbers remain native JSON
+types. PDF generation is not implemented on Windows yet; this scaffold is
+focused on a stable data path first.
 
 ## Collector Contract
 

@@ -10,6 +10,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 - Independent Windows PowerShell 5.1 scaffold under `windows/` with its own
   `VERSION`, PSD1 configuration, logging, IceWarp `tool.exe` wrapper, flat JSON
   output, and collector runner.
+- Windows JSON keeps native booleans and numbers and maps empty strings to
+  `null`, matching the Linux JSON contract.
 - `windows/collectors/General/Version.ps1` as the first sample collector.
 - Pester smoke tests with a Pester 3.4/5-compatible runner.
 - Windows setup, deployment, and troubleshooting documentation.
