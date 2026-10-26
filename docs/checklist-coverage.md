@@ -126,7 +126,7 @@ Legend:
 
 ## New Items Added During Development (beyond original 99)
 
-These items were added based on the IceWarp 14.3.0.12 API and are evaluated in the reports. The Linux 14.3.0.13 `APIConst.pas` reference is unchanged from Linux 14.3.0.12, so the same mapping applies. The Windows 14.3.0.13 file has a different hash and has not been key-compared.
+These items were added based on the IceWarp 14.3.0.12 API and are evaluated in the reports. The Linux 14.3.0.13 `APIConst.pas` reference is unchanged from Linux 14.3.0.12, so the same mapping applies. The Windows 14.3.0.13 reference was compared at key level: all Linux keys are present, Windows adds 4 keys, and 2 keys differ in capitalization. None of these differences affect the current 113-item checklist.
 
 | # | Section | Item | Status | Collector / Key | Notes |
 |---|---------|------|--------|-----------------|-------|

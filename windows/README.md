@@ -146,6 +146,41 @@ Rules:
 The only collector in 0.1.0 is `collectors\General\Version.ps1`, which reads
 `C_Version` and `C_NiceVersion` and adds basic operating-system fields.
 
+## API Reference
+
+The authoritative Windows-side API reference is
+`tool.v14.3.0.13.windows.help`, which is the IceWarp 14.3.0.13
+`APIConst.pas` from the Windows server. It is **not** the same file as the
+Linux reference.
+
+| File | Platform | SHA-256 |
+|---|---|---|
+| `tool.v14.3.0.13.help` | Linux | `51EE702640A3B08CC0AF77805E3D54E143709E91DCEEF190BF880DEF11287E5D` |
+| `tool.v14.3.0.13.windows.help` | Windows | `5102C041514887DEC81A428B05EB9D6D930EA38B3F423B350EE790EDA31D9D36` |
+
+Key-level comparison:
+
+- All Linux keys are present on Windows.
+- Windows adds 4 keys: `C_API_DomainList_DefaultLimit`, `U_MailingLists`,
+  `U_MailingListsList`, and `U_SlaveDomain`.
+- `U_GROUPS` / `U_GROUPSLIST` are spelled `U_Groups` / `U_GroupsList` on
+  Windows; the IDs and descriptions are the same.
+- `U_MasterDomain` is `String [R]` on Windows and `String` on Linux. Read
+  only on Windows.
+- `C_OS` is `0` for Windows and `1` for Linux on both platforms.
+- `C_Accounts_Policies_Auth_Schemes` is present; the incorrect
+  `C_Mail_Security_AuthScheme` is absent.
+
+Use the Windows reference when writing or reviewing Windows collectors. Keep
+both files; do not treat the Linux reference as authoritative for Windows.
+See `docs/api-windows-vs-linux-v14.3.0.13.md` for the full comparison.
+
+**Important:** the API reference defines key names and IDs. It is not a
+substitute for validating `tool.exe` output formatting, value semantics,
+service names, and Windows-only behavior on the lab server. A Windows
+`tool.exe` search/list export is still needed to confirm the property
+listing.
+
 ## Tests
 
 ```powershell

@@ -121,14 +121,11 @@ The Windows server file was checked separately:
 | Windows 14.3.0.13 (`C:\Program Files\IceWarp\api\delphi\APIConst.pas`) | `5102C041514887DEC81A428B05EB9D6D930EA38B3F423B350EE790EDA31D9D36` |
 
 The hashes differ, so the Linux and Windows files are not byte-identical.
-This result does **not** show which API keys differ, and it does not show that
-the keys are all different. A key-level comparison requires the Windows
-`APIConst.pas` file itself.
-
-No key-level Windows comparison was performed. The Linux comparison above is
-complete and unaffected by the Windows hash difference. If a Windows-vs-Linux
-key comparison is needed, provide the Windows file and the same key, ID, type,
-and description checks can be run against it.
+The Windows file has now been supplied and compared at key level. See
+[Windows vs Linux Comparison](docs/api-windows-vs-linux-v14.3.0.13.md).
+All Linux keys are present on Windows; Windows adds 4 keys, changes the
+capitalization of 2 keys, and marks `U_MasterDomain` read-only. The Linux
+comparison above is complete and unaffected.
 
 ---
 
@@ -140,8 +137,9 @@ and description checks can be run against it.
 - **Checklist:** The 113-item mapping remains based on the 14.3.0.12 API; the
   v1.14 label remains display-only.
 - **Linux reports:** No changes.
-- **Windows agent:** No changes. Windows key parity with Linux is unverified;
-  the hash difference is a file-level difference only.
+- **Windows agent:** No changes. Windows key parity with Linux is now
+  verified at key level; see
+  [Windows vs Linux Comparison](docs/api-windows-vs-linux-v14.3.0.13.md).
 - **`tool.help`:** Not refreshed, because no 14.3.0.13 `tool.exe` search
   export was supplied. `tool.v14.3.0.13.help` is the `APIConst.pas`
   reference, not a `tool.sh` property listing.
@@ -159,9 +157,11 @@ The Linux IceWarp Health Agent is **fully compatible** with IceWarp version
 - Checklist definition (`config/checklist.conf.pdf`)
 - Report generators (`lib/pdf.sh`, `lib/management_report.sh`)
 
-The Windows API key comparison is **not completed**. The Windows file hash
-differs from Linux, but only the Windows file can establish which keys, if
-any, differ. This is a separate follow-up, not a failure of the Linux update.
+The Windows API key comparison is **complete** and documented in
+`docs/api-windows-vs-linux-v14.3.0.13.md`. All Linux keys are present on
+Windows; Windows adds 4 keys, changes the capitalization of 2 keys, and marks
+`U_MasterDomain` read-only. This is a separate follow-up, not a failure of
+the Linux update.
 
 ---
 
