@@ -50,54 +50,63 @@ run_health_checks() {
         results+=("cpu|skip|CPU data not available")
     fi
     
-    # --- 3. Memory Usage (Warn if > 60%) ---
+    # --- 3. Memory Usage (Strict Override: >90% CRITICAL, >40% WARN) ---
     local total_kb=$(echo "$json_data" | jq -r '.os.memory.total_kb // 0')
     local available_kb=$(echo "$json_data" | jq -r '.os.memory.available_kb // 0')
+    local ram_note="Total(KB)=${total_kb} / Available KB=${available_kb}"
     if [[ "$total_kb" -gt 0 ]] && [[ "$available_kb" -ge 0 ]]; then
         local used_kb=$((total_kb - available_kb))
         local mem_percent=$(echo "scale=2; ($used_kb / $total_kb) * 100" | bc 2>/dev/null || echo "0")
-        local threshold=60
-        if (( $(echo "$mem_percent > $threshold" | bc -l 2>/dev/null || echo "0") )); then
-            results+=("memory|warn|Memory usage is ${mem_percent}% (threshold: ${threshold}%)")
+        if (( $(echo "$mem_percent > 90" | bc -l 2>/dev/null || echo "0") )); then
+            results+=("memory|critical|${ram_note} (RAM usage ${mem_percent}% CRITICAL - above 90%)")
+        elif (( $(echo "$mem_percent > 40" | bc -l 2>/dev/null || echo "0") )); then
+            results+=("memory|warn|${ram_note} (RAM usage ${mem_percent}% WARN - above 40%)")
         else
-            results+=("memory|pass|Memory usage is ${mem_percent}% (OK)")
+            results+=("memory|pass|${ram_note} (RAM usage ${mem_percent}% OK)")
         fi
     else
-        results+=("memory|skip|Memory data not available")
+        results+=("memory|warn|${ram_note} (RAM data unavailable)")
     fi
     
-    # --- 4. Disk Usage (Warn if > 80%) ---
+    # --- 4. Disk Usage (Strict Override: >=95% CRITICAL, >=80% WARN) ---
+    local total_gb=$(echo "$json_data" | jq -r '.storage.root_fs.total_gb // 0')
     local disk_used_percent=$(echo "$json_data" | jq -r '.storage.root_fs.used_percent // "0%"' | sed 's/%//')
+    local disk_note="Total(GB)=${total_gb} / Used %=${disk_used_percent}"
     if [[ -n "$disk_used_percent" ]] && [[ "$disk_used_percent" != "N/A" ]]; then
-        local threshold=80
-        if (( disk_used_percent >= threshold )); then
-            results+=("disk|warn|Disk usage is ${disk_used_percent}% (threshold: ${threshold}%)")
+        if (( disk_used_percent >= 95 )); then
+            results+=("disk|critical|${disk_note} (Disk usage ${disk_used_percent}% CRITICAL - above 95%)")
+        elif (( disk_used_percent >= 80 )); then
+            results+=("disk|warn|${disk_note} (Disk usage ${disk_used_percent}% WARN - above 80%)")
         else
-            results+=("disk|pass|Disk usage is ${disk_used_percent}% (OK)")
+            results+=("disk|pass|${disk_note} (Disk usage ${disk_used_percent}% OK)")
         fi
     else
-        results+=("disk|skip|Disk usage data not available")
+        results+=("disk|warn|${disk_note} (Disk usage data unavailable)")
     fi
     
-    # --- 5. OS Last Update (Warn if > 3 days) ---
+    # --- 5. OS Last Update (Warn if > 7 days, matches health.sh) ---
     local last_update=$(echo "$json_data" | jq -r '.os.last_update_date // ""')
     if [[ -n "$last_update" ]] && [[ "$last_update" != "null" ]]; then
         local days=$(days_ago "$last_update")
-        if (( days > 3 )); then
-            results+=("os_update|warn|OS last update was $days days ago (threshold: 3 days)")
+        if (( days > 30 )); then
+            results+=("os_update|critical|OS is outdated (${days} days since last update)")
+        elif (( days > 7 )); then
+            results+=("os_update|warn|OS update is ${days} days old (consider updating within a week)")
         else
-            results+=("os_update|pass|OS last update was $days days ago (OK)")
+            results+=("os_update|pass|OS updated recently (${days} days ago)")
         fi
     else
-        results+=("os_update|skip|OS last update date not available")
+        results+=("os_update|warn|OS last update date not available")
     fi
     
-    # --- 6. DIGEST-MD5 (Security) ---
-    local digest_md5=$(echo "$json_data" | jq -r '.security.digest_md5.enabled // false')
-    if [[ "$digest_md5" == "false" ]]; then
-        results+=("digest_md5|pass|DIGEST-MD5 auth scheme is disabled")
+    # --- 6. DIGEST-MD5 (Security) Strict Override: true=PASS, false/missing=CRITICAL ---
+    local digest_md5=$(echo "$json_data" | jq -r '.security.digest_md5.enabled // ""')
+    if [[ "$digest_md5" == "true" ]]; then
+        results+=("digest_md5|pass|Disable DIGEST-MD5 is active (DIGEST-MD5 disabled)")
+    elif [[ "$digest_md5" == "false" ]]; then
+        results+=("digest_md5|critical|Disable DIGEST-MD5 is NOT active (DIGEST-MD5 still enabled)")
     else
-        results+=("digest_md5|warn|DIGEST-MD5 auth scheme is still enabled (weak, legacy)")
+        results+=("digest_md5|critical|Auth scheme list not available - cannot verify DIGEST-MD5 status")
     fi
     
     # --- 7. Login Policy / Intrusion Prevention ---
@@ -112,25 +121,86 @@ run_health_checks() {
         results+=("login_blocking|fail|Neither Login Policy lockout nor Intrusion Prevention failed-login blocking is active")
     fi
     
+    # --- 7b. Intrusion Prevention Thresholds (Strict Override: hardcoded 50/360) ---
+    local cpms=$(echo "$json_data" | jq -r '.security.intrusion.block_connections_per_minute.value // ""')
+    if [[ -z "$cpms" ]] || [[ "$cpms" == "null" ]]; then
+        results+=("intrusion.block_connections|critical|Block IP - Connections in 1 Minute setting not found")
+    elif [[ "$cpms" == "50" ]]; then
+        results+=("intrusion.block_connections|pass|Block IP - Connections in 1 Minute is 50 (expected 50)")
+    else
+        results+=("intrusion.block_connections|warn|Block IP - Connections in 1 Minute is $cpms (expected 50)")
+    fi
+    
+    local block_dur=$(echo "$json_data" | jq -r '.security.intrusion.block_duration_minutes // ""')
+    if [[ -z "$block_dur" ]] || [[ "$block_dur" == "null" ]]; then
+        results+=("intrusion.block_duration|critical|Amount of Time IP is Blocked setting not found")
+    elif [[ "$block_dur" == "360" ]]; then
+        results+=("intrusion.block_duration|pass|Amount of Time IP is Blocked is 360 minutes (expected 360)")
+    else
+        results+=("intrusion.block_duration|warn|Amount of Time IP is Blocked is $block_dur minutes (expected 360)")
+    fi
+
+    # --- 7c. Admin Email (Strict Override: empty=CRITICAL, invalid=WARN) ---
+    local admin_email=$(echo "$json_data" | jq -r '.monitor.alert_email // ""')
+    if [[ -z "$admin_email" ]] || [[ "$admin_email" == "null" ]] || [[ "$admin_email" == "N/A" ]]; then
+        results+=("admin_email|critical|Admin email is not set")
+    elif [[ "$admin_email" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
+        results+=("admin_email|pass|Admin email is configured: $admin_email")
+    else
+        results+=("admin_email|warn|Admin email is set but invalid format: $admin_email")
+    fi
+
+    # --- 7d. Session Timeout (Strict Override: has value=PASS, missing=WARN) ---
+    local session_timeout=$(echo "$json_data" | jq -r '.icewarp.session_timeout_minutes // ""')
+    if [[ -n "$session_timeout" ]] && [[ "$session_timeout" != "null" ]] && [[ "$session_timeout" != "N/A" ]] && [[ "$session_timeout" != "0" ]]; then
+        results+=("session_timeout|pass|Session timeout is configured: $session_timeout minutes")
+    else
+        results+=("session_timeout|warn|Session timeout is not set or is 0")
+    fi
+
+    # --- 7e. IMAP / POP3 Services (Strict Override: Running=PASS, Disabled=WARN) ---
+    local imap_active=$(echo "$json_data" | jq -r '.service.imap.active // 0')
+    local pop3_active=$(echo "$json_data" | jq -r '.service.pop3.active // 0')
+    if [[ "$imap_active" == "1" ]] || [[ "$imap_active" == "true" ]]; then
+        results+=("service.imap|pass|IMAP service is running")
+    else
+        results+=("service.imap|warn|IMAP service is disabled")
+    fi
+    if [[ "$pop3_active" == "1" ]] || [[ "$pop3_active" == "true" ]]; then
+        results+=("service.pop3|pass|POP3 service is running")
+    else
+        results+=("service.pop3|warn|POP3 service is disabled")
+    fi
+    
+    # --- 7h. Password Policy ---
+    local pass_active=$(echo "$json_data" | jq -r '.security.password_policy.active // 0')
+    local pass_min_len=$(echo "$json_data" | jq -r '.security.password_policy.min_length // 0')
+    if [[ "$pass_active" == "1" ]]; then
+        if (( pass_min_len >= 8 )); then
+            results+=("password_policy|pass|Password policy active, min length $pass_min_len meets recommendation")
+        else
+            results+=("password_policy|warn|Password policy active but min length ($pass_min_len) below recommended 8")
+        fi
+    else
+        results+=("password_policy|fail|Password policy is not active")
+    fi
+
     # --- 8. TLS Delivery ---
     local use_tls=$(echo "$json_data" | jq -r '.smtp.use_tls_ssl // 0')
     if [[ "$use_tls" == "1" ]]; then
         results+=("tls_delivery|pass|TLS/SSL for delivery is enabled")
     else
-        results+=("tls_delivery|warn|TLS/SSL for delivery is not enabled")
+        results+=("tls_delivery|fail|TLS/SSL for delivery is NOT enabled")
     fi
     
-    # --- 9. Password Policy ---
-    local pass_active=$(echo "$json_data" | jq -r '.security.password_policy.active // 0')
-    local pass_min_len=$(echo "$json_data" | jq -r '.security.password_policy.min_length // 0')
-    if [[ "$pass_active" == "1" ]]; then
-        if (( pass_min_len >= 10 )); then
-            results+=("password_policy|pass|Password policy active, min length $pass_min_len meets recommendation")
-        else
-            results+=("password_policy|warn|Password policy active but min length ($pass_min_len) is below recommended 10")
-        fi
+    # --- 7f. Database Type (Strict Override: SQLite=WARN, MySQL=PASS, no INFO) ---
+    local db_type=$(echo "$json_data" | jq -r '.database.type // ""')
+    if [[ "$db_type" == "sqlite" ]]; then
+        results+=("database|warn|SQLite is in use; MySQL is recommended for production")
+    elif [[ "$db_type" == "mysql" ]]; then
+        results+=("database|pass|MySQL database platform is active")
     else
-        results+=("password_policy|skip|Password policy is not active")
+        results+=("database|warn|Database type could not be determined (unknown/empty)")
     fi
     
     # --- 10. Monitor (if applicable) ---

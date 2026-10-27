@@ -359,7 +359,7 @@ _validate_intrusion_value() {
 
     case "$KEY" in
         "security.intrusion.block_connections_per_minute.value")
-            EXPECTED="10"
+            EXPECTED="50"
             ;;
         "security.intrusion.block_unknown_user_count.value")
             EXPECTED="5"
@@ -377,10 +377,10 @@ _validate_intrusion_value() {
             EXPECTED="5"
             ;;
         "security.intrusion.block_duration_minutes")
-            EXPECTED="30"
+            EXPECTED="360"
             ;;
         *)
-            printf 'INFO|INFO|%s' "$VALUE"
+            printf 'WARN|WARN|%s' "$VALUE"
             return
             ;;
     esac
@@ -446,9 +446,16 @@ _render_checklist() {
             continue
         fi
 
-        # ---- Special case: Database Type ----
-        if [ "$LABEL" = "Database Type" ] && [ "${DATA[database.type]:-}" = "sqlite" ]; then
-            _layout_row "$LABEL" "sqlite" "WARN" "WARN" "SQLite is not recommended for production - use MySQL"
+        # ---- Special case: Database Type (Strict Override: SQLite=WARN, MySQL=PASS, no INFO) ----
+        if [ "$LABEL" = "Database Type" ]; then
+            local DB_TYPE="${DATA[database.type]:-}"
+            if [ "$DB_TYPE" = "sqlite" ]; then
+                _layout_row "$LABEL" "sqlite" "WARN" "WARN" "SQLite is not recommended for production - use MySQL"
+            elif [ "$DB_TYPE" = "mysql" ]; then
+                _layout_row "$LABEL" "mysql" "PASS" "PASS" "MySQL database platform is active"
+            else
+                _layout_row "$LABEL" "${DB_TYPE:-unknown}" "WARN" "WARN" "Database type could not be determined (unknown/empty)"
+            fi
             continue
         fi
 
@@ -459,6 +466,19 @@ _render_checklist() {
                 _layout_row "$LABEL" "$RAW" "PASS" "PASS" "$NOTE"
             else
                 _layout_row "$LABEL" "$RAW" "CRITICAL" "CRITICAL" "Expected: customers-stat@parsavan.com"
+            fi
+            continue
+        fi
+
+        # ---- Special case: Set Admin Email (Strict Override: empty=CRITICAL, invalid=WARN) ----
+        if [ "$LABEL" = "Set Admin Email" ]; then
+            local RAW="${DATA[monitor.alert_email]:-}"
+            if [ -z "$RAW" ] || [ "$RAW" = "null" ] || [ "$RAW" = "N/A" ]; then
+                _layout_row "$LABEL" "empty" "CRITICAL" "CRITICAL" "Admin email is not set"
+            elif [[ "$RAW" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
+                _layout_row "$LABEL" "$RAW" "PASS" "PASS" "$NOTE"
+            else
+                _layout_row "$LABEL" "$RAW" "WARN" "WARN" "Admin email is set but invalid format"
             fi
             continue
         fi
@@ -522,6 +542,17 @@ _render_checklist() {
                 _layout_row "$LABEL" "Bypass enabled (2FA off)" "WARN" "WARN" "$NOTE"
             else
                 _layout_row "$LABEL" "2FA active" "PASS" "PASS" "$NOTE"
+            fi
+            continue
+        fi
+
+        # ---- Special case: Session Timeout (Strict Override: has value=PASS, missing=WARN) ----
+        if [ "$LABEL" = "Session Timeout" ]; then
+            local RAW="${DATA[icewarp.session_timeout_minutes]:-}"
+            if [ -n "$RAW" ] && [ "$RAW" != "null" ] && [ "$RAW" != "N/A" ] && [ "$RAW" != "0" ]; then
+                _layout_row "$LABEL" "${RAW} minutes" "PASS" "PASS" "$NOTE"
+            else
+                _layout_row "$LABEL" "not set" "WARN" "WARN" "Session timeout is not configured"
             fi
             continue
         fi
@@ -601,23 +632,23 @@ _render_checklist() {
         # ---- Special case: DIGEST-MD5 ----
         if [ "$LABEL" = "Disable DIGEST-MD5" ]; then
             local RAW="${DATA[security.digest_md5.enabled]:-}"
-            if [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
+            if [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
                 _layout_row "$LABEL" "Disabled" "PASS" "PASS" "$NOTE"
-            elif [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
+            elif [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
                 _layout_row "$LABEL" "Enabled" "CRITICAL" "CRITICAL" "$NOTE"
             else
-                _layout_row "$LABEL" "N/A" "INFO" "INFO" "$NOTE"
+                _layout_row "$LABEL" "N/A" "CRITICAL" "CRITICAL" "Auth scheme list not available - cannot verify DIGEST-MD5 status"
             fi
             continue
         fi
 
-        # ---- Special case: IMAP / POP3 ----
+        # ---- Special case: IMAP / POP3 (Strict Override: Running=PASS, Disabled=WARN) ----
         if [ "$LABEL" = "Disable IMAP" ] || [ "$LABEL" = "Disable POP3" ]; then
             local RAW="${DATA[${KEYS}]:-0}"
-            if [[ "$RAW" == "0" ]] || [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
-                _layout_row "$LABEL" "Disabled" "PASS" "PASS" "${NOTE:-If service is needed, enable it; otherwise disabled is secure}"
+            if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
+                _layout_row "$LABEL" "Running" "PASS" "PASS" "${NOTE:-Service is running}"
             else
-                _layout_row "$LABEL" "Enabled" "PASS" "PASS" "${NOTE:-Service is enabled - ensure it is required}"
+                _layout_row "$LABEL" "Disabled" "WARN" "WARN" "${NOTE:-Service is disabled}"
             fi
             continue
         fi
@@ -828,17 +859,18 @@ _render_checklist() {
                 "Disk (Total GB / Used %)")
                     local TOTAL_GB="${DATA[storage.root_fs.total_gb]:-0}"
                     local USED_PERCENT="${DATA[storage.root_fs.used_percent]:-0}"
-                    local VALUE="total_gb=${TOTAL_GB},used_percent=${USED_PERCENT}"
+                    # NOTE FORMAT (STRICT): Total(GB)=X / Used %=Y
+                    local VALUE="Total(GB)=${TOTAL_GB} / Used %=${USED_PERCENT}"
                     local BKIND="PASS"
                     local BTEXT="PASS"
                     local MSG=""
                     if _is_num "$USED_PERCENT"; then
                         if [ "$USED_PERCENT" -ge 95 ]; then
-                            BKIND="CRITICAL"; BTEXT="CRITICAL"; MSG="Disk usage is ${USED_PERCENT}% (CRITICAL - above 95%)"
+                            BKIND="CRITICAL"; BTEXT="CRITICAL"; MSG="Disk usage ${USED_PERCENT}% (CRITICAL - above 95%)"
                         elif [ "$USED_PERCENT" -ge 80 ]; then
-                            BKIND="WARN"; BTEXT="WARN"; MSG="Disk usage is ${USED_PERCENT}% (WARN - above 80%)"
+                            BKIND="WARN"; BTEXT="WARN"; MSG="Disk usage ${USED_PERCENT}% (WARN - above 80%)"
                         else
-                            BKIND="PASS"; BTEXT="PASS"; MSG="Disk usage is ${USED_PERCENT}% (OK)"
+                            BKIND="PASS"; BTEXT="PASS"; MSG="Disk usage ${USED_PERCENT}% (OK)"
                         fi
                     else
                         MSG="Unable to calculate disk usage percentage"
@@ -874,7 +906,8 @@ _render_checklist() {
                 "RAM (Total KB / Available KB)")
                     local TOTAL_KB="${DATA[os.memory.total_kb]:-0}"
                     local AVAIL_KB="${DATA[os.memory.available_kb]:-0}"
-                    local VALUE="total_kb=${TOTAL_KB},available_kb=${AVAIL_KB}"
+                    # NOTE FORMAT (STRICT): Total(KB)=X / Available KB=Y
+                    local VALUE="Total(KB)=${TOTAL_KB} / Available KB=${AVAIL_KB}"
                     local BKIND="PASS"
                     local BTEXT="PASS"
                     local MSG=""
@@ -883,11 +916,11 @@ _render_checklist() {
                         local CRIT_LIMIT=$(awk 'BEGIN{print 90}')
                         local WARN_LIMIT=$(awk 'BEGIN{print 40}')
                         if awk -v used="$USED_PERCENT" -v lim="$CRIT_LIMIT" 'BEGIN{exit !(used > lim)}'; then
-                            BKIND="CRITICAL"; BTEXT="CRITICAL"; MSG="RAM usage is ${USED_PERCENT}% (CRITICAL - above 90%)"
+                            BKIND="CRITICAL"; BTEXT="CRITICAL"; MSG="RAM usage ${USED_PERCENT}% (CRITICAL - above 90%)"
                         elif awk -v used="$USED_PERCENT" -v lim="$WARN_LIMIT" 'BEGIN{exit !(used > lim)}'; then
-                            BKIND="WARN"; BTEXT="WARN"; MSG="RAM usage is ${USED_PERCENT}% (WARN - above 40%)"
+                            BKIND="WARN"; BTEXT="WARN"; MSG="RAM usage ${USED_PERCENT}% (WARN - above 40%)"
                         else
-                            BKIND="PASS"; BTEXT="PASS"; MSG="RAM usage is ${USED_PERCENT}% (OK)"
+                            BKIND="PASS"; BTEXT="PASS"; MSG="RAM usage ${USED_PERCENT}% (OK)"
                         fi
                     else
                         MSG="Unable to calculate RAM usage percentage"

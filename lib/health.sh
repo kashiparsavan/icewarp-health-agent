@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 
 ###############################################################################
 #
@@ -61,24 +61,28 @@ _health_messages_for() {
 evaluate_health() {
 
     # --- Memory (percentage based) ---
+    # NOTE FORMAT (STRICT): Total(KB)=<total> / Available KB=<available>
     local AVAIL_KB="${DATA[os.memory.available_kb]:-}"
     local TOTAL_RAM_KB="${DATA[os.memory.total_kb]:-}"
+    local RAM_NOTE="Total(KB)=${TOTAL_RAM_KB:-0} / Available KB=${AVAIL_KB:-0}"
     if _is_num "$AVAIL_KB" && _is_num "$TOTAL_RAM_KB" && [ "$TOTAL_RAM_KB" -gt 0 ]; then
         local USED_PERCENT=$(awk -v t="$TOTAL_RAM_KB" -v a="$AVAIL_KB" 'BEGIN{printf "%.2f", ((t-a)/t)*100}')
         if awk -v used="$USED_PERCENT" -v lim=90 'BEGIN{exit !(used > lim)}'; then
-            _health_set "memory" "critical" "RAM usage is ${USED_PERCENT}% (CRITICAL - above 90%)"
+            _health_set "memory" "critical" "${RAM_NOTE} (RAM usage ${USED_PERCENT}% CRITICAL - above 90%)"
         elif awk -v used="$USED_PERCENT" -v lim=40 'BEGIN{exit !(used > lim)}'; then
-            _health_set "memory" "warn" "RAM usage is ${USED_PERCENT}% (WARN - above 40%)"
+            _health_set "memory" "warn" "${RAM_NOTE} (RAM usage ${USED_PERCENT}% WARN - above 40%)"
         else
-            _health_set "memory" "pass" "RAM usage is ${USED_PERCENT}% (OK)"
+            _health_set "memory" "pass" "${RAM_NOTE} (RAM usage ${USED_PERCENT}% OK)"
         fi
     else
-        _health_set "memory" "skip" "Unable to calculate RAM usage"
+        _health_set "memory" "warn" "${RAM_NOTE} (RAM data unavailable)"
     fi
 
     # --- Disk ---
+    # NOTE FORMAT (STRICT): Total(GB)=<total> / Used %=<used>
     local DISK_FLOOR_MB="${DATA[monitor.disk.alert_below_mb]:-}"
     local MOUNT_KEY MOUNT_NAME FREE_GB FREE_MB TOTAL_GB TOTAL_MB DEVICE MOUNT DEDUPE_KEY WORST="pass"
+    local USED_PERCENT
     declare -A _SEEN_DISK=()
     for MOUNT_KEY in "${!DATA[@]}"; do
         [[ "$MOUNT_KEY" == storage.*.free_gb ]] || continue
@@ -98,26 +102,28 @@ evaluate_health() {
         _is_num "$FREE_GB" || continue
         FREE_MB="$(awk -v g="$FREE_GB" 'BEGIN{printf "%d", g*1024}')"
         TOTAL_GB="${DATA[storage.${MOUNT_NAME}.total_gb]:-}"
+        USED_PERCENT="${DATA[storage.${MOUNT_NAME}.used_percent]:-}"
+        local DISK_NOTE="Total(GB)=${TOTAL_GB:-0} / Used %=${USED_PERCENT:-0}"
 
         if ! _is_num "$DISK_FLOOR_MB" || [ "$DISK_FLOOR_MB" -le 0 ]; then
-            _health_set "disk.${MOUNT_NAME}" "skip" "System Monitor disk threshold not configured"
+            _health_set "disk.${MOUNT_NAME}" "warn" "${DISK_NOTE} (System Monitor disk threshold not configured)"
             continue
         fi
 
         if _is_num "$TOTAL_GB"; then
             TOTAL_MB="$(awk -v g="$TOTAL_GB" 'BEGIN{printf "%d", g*1024}')"
             if [ "$DISK_FLOOR_MB" -gt "$TOTAL_MB" ]; then
-                _health_set "disk.${MOUNT_NAME}" "warn" "Configured threshold (${DISK_FLOOR_MB}MB) exceeds capacity (${TOTAL_MB}MB) - review System Monitor"
+                _health_set "disk.${MOUNT_NAME}" "warn" "${DISK_NOTE} (Configured threshold exceeds capacity - review System Monitor)"
                 [ "$WORST" = "pass" ] && WORST="warn"
                 continue
             fi
         fi
 
         if [ "$FREE_MB" -lt "$DISK_FLOOR_MB" ]; then
-            _health_set "disk.${MOUNT_NAME}" "fail" "Free space (${FREE_GB}GB) below configured alert threshold"
+            _health_set "disk.${MOUNT_NAME}" "fail" "${DISK_NOTE} (Free space ${FREE_GB}GB below configured alert threshold)"
             WORST="fail"
         else
-            _health_set "disk.${MOUNT_NAME}" "pass" "Free space (${FREE_GB}GB) OK"
+            _health_set "disk.${MOUNT_NAME}" "pass" "${DISK_NOTE} (Free space ${FREE_GB}GB OK)"
         fi
     done
     if [ "$WORST" = "fail" ]; then
@@ -182,13 +188,14 @@ evaluate_health() {
         _health_set "tls_delivery" "fail" "TLS/SSL for delivery is NOT enabled"
     fi
 
-    # --- DIGEST-MD5 ---
-    if [ "${DATA[security.digest_md5.enabled]:-}" = "true" ]; then
-        _health_set "digest_md5" "warn" "DIGEST-MD5 auth scheme is still enabled (weak, legacy)"
-    elif [ "${DATA[security.digest_md5.enabled]:-}" = "false" ]; then
-        _health_set "digest_md5" "pass" "DIGEST-MD5 auth scheme is disabled"
+    # --- DIGEST-MD5 (Strict Override: true=PASS, false/missing=CRITICAL) ---
+    local DIGEST_RAW="${DATA[security.digest_md5.enabled]:-}"
+    if [ "$DIGEST_RAW" = "true" ]; then
+        _health_set "digest_md5" "pass" "Disable DIGEST-MD5 is active (DIGEST-MD5 disabled)"
+    elif [ "$DIGEST_RAW" = "false" ]; then
+        _health_set "digest_md5" "critical" "Disable DIGEST-MD5 is NOT active (DIGEST-MD5 still enabled)"
     else
-        _health_set "digest_md5" "skip" "Auth scheme list not available"
+        _health_set "digest_md5" "critical" "Auth scheme list not available - cannot verify DIGEST-MD5 status"
     fi
 
     # --- Backup (using icewarp.* and backup.db.* keys) ---
@@ -340,6 +347,59 @@ evaluate_health() {
         _health_set "directory_cache" "pass" "Directory Cache schedule is configured (${CACHE_SCHED})"
     fi
 
+    # --- Intrusion Prevention Thresholds (Strict Override: hardcoded 50/360) ---
+    local CPMS_VAL="${DATA[security.intrusion.block_connections_per_minute.value]:-}"
+    local CPMS_EXPECTED="50"
+    if [ -z "$CPMS_VAL" ]; then
+        _health_set "intrusion.block_connections" "critical" "Block IP - Connections in 1 Minute setting not found"
+    elif [ "$CPMS_VAL" = "$CPMS_EXPECTED" ]; then
+        _health_set "intrusion.block_connections" "pass" "Block IP - Connections in 1 Minute is ${CPMS_VAL} (expected ${CPMS_EXPECTED})"
+    else
+        _health_set "intrusion.block_connections" "warn" "Block IP - Connections in 1 Minute is ${CPMS_VAL} (expected ${CPMS_EXPECTED})"
+    fi
+
+    local BLOCK_DUR_VAL="${DATA[security.intrusion.block_duration_minutes]:-}"
+    local BLOCK_DUR_EXPECTED="360"
+    if [ -z "$BLOCK_DUR_VAL" ]; then
+        _health_set "intrusion.block_duration" "critical" "Amount of Time IP is Blocked setting not found"
+    elif [ "$BLOCK_DUR_VAL" = "$BLOCK_DUR_EXPECTED" ]; then
+        _health_set "intrusion.block_duration" "pass" "Amount of Time IP is Blocked is ${BLOCK_DUR_VAL} minutes (expected ${BLOCK_DUR_EXPECTED})"
+    else
+        _health_set "intrusion.block_duration" "warn" "Amount of Time IP is Blocked is ${BLOCK_DUR_VAL} minutes (expected ${BLOCK_DUR_EXPECTED})"
+    fi
+
+    # --- Admin Email (Strict Override: empty=CRITICAL, invalid=WARN) ---
+    local ADMIN_EMAIL="${DATA[monitor.alert_email]:-}"
+    if [ -z "$ADMIN_EMAIL" ] || [ "$ADMIN_EMAIL" = "null" ] || [ "$ADMIN_EMAIL" = "N/A" ]; then
+        _health_set "admin_email" "critical" "Admin email is not set"
+    elif [[ "$ADMIN_EMAIL" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
+        _health_set "admin_email" "pass" "Admin email is configured: ${ADMIN_EMAIL}"
+    else
+        _health_set "admin_email" "warn" "Admin email is set but invalid format: ${ADMIN_EMAIL}"
+    fi
+
+    # --- Session Timeout (Strict Override: has value=PASS, missing/empty=WARN) ---
+    local SESSION_TIMEOUT="${DATA[icewarp.session_timeout_minutes]:-}"
+    if [ -n "$SESSION_TIMEOUT" ] && [ "$SESSION_TIMEOUT" != "null" ] && [ "$SESSION_TIMEOUT" != "N/A" ] && [ "$SESSION_TIMEOUT" != "0" ]; then
+        _health_set "session_timeout" "pass" "Session timeout is configured: ${SESSION_TIMEOUT} minutes"
+    else
+        _health_set "session_timeout" "warn" "Session timeout is not set or is 0"
+    fi
+
+    # --- IMAP / POP3 Services (Strict Override: Running=PASS, Disabled=WARN) ---
+    local IMAP_ACTIVE="${DATA[service.imap.active]:-0}"
+    local POP3_ACTIVE="${DATA[service.pop3.active]:-0}"
+    if [ "$IMAP_ACTIVE" = "1" ] || [ "$IMAP_ACTIVE" = "true" ]; then
+        _health_set "service.imap" "pass" "IMAP service is running"
+    else
+        _health_set "service.imap" "warn" "IMAP service is disabled"
+    fi
+    if [ "$POP3_ACTIVE" = "1" ] || [ "$POP3_ACTIVE" = "true" ]; then
+        _health_set "service.pop3" "pass" "POP3 service is running"
+    else
+        _health_set "service.pop3" "warn" "POP3 service is disabled"
+    fi
+
     # --- Report Health Summary roll-ups ---
     # The technical and management reports show nine executive pillars rather
     # than every low-level rule. Each pillar is derived from the detailed
@@ -420,8 +480,8 @@ evaluate_health() {
 
     # Access & authentication
     local ACC_RES ACC_MSG
-    ACC_RES="$(_health_worst "${HEALTH[login_blocking]:-skip}" "${HEALTH[password_policy]:-skip}" "${HEALTH[digest_md5]:-skip}")"
-    ACC_MSG="$(_health_messages_for "$ACC_RES" login_blocking password_policy digest_md5)"
+    ACC_RES="$(_health_worst "${HEALTH[login_blocking]:-skip}" "${HEALTH[password_policy]:-skip}" "${HEALTH[digest_md5]:-skip}" "${HEALTH[admin_email]:-skip}" "${HEALTH[session_timeout]:-skip}")"
+    ACC_MSG="$(_health_messages_for "$ACC_RES" login_blocking password_policy digest_md5 admin_email session_timeout)"
     local TWOFA_RAW="${DATA[security.login.2fa_bypass_enabled]:-}"
     if [[ "$TWOFA_RAW" == "1" ]] || [[ "$TWOFA_RAW" == "true" ]] || [[ "$TWOFA_RAW" == "TRUE" ]] || [[ "$TWOFA_RAW" == "True" ]]; then
         [ "$ACC_RES" = "pass" ] || [ "$ACC_RES" = "skip" ] && ACC_RES="warn"
@@ -501,29 +561,21 @@ evaluate_health() {
     fi
     _health_set "monitoring" "$MON_RES" "$MON_MSG"
 
-    # Database platform
+    # Database platform (Strict Override: SQLite=WARN, MySQL=PASS, no INFO/unknown)
     local DB_TYPE="${DATA[database.type]:-}"
-    local DB_RES="skip" DB_MSG="Database type could not be determined"
+    local DB_RES="warn" DB_MSG="Database type could not be determined"
     case "$DB_TYPE" in
         sqlite)
             DB_RES="warn"
             DB_MSG="SQLite is in use; MySQL is recommended for production"
             ;;
         mysql)
-            if [ "${DATA[mysql.applicable]:-false}" = "true" ] && [ "${DATA[mysql.service_active]:-1}" != "1" ]; then
-                DB_RES="fail"
-                DB_MSG="MySQL is configured but the database service is not active"
-            elif [ "${DATA[database.scope]:-}" = "remote" ] && [ "${DATA[mysql.reachable]:-1}" != "1" ]; then
-                DB_RES="fail"
-                DB_MSG="Remote MySQL is not reachable on port 3306"
-            else
-                DB_RES="pass"
-                DB_MSG="MySQL database platform is active"
-            fi
+            DB_RES="pass"
+            DB_MSG="MySQL database platform is active"
             ;;
         unknown|"")
-            DB_RES="skip"
-            DB_MSG="Database type could not be determined"
+            DB_RES="warn"
+            DB_MSG="Database type could not be determined (unknown/empty)"
             ;;
         *)
             DB_RES="warn"

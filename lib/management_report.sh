@@ -535,14 +535,14 @@ _validate_intrusion_value() {
     local VALUE="$2"
     local EXPECTED=""
     case "$KEY" in
-        "security.intrusion.block_connections_per_minute.value") EXPECTED="10" ;;
+        "security.intrusion.block_connections_per_minute.value") EXPECTED="50" ;;
         "security.intrusion.block_unknown_user_count.value") EXPECTED="5" ;;
         "security.intrusion.block_relay_denied_count.value") EXPECTED="5" ;;
         "security.intrusion.block_rset_count.value") EXPECTED="5" ;;
         "security.intrusion.block_spam_score.value") EXPECTED="9.00" ;;
         "security.intrusion.block_failed_logins.value") EXPECTED="5" ;;
-        "security.intrusion.block_duration_minutes") EXPECTED="30" ;;
-        *) echo "INFO" ;;
+        "security.intrusion.block_duration_minutes") EXPECTED="360" ;;
+        *) echo "WARN" ;;
     esac
     if [ -z "$VALUE" ]; then
         echo "CRITICAL"
@@ -592,9 +592,16 @@ _mr_render_checklist() {
             continue
         fi
 
-        # ---- Special case: Database Type ----
-        if [ "$LABEL" = "Database Type" ] && [ "${DATA[database.type]:-}" = "sqlite" ]; then
-            _mr_grid_item "$LABEL" "WARN"
+        # ---- Special case: Database Type (Strict Override: SQLite=WARN, MySQL=PASS, no INFO) ----
+        if [ "$LABEL" = "Database Type" ]; then
+            local DB_TYPE="${DATA[database.type]:-}"
+            if [ "$DB_TYPE" = "sqlite" ]; then
+                _mr_grid_item "$LABEL" "WARN"
+            elif [ "$DB_TYPE" = "mysql" ]; then
+                _mr_grid_item "$LABEL" "PASS"
+            else
+                _mr_grid_item "$LABEL" "WARN"
+            fi
             continue
         fi
 
@@ -605,6 +612,30 @@ _mr_render_checklist() {
                 _mr_grid_item "$LABEL" "PASS"
             else
                 _mr_grid_item "$LABEL" "CRITICAL"
+            fi
+            continue
+        fi
+
+        # ---- Special case: Set Admin Email (Strict Override: empty=CRITICAL, invalid=WARN) ----
+        if [ "$LABEL" = "Set Admin Email" ]; then
+            local RAW="${DATA[monitor.alert_email]:-}"
+            if [ -z "$RAW" ] || [ "$RAW" = "null" ] || [ "$RAW" = "N/A" ]; then
+                _mr_grid_item "$LABEL" "CRITICAL"
+            elif [[ "$RAW" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
+                _mr_grid_item "$LABEL" "PASS"
+            else
+                _mr_grid_item "$LABEL" "WARN"
+            fi
+            continue
+        fi
+
+        # ---- Special case: Session Timeout (Strict Override: has value=PASS, missing=WARN) ----
+        if [ "$LABEL" = "Session Timeout" ]; then
+            local RAW="${DATA[icewarp.session_timeout_minutes]:-}"
+            if [ -n "$RAW" ] && [ "$RAW" != "null" ] && [ "$RAW" != "N/A" ] && [ "$RAW" != "0" ]; then
+                _mr_grid_item "$LABEL" "PASS"
+            else
+                _mr_grid_item "$LABEL" "WARN"
             fi
             continue
         fi
@@ -720,23 +751,23 @@ _mr_render_checklist() {
         # ---- Special case: DIGEST-MD5 ----
         if [ "$LABEL" = "Disable DIGEST-MD5" ]; then
             local RAW="${DATA[security.digest_md5.enabled]:-}"
-            if [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
+            if [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
                 _mr_grid_item "$LABEL" "PASS"
-            elif [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
+            elif [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
                 _mr_grid_item "$LABEL" "CRITICAL"
             else
-                _mr_grid_item "$LABEL" "NA"
+                _mr_grid_item "$LABEL" "CRITICAL"
             fi
             continue
         fi
 
-        # ---- Special case: IMAP / POP3 ----
+        # ---- Special case: IMAP / POP3 (Strict Override: Running=PASS, Disabled=WARN) ----
         if [ "$LABEL" = "Disable IMAP" ] || [ "$LABEL" = "Disable POP3" ]; then
             local RAW="${DATA[${KEYS}]:-0}"
-            if [[ "$RAW" == "0" ]] || [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
+            if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
                 _mr_grid_item "$LABEL" "PASS"
             else
-                _mr_grid_item "$LABEL" "PASS"
+                _mr_grid_item "$LABEL" "WARN"
             fi
             continue
         fi

@@ -21,7 +21,23 @@ collector_run() {
         DATA["security.digest_md5.enabled"]="false"
     fi
     
-    # Check protocol settings
-    DATA["service.imap.active"]="${DATA[service.imap.active]:-0}"
-    DATA["service.pop3.active"]="${DATA[service.pop3.active]:-0}"
+    # Check IMAP/POP3 service status (Strict Override: Running=PASS, Disabled=WARN)
+    local IMAP_STATUS=""
+    local POP3_STATUS=""
+    if [ -n "${IW_TOOL:-}" ] && [ -x "$IW_TOOL" ]; then
+        IMAP_STATUS="$(timeout 5 "$IW_TOOL" display system C_System_Services_IMAP_Enable 2>/dev/null | awk -F': ' '{print $2}' | tr -d ' ')"
+        POP3_STATUS="$(timeout 5 "$IW_TOOL" display system C_System_Services_POP3_Enable 2>/dev/null | awk -F': ' '{print $2}' | tr -d ' ')"
+    fi
+    
+    if [ "$IMAP_STATUS" = "1" ] || [ "$IMAP_STATUS" = "true" ]; then
+        DATA["service.imap.active"]="1"
+    else
+        DATA["service.imap.active"]="0"
+    fi
+    
+    if [ "$POP3_STATUS" = "1" ] || [ "$POP3_STATUS" = "true" ]; then
+        DATA["service.pop3.active"]="1"
+    else
+        DATA["service.pop3.active"]="0"
+    fi
 }
