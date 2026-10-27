@@ -48,14 +48,14 @@ SMTP Protocol Hardening~Process POP3/IMAP~B~security.intrusion.process_pop3_imap
 SMTP Protocol Hardening~Add rDNS Result to Received for All Messages~B~smtp.rdns_in_received~Add rDNS to Received
 SMTP Protocol Hardening~Set Directory Cache Schedule~B~directory_cache.scheduled~Directory cache schedule
 SMTP Protocol Hardening~Change Admin URL~B~admin.url_changed_from_default~Admin URL changed
-Intrusion Prevention - Block Rules~Block IP - Connections in 1 Minute~V~security.intrusion.block_connections_per_minute.value~Expected: 10
+Intrusion Prevention - Block Rules~Block IP - Connections in 1 Minute~V~security.intrusion.block_connections_per_minute.value~Expected: 50
 Intrusion Prevention - Block Rules~Block IP - Unknown User Delivery Count~V~security.intrusion.block_unknown_user_count.value~Expected: 5
 Intrusion Prevention - Block Rules~Block IP - Denied for Relaying Too Often~V~security.intrusion.block_relay_denied_count.value~Expected: 5
 Intrusion Prevention - Block Rules~Block IP - Exceeds RSET Session Count~V~security.intrusion.block_rset_count.value~Expected: 5
 Intrusion Prevention - Block Rules~Block IP - Message Spam Score~V~security.intrusion.block_spam_score.value~Expected: 9.00
 Intrusion Prevention - Block Rules~Block IP - Listed on DNSBL~B~security.intrusion.block_dnsbl_listed.enabled~DNSBL blocking
 Intrusion Prevention - Block Rules~Block IP - Exceeds Failed Login Attempts~V~security.intrusion.block_failed_logins.value~Expected: 5
-Intrusion Prevention - Block Rules~Amount of Time IP is Blocked (minutes)~V~security.intrusion.block_duration_minutes~Expected: 30
+Intrusion Prevention - Block Rules~Amount of Time IP is Blocked (minutes)~V~security.intrusion.block_duration_minutes~Expected: 360
 Intrusion Prevention - Block Rules~Refuse Blocked IP Address~B~security.intrusion.refuse_blocked_ip~Refuse blocked IP
 Intrusion Prevention - Block Rules~Close Blocked Connection~B~security.intrusion.close_blocked_connection~Close blocked connection
 Intrusion Prevention - Block Rules~Close All Other Connections from Blocked IP~B~security.intrusion.close_all_other_connections~Close other connections

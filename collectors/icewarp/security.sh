@@ -19,10 +19,11 @@ collector_run() {
         fi
 
         # ============================================================
-        # DIGEST-MD5 (c_auth_schemes)
+        # DIGEST-MD5 (C_Accounts_Policies_Auth_Schemes)
         # ============================================================
         local AUTH_SCHEMES
-        AUTH_SCHEMES="$(timeout 5 "$IW_TOOL" display system c_auth_schemes 2>/dev/null | awk -F': ' '{print $2}')"
+        AUTH_SCHEMES="$(timeout 5 "$IW_TOOL" display system C_Accounts_Policies_Auth_Schemes 2>/dev/null | awk -F': ' '{print $2}')"
+        DATA["security.auth_schemes.raw"]="$AUTH_SCHEMES"
         if [ -n "$AUTH_SCHEMES" ]; then
             # Check if DIGEST-MD5 is in the list
             if echo "$AUTH_SCHEMES" | grep -qi "DIGEST-MD5"; then
@@ -31,7 +32,7 @@ collector_run() {
                 DATA["security.digest_md5.enabled"]="false"
             fi
         else
-            # If key not found, leave empty -> will show INFO
+            # If key not found, leave empty -> will show CRITICAL
             DATA["security.digest_md5.enabled"]=""
         fi
     fi

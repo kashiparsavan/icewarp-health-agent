@@ -752,9 +752,9 @@ _mr_render_checklist() {
         if [ "$LABEL" = "Disable DIGEST-MD5" ]; then
             local RAW="${DATA[security.digest_md5.enabled]:-}"
             if [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
-                _mr_grid_item "$LABEL" "PASS"
-            elif [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
                 _mr_grid_item "$LABEL" "CRITICAL"
+            elif [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
+                _mr_grid_item "$LABEL" "PASS"
             else
                 _mr_grid_item "$LABEL" "CRITICAL"
             fi
@@ -1012,6 +1012,11 @@ _mr_render_checklist() {
                         CRITICAL) _mr_grid_item "$LABEL" "CRITICAL" ;;
                         *) _mr_grid_item "$LABEL" "INFO" ;;
                     esac
+                    continue
+                    ;;
+                "Database Scope")
+                    local SCOPE="${DATA[database.scope]:-unknown}"
+                    _mr_grid_item "$LABEL" "PASS"
                     continue
                     ;;
             esac

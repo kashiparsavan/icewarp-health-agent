@@ -633,9 +633,9 @@ _render_checklist() {
         if [ "$LABEL" = "Disable DIGEST-MD5" ]; then
             local RAW="${DATA[security.digest_md5.enabled]:-}"
             if [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
-                _layout_row "$LABEL" "Disabled" "PASS" "PASS" "$NOTE"
-            elif [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
                 _layout_row "$LABEL" "Enabled" "CRITICAL" "CRITICAL" "$NOTE"
+            elif [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
+                _layout_row "$LABEL" "Disabled" "PASS" "PASS" "$NOTE"
             else
                 _layout_row "$LABEL" "N/A" "CRITICAL" "CRITICAL" "Auth scheme list not available - cannot verify DIGEST-MD5 status"
             fi
@@ -859,6 +859,9 @@ _render_checklist() {
                 "Disk (Total GB / Used %)")
                     local TOTAL_GB="${DATA[storage.root_fs.total_gb]:-0}"
                     local USED_PERCENT="${DATA[storage.root_fs.used_percent]:-0}"
+                    # Ensure defaults work even if key exists but is empty string
+                    [ -z "$TOTAL_GB" ] && TOTAL_GB=0
+                    [ -z "$USED_PERCENT" ] && USED_PERCENT=0
                     # NOTE FORMAT (STRICT): Total(GB)=X / Used %=Y
                     local VALUE="Total(GB)=${TOTAL_GB} / Used %=${USED_PERCENT}"
                     local BKIND="PASS"
@@ -904,6 +907,9 @@ _render_checklist() {
                 "RAM (Total KB / Available KB)")
                     local TOTAL_KB="${DATA[os.memory.total_kb]:-0}"
                     local AVAIL_KB="${DATA[os.memory.available_kb]:-0}"
+                    # Ensure defaults work even if key exists but is empty string
+                    [ -z "$TOTAL_KB" ] && TOTAL_KB=0
+                    [ -z "$AVAIL_KB" ] && AVAIL_KB=0
                     # NOTE FORMAT (STRICT): Total(KB)=X / Available KB=Y
                     local VALUE="Total(KB)=${TOTAL_KB} / Available KB=${AVAIL_KB}"
                     local BKIND="PASS"
@@ -956,6 +962,15 @@ _render_checklist() {
                         *) BKIND="INFO"; BTEXT="INFO" ;;
                     esac
                     _layout_row "$LABEL" "${DATA[system.swap.used_percent]:-0}%" "$BKIND" "$BTEXT" "$MSG"
+                    continue
+                    ;;
+                "Database Scope")
+                    local SCOPE="${DATA[database.scope]:-unknown}"
+                    local VALUE="${SCOPE}"
+                    local BKIND="PASS"
+                    local BTEXT="PASS"
+                    local MSG="Database scope: ${SCOPE}"
+                    _layout_row "$LABEL" "$VALUE" "$BKIND" "$BTEXT" "$MSG"
                     continue
                     ;;
             esac

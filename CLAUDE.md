@@ -1,5 +1,11 @@
 # CLAUDE.md
 
+## ⚠️ ABSOLUTE RULES (NEVER BREAK THESE)
+1. **NO CRLF (WINDOWS LINE ENDINGS):** All `.sh` files MUST have LF line endings. Never save Linux scripts with Windows CRLF.
+2. **PDF RENDERERS MUST MATCH HEALTH ENGINE:** If you change a threshold or logic in `health.sh`, you MUST apply the exact same change in `lib/pdf.sh` and `lib/management_report.sh`. Never leave hardcoded values in the PDF renderers.
+3. **NEVER USE `git push -f`:** Always push normally. If there is a conflict, stop and ask.
+4. **NO ARBITRARY INFO STATUS:** If a setting is missing or invalid, it must be `WARN` or `CRITICAL`, never `INFO`, unless explicitly allowed.
+
 Guidance for Claude Code (and other AI agents) working in this repository.
 
 ## What this project is

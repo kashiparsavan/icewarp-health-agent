@@ -188,12 +188,12 @@ evaluate_health() {
         _health_set "tls_delivery" "fail" "TLS/SSL for delivery is NOT enabled"
     fi
 
-    # --- DIGEST-MD5 (Strict Override: true=PASS, false/missing=CRITICAL) ---
+    # --- DIGEST-MD5 (Strict Override: true=CRITICAL (enabled=bad), false=PASS (disabled=good), missing=CRITICAL) ---
     local DIGEST_RAW="${DATA[security.digest_md5.enabled]:-}"
     if [ "$DIGEST_RAW" = "true" ]; then
-        _health_set "digest_md5" "pass" "Disable DIGEST-MD5 is active (DIGEST-MD5 disabled)"
+        _health_set "digest_md5" "critical" "DIGEST-MD5 auth scheme is ENABLED (weak, legacy)"
     elif [ "$DIGEST_RAW" = "false" ]; then
-        _health_set "digest_md5" "critical" "Disable DIGEST-MD5 is NOT active (DIGEST-MD5 still enabled)"
+        _health_set "digest_md5" "pass" "DIGEST-MD5 auth scheme is disabled"
     else
         _health_set "digest_md5" "critical" "Auth scheme list not available - cannot verify DIGEST-MD5 status"
     fi

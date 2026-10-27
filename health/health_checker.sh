@@ -99,12 +99,12 @@ run_health_checks() {
         results+=("os_update|warn|OS last update date not available")
     fi
     
-    # --- 6. DIGEST-MD5 (Security) Strict Override: true=PASS, false/missing=CRITICAL ---
+    # --- 6. DIGEST-MD5 (Security) Strict Override: true=CRITICAL (enabled=bad), false=PASS (disabled=good), missing=CRITICAL ---
     local digest_md5=$(echo "$json_data" | jq -r '.security.digest_md5.enabled // ""')
     if [[ "$digest_md5" == "true" ]]; then
-        results+=("digest_md5|pass|Disable DIGEST-MD5 is active (DIGEST-MD5 disabled)")
+        results+=("digest_md5|critical|DIGEST-MD5 auth scheme is ENABLED (weak, legacy)")
     elif [[ "$digest_md5" == "false" ]]; then
-        results+=("digest_md5|critical|Disable DIGEST-MD5 is NOT active (DIGEST-MD5 still enabled)")
+        results+=("digest_md5|pass|DIGEST-MD5 auth scheme is disabled")
     else
         results+=("digest_md5|critical|Auth scheme list not available - cannot verify DIGEST-MD5 status")
     fi
