@@ -642,13 +642,13 @@ _render_checklist() {
             continue
         fi
 
-        # ---- Special case: IMAP / POP3 (Strict Override: Running=PASS, Disabled=WARN) ----
+        # ---- Special case: IMAP / POP3 (Strict Override: Disabled=PASS, Enabled=WARN) ----
         if [ "$LABEL" = "Disable IMAP" ] || [ "$LABEL" = "Disable POP3" ]; then
-            local RAW="${DATA[${KEYS}]:-0}"
-            if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
-                _layout_row "$LABEL" "Running" "PASS" "PASS" "${NOTE:-Service is running}"
+            local RAW="${DATA[${KEYS}]:-1}"
+            if [[ "$RAW" == "0" ]] || [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
+                _layout_row "$LABEL" "Disabled" "PASS" "PASS" "${NOTE:-Service is disabled (control enforced)}"
             else
-                _layout_row "$LABEL" "Disabled" "WARN" "WARN" "${NOTE:-Service is disabled}"
+                _layout_row "$LABEL" "Enabled" "WARN" "WARN" "${NOTE:-Service is enabled (control failed)}"
             fi
             continue
         fi
@@ -866,14 +866,12 @@ _render_checklist() {
                     local MSG=""
                     if _is_num "$USED_PERCENT"; then
                         if [ "$USED_PERCENT" -ge 95 ]; then
-                            BKIND="CRITICAL"; BTEXT="CRITICAL"; MSG="Disk usage ${USED_PERCENT}% (CRITICAL - above 95%)"
+                            BKIND="CRITICAL"; BTEXT="CRITICAL"
                         elif [ "$USED_PERCENT" -ge 80 ]; then
-                            BKIND="WARN"; BTEXT="WARN"; MSG="Disk usage ${USED_PERCENT}% (WARN - above 80%)"
+                            BKIND="WARN"; BTEXT="WARN"
                         else
-                            BKIND="PASS"; BTEXT="PASS"; MSG="Disk usage ${USED_PERCENT}% (OK)"
+                            BKIND="PASS"; BTEXT="PASS"
                         fi
-                    else
-                        MSG="Unable to calculate disk usage percentage"
                     fi
                     _layout_row "$LABEL" "$VALUE" "$BKIND" "$BTEXT" "$MSG"
                     continue
@@ -916,14 +914,12 @@ _render_checklist() {
                         local CRIT_LIMIT=$(awk 'BEGIN{print 90}')
                         local WARN_LIMIT=$(awk 'BEGIN{print 40}')
                         if awk -v used="$USED_PERCENT" -v lim="$CRIT_LIMIT" 'BEGIN{exit !(used > lim)}'; then
-                            BKIND="CRITICAL"; BTEXT="CRITICAL"; MSG="RAM usage ${USED_PERCENT}% (CRITICAL - above 90%)"
+                            BKIND="CRITICAL"; BTEXT="CRITICAL"
                         elif awk -v used="$USED_PERCENT" -v lim="$WARN_LIMIT" 'BEGIN{exit !(used > lim)}'; then
-                            BKIND="WARN"; BTEXT="WARN"; MSG="RAM usage ${USED_PERCENT}% (WARN - above 40%)"
+                            BKIND="WARN"; BTEXT="WARN"
                         else
-                            BKIND="PASS"; BTEXT="PASS"; MSG="RAM usage ${USED_PERCENT}% (OK)"
+                            BKIND="PASS"; BTEXT="PASS"
                         fi
-                    else
-                        MSG="Unable to calculate RAM usage percentage"
                     fi
                     _layout_row "$LABEL" "$VALUE" "$BKIND" "$BTEXT" "$MSG"
                     continue

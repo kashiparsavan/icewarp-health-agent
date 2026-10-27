@@ -58,14 +58,14 @@ run_health_checks() {
         local used_kb=$((total_kb - available_kb))
         local mem_percent=$(echo "scale=2; ($used_kb / $total_kb) * 100" | bc 2>/dev/null || echo "0")
         if (( $(echo "$mem_percent > 90" | bc -l 2>/dev/null || echo "0") )); then
-            results+=("memory|critical|${ram_note} (RAM usage ${mem_percent}% CRITICAL - above 90%)")
+            results+=("memory|critical|${ram_note}")
         elif (( $(echo "$mem_percent > 40" | bc -l 2>/dev/null || echo "0") )); then
-            results+=("memory|warn|${ram_note} (RAM usage ${mem_percent}% WARN - above 40%)")
+            results+=("memory|warn|${ram_note}")
         else
-            results+=("memory|pass|${ram_note} (RAM usage ${mem_percent}% OK)")
+            results+=("memory|pass|${ram_note}")
         fi
     else
-        results+=("memory|warn|${ram_note} (RAM data unavailable)")
+        results+=("memory|warn|${ram_note}")
     fi
     
     # --- 4. Disk Usage (Strict Override: >=95% CRITICAL, >=80% WARN) ---
@@ -74,14 +74,14 @@ run_health_checks() {
     local disk_note="Total(GB)=${total_gb} / Used %=${disk_used_percent}"
     if [[ -n "$disk_used_percent" ]] && [[ "$disk_used_percent" != "N/A" ]]; then
         if (( disk_used_percent >= 95 )); then
-            results+=("disk|critical|${disk_note} (Disk usage ${disk_used_percent}% CRITICAL - above 95%)")
+            results+=("disk|critical|${disk_note}")
         elif (( disk_used_percent >= 80 )); then
-            results+=("disk|warn|${disk_note} (Disk usage ${disk_used_percent}% WARN - above 80%)")
+            results+=("disk|warn|${disk_note}")
         else
-            results+=("disk|pass|${disk_note} (Disk usage ${disk_used_percent}% OK)")
+            results+=("disk|pass|${disk_note}")
         fi
     else
-        results+=("disk|warn|${disk_note} (Disk usage data unavailable)")
+        results+=("disk|warn|${disk_note}")
     fi
     
     # --- 5. OS Last Update (Warn if > 7 days, matches health.sh) ---
@@ -158,18 +158,18 @@ run_health_checks() {
         results+=("session_timeout|warn|Session timeout is not set or is 0")
     fi
 
-    # --- 7e. IMAP / POP3 Services (Strict Override: Running=PASS, Disabled=WARN) ---
-    local imap_active=$(echo "$json_data" | jq -r '.service.imap.active // 0')
-    local pop3_active=$(echo "$json_data" | jq -r '.service.pop3.active // 0')
-    if [[ "$imap_active" == "1" ]] || [[ "$imap_active" == "true" ]]; then
-        results+=("service.imap|pass|IMAP service is running")
+    # --- 7e. IMAP / POP3 Services (Strict Override: Disabled=PASS, Enabled=WARN) ---
+    local imap_active=$(echo "$json_data" | jq -r '.service.imap.active // 1')
+    local pop3_active=$(echo "$json_data" | jq -r '.service.pop3.active // 1')
+    if [[ "$imap_active" == "0" ]] || [[ "$imap_active" == "false" ]]; then
+        results+=("service.imap|pass|IMAP service is disabled (control enforced)")
     else
-        results+=("service.imap|warn|IMAP service is disabled")
+        results+=("service.imap|warn|IMAP service is enabled (control failed)")
     fi
-    if [[ "$pop3_active" == "1" ]] || [[ "$pop3_active" == "true" ]]; then
-        results+=("service.pop3|pass|POP3 service is running")
+    if [[ "$pop3_active" == "0" ]] || [[ "$pop3_active" == "false" ]]; then
+        results+=("service.pop3|pass|POP3 service is disabled (control enforced)")
     else
-        results+=("service.pop3|warn|POP3 service is disabled")
+        results+=("service.pop3|warn|POP3 service is enabled (control failed)")
     fi
     
     # --- 7h. Password Policy ---

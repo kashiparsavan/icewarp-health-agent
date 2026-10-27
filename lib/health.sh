@@ -68,14 +68,14 @@ evaluate_health() {
     if _is_num "$AVAIL_KB" && _is_num "$TOTAL_RAM_KB" && [ "$TOTAL_RAM_KB" -gt 0 ]; then
         local USED_PERCENT=$(awk -v t="$TOTAL_RAM_KB" -v a="$AVAIL_KB" 'BEGIN{printf "%.2f", ((t-a)/t)*100}')
         if awk -v used="$USED_PERCENT" -v lim=90 'BEGIN{exit !(used > lim)}'; then
-            _health_set "memory" "critical" "${RAM_NOTE} (RAM usage ${USED_PERCENT}% CRITICAL - above 90%)"
+            _health_set "memory" "critical" "${RAM_NOTE}"
         elif awk -v used="$USED_PERCENT" -v lim=40 'BEGIN{exit !(used > lim)}'; then
-            _health_set "memory" "warn" "${RAM_NOTE} (RAM usage ${USED_PERCENT}% WARN - above 40%)"
+            _health_set "memory" "warn" "${RAM_NOTE}"
         else
-            _health_set "memory" "pass" "${RAM_NOTE} (RAM usage ${USED_PERCENT}% OK)"
+            _health_set "memory" "pass" "${RAM_NOTE}"
         fi
     else
-        _health_set "memory" "warn" "${RAM_NOTE} (RAM data unavailable)"
+        _health_set "memory" "warn" "${RAM_NOTE}"
     fi
 
     # --- Disk ---
@@ -106,24 +106,24 @@ evaluate_health() {
         local DISK_NOTE="Total(GB)=${TOTAL_GB:-0} / Used %=${USED_PERCENT:-0}"
 
         if ! _is_num "$DISK_FLOOR_MB" || [ "$DISK_FLOOR_MB" -le 0 ]; then
-            _health_set "disk.${MOUNT_NAME}" "warn" "${DISK_NOTE} (System Monitor disk threshold not configured)"
+            _health_set "disk.${MOUNT_NAME}" "warn" "${DISK_NOTE}"
             continue
         fi
 
         if _is_num "$TOTAL_GB"; then
             TOTAL_MB="$(awk -v g="$TOTAL_GB" 'BEGIN{printf "%d", g*1024}')"
             if [ "$DISK_FLOOR_MB" -gt "$TOTAL_MB" ]; then
-                _health_set "disk.${MOUNT_NAME}" "warn" "${DISK_NOTE} (Configured threshold exceeds capacity - review System Monitor)"
+                _health_set "disk.${MOUNT_NAME}" "warn" "${DISK_NOTE}"
                 [ "$WORST" = "pass" ] && WORST="warn"
                 continue
             fi
         fi
 
         if [ "$FREE_MB" -lt "$DISK_FLOOR_MB" ]; then
-            _health_set "disk.${MOUNT_NAME}" "fail" "${DISK_NOTE} (Free space ${FREE_GB}GB below configured alert threshold)"
+            _health_set "disk.${MOUNT_NAME}" "fail" "${DISK_NOTE}"
             WORST="fail"
         else
-            _health_set "disk.${MOUNT_NAME}" "pass" "${DISK_NOTE} (Free space ${FREE_GB}GB OK)"
+            _health_set "disk.${MOUNT_NAME}" "pass" "${DISK_NOTE}"
         fi
     done
     if [ "$WORST" = "fail" ]; then
@@ -386,18 +386,18 @@ evaluate_health() {
         _health_set "session_timeout" "warn" "Session timeout is not set or is 0"
     fi
 
-    # --- IMAP / POP3 Services (Strict Override: Running=PASS, Disabled=WARN) ---
-    local IMAP_ACTIVE="${DATA[service.imap.active]:-0}"
-    local POP3_ACTIVE="${DATA[service.pop3.active]:-0}"
-    if [ "$IMAP_ACTIVE" = "1" ] || [ "$IMAP_ACTIVE" = "true" ]; then
-        _health_set "service.imap" "pass" "IMAP service is running"
+    # --- IMAP / POP3 Services (Strict Override: Disabled=PASS, Enabled=WARN) ---
+    local IMAP_ACTIVE="${DATA[service.imap.active]:-1}"
+    local POP3_ACTIVE="${DATA[service.pop3.active]:-1}"
+    if [ "$IMAP_ACTIVE" = "0" ] || [ "$IMAP_ACTIVE" = "false" ]; then
+        _health_set "service.imap" "pass" "IMAP service is disabled (control enforced)"
     else
-        _health_set "service.imap" "warn" "IMAP service is disabled"
+        _health_set "service.imap" "warn" "IMAP service is enabled (control failed)"
     fi
-    if [ "$POP3_ACTIVE" = "1" ] || [ "$POP3_ACTIVE" = "true" ]; then
-        _health_set "service.pop3" "pass" "POP3 service is running"
+    if [ "$POP3_ACTIVE" = "0" ] || [ "$POP3_ACTIVE" = "false" ]; then
+        _health_set "service.pop3" "pass" "POP3 service is disabled (control enforced)"
     else
-        _health_set "service.pop3" "warn" "POP3 service is disabled"
+        _health_set "service.pop3" "warn" "POP3 service is enabled (control failed)"
     fi
 
     # --- Report Health Summary roll-ups ---

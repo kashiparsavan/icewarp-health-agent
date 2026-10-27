@@ -761,10 +761,10 @@ _mr_render_checklist() {
             continue
         fi
 
-        # ---- Special case: IMAP / POP3 (Strict Override: Running=PASS, Disabled=WARN) ----
+        # ---- Special case: IMAP / POP3 (Strict Override: Disabled=PASS, Enabled=WARN) ----
         if [ "$LABEL" = "Disable IMAP" ] || [ "$LABEL" = "Disable POP3" ]; then
-            local RAW="${DATA[${KEYS}]:-0}"
-            if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
+            local RAW="${DATA[${KEYS}]:-1}"
+            if [[ "$RAW" == "0" ]] || [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
                 _mr_grid_item "$LABEL" "PASS"
             else
                 _mr_grid_item "$LABEL" "WARN"
