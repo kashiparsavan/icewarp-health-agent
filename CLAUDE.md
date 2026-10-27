@@ -25,6 +25,11 @@ anything from the Linux `lib/`, and does not share Linux configuration. See
 `windows/README.md`. Windows target: Windows Server 2012 R2 or later with
 Windows PowerShell 5.1 and IceWarp `tool.exe`.
 
+## ⚠️ STRICT REPOSITORY SEPARATION RULES
+- This repository (`icewarp-health-agent`) is STRICTLY for Linux/Bash.
+- NEVER create, copy, or commit any Windows-related files (like `.ps1`, `windows/`, or `.windows.help`) into this repository.
+- The Windows project lives separately at `C:\Projects\icewarp-health-agent-windows`. Do not cross-contaminate the two.
+
 ## Commands
 
 Run from the repository root **on the IceWarp server** (normally as root):
