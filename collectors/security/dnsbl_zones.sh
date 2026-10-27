@@ -9,9 +9,14 @@ collector_run() {
     if [ -n "${IW_TOOL:-}" ] && [ -x "$IW_TOOL" ]; then
         # Get configured DNSBL zones from tool.sh
         # Try multiple possible keys
-        DNSBL_ZONES="$(timeout 5 "$IW_TOOL" display system C_Mail_Security_Protection_DNSBLZones 2>/dev/null | awk -F': ' '{print $2}')"
+        DNSBL_ZONES="$(timeout 5 "$IW_TOOL" display system C_Mail_Security_DNSBL_Hosts 2>/dev/null | awk -F': ' '{print $2}')"
         
         # Fallback: try alternative key names
+        if [ -z "$DNSBL_ZONES" ]; then
+            DNSBL_ZONES="$(timeout 5 "$IW_TOOL" display system C_Mail_Security_Protection_DNSBLZones 2>/dev/null | awk -F': ' '{print $2}')"
+        fi
+        
+        # Another fallback
         if [ -z "$DNSBL_ZONES" ]; then
             DNSBL_ZONES="$(timeout 5 "$IW_TOOL" display system C_Mail_Security_AntiSpam_DNSBLZones 2>/dev/null | awk -F': ' '{print $2}')"
         fi
@@ -20,6 +25,14 @@ collector_run() {
         if [ -z "$DNSBL_ZONES" ]; then
             DNSBL_ZONES="$(timeout 5 "$IW_TOOL" display system C_Security_DNSBL_Zones 2>/dev/null | awk -F': ' '{print $2}')"
         fi
+    fi
+
+    # Fallback: check XML config for DNSBL zones
+    if [ -z "$DNSBL_ZONES" ] && [ -f /opt/icewarp-data/config/license.xml ]; then
+        DNSBL_ZONES="$(grep -ioP '<DNSBL[^>]*>\K[^<]+' /opt/icewarp-data/config/license.xml 2>/dev/null | head -n1)"
+    fi
+    if [ -z "$DNSBL_ZONES" ] && [ -f /opt/icewarp/config/license.xml ]; then
+        DNSBL_ZONES="$(grep -ioP '<DNSBL[^>]*>\K[^<]+' /opt/icewarp/config/license.xml 2>/dev/null | head -n1)"
     fi
 
     # Normalize the zones list

@@ -16,6 +16,20 @@ collector_run() {
     collector_set "monitor.enabled" "$(iw_get "C_System_Tools_Monitor_Enable" "" "" "")"
     collector_set "monitor.alert_email" "$(iw_get "C_System_Tools_Monitor_ReportAddress" "" "" "")"
 
+    # Fallback: if System Monitor email is not set, check domain admin email
+    local ADMIN_EMAIL="${DATA[monitor.alert_email]:-}"
+    if [ -z "$ADMIN_EMAIL" ] || [ "$ADMIN_EMAIL" = "null" ] || [ "$ADMIN_EMAIL" = "N/A" ]; then
+        # Try to get domain admin email from the primary domain
+        local PRIMARY_DOMAIN="${DATA[domain.primary.name]:-}"
+        if [ -n "$PRIMARY_DOMAIN" ] && [ "$PRIMARY_DOMAIN" != "not returned" ]; then
+            local DOMAIN_ADMIN_EMAIL
+            DOMAIN_ADMIN_EMAIL="$(iw_get_domain "$PRIMARY_DOMAIN" "D_AdminEmail" "" "" "")"
+            if [ -n "$DOMAIN_ADMIN_EMAIL" ] && [ "$DOMAIN_ADMIN_EMAIL" != "null" ] && [ "$DOMAIN_ADMIN_EMAIL" != "N/A" ]; then
+                collector_set "monitor.alert_email" "$DOMAIN_ADMIN_EMAIL"
+            fi
+        fi
+    fi
+
     FREE_MEM_KB="$(iw_get "C_System_Tools_Monitor_FreeMem" "" "" "")"
     collector_set "monitor.memory.alert_below_kb" "$FREE_MEM_KB"
     if [[ "$FREE_MEM_KB" =~ ^[0-9]+$ ]]; then

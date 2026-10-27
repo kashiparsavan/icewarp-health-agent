@@ -16,6 +16,26 @@ collector_run() {
     local CONN
     CONN="$(iw_get "C_System_Storage_Accounts_ODBCConnString_Real" "" "" "")"
 
+    # Fallback: In Docker, the config might be at a different path
+    # Try to read from icewarp.xml or accounts.xml if connection string is empty
+    if [ -z "$CONN" ]; then
+        # Try to read from icewarp.xml or accounts.xml in Docker config path
+        local XML
+        XML="$(cat /opt/icewarp-data/config/icewarp.xml 2>/dev/null || cat /opt/icewarp/config/icewarp.xml 2>/dev/null)"
+        if [ -n "$XML" ]; then
+            CONN="$(echo "$XML" | grep -ioP '<ODBCConnString[^>]*>\K[^<]+' | head -n1)"
+        fi
+    fi
+
+    # If still empty, try accounts.xml
+    if [ -z "$CONN" ]; then
+        local ACCOUNTS_XML
+        ACCOUNTS_XML="$(cat /opt/icewarp-data/config/accounts.xml 2>/dev/null || cat /opt/icewarp/config/accounts.xml 2>/dev/null)"
+        if [ -n "$ACCOUNTS_XML" ]; then
+            CONN="$(echo "$ACCOUNTS_XML" | grep -ioP '<ODBCConnString[^>]*>\K[^<]+' | head -n1)"
+        fi
+    fi
+
     collector_set "database.connection_string_raw" "$CONN"
 
     if [ -z "$CONN" ]; then
