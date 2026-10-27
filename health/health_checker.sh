@@ -158,18 +158,18 @@ run_health_checks() {
         results+=("session_timeout|warn|Session timeout is not set or is 0")
     fi
 
-    # --- 7e. IMAP / POP3 Services (Strict Override: Disabled=PASS, Enabled=WARN) ---
-    local imap_active=$(echo "$json_data" | jq -r '.service.imap.active // 1')
-    local pop3_active=$(echo "$json_data" | jq -r '.service.pop3.active // 1')
-    if [[ "$imap_active" == "0" ]] || [[ "$imap_active" == "false" ]]; then
-        results+=("service.imap|pass|IMAP service is disabled (control enforced)")
+    # --- 7e. IMAP / POP3 Services (Strict Override: Running=PASS, Disabled=WARN) ---
+    local imap_active=$(echo "$json_data" | jq -r '.service.imap.active // 0')
+    local pop3_active=$(echo "$json_data" | jq -r '.service.pop3.active // 0')
+    if [[ "$imap_active" == "1" ]] || [[ "$imap_active" == "true" ]]; then
+        results+=("service.imap|pass|IMAP service is running")
     else
-        results+=("service.imap|warn|IMAP service is enabled (control failed)")
+        results+=("service.imap|warn|IMAP service is disabled")
     fi
-    if [[ "$pop3_active" == "0" ]] || [[ "$pop3_active" == "false" ]]; then
-        results+=("service.pop3|pass|POP3 service is disabled (control enforced)")
+    if [[ "$pop3_active" == "1" ]] || [[ "$pop3_active" == "true" ]]; then
+        results+=("service.pop3|pass|POP3 service is running")
     else
-        results+=("service.pop3|warn|POP3 service is enabled (control failed)")
+        results+=("service.pop3|warn|POP3 service is disabled")
     fi
     
     # --- 7h. Password Policy ---

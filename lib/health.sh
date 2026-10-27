@@ -386,18 +386,18 @@ evaluate_health() {
         _health_set "session_timeout" "warn" "Session timeout is not set or is 0"
     fi
 
-    # --- IMAP / POP3 Services (Strict Override: Disabled=PASS, Enabled=WARN) ---
-    local IMAP_ACTIVE="${DATA[service.imap.active]:-1}"
-    local POP3_ACTIVE="${DATA[service.pop3.active]:-1}"
-    if [ "$IMAP_ACTIVE" = "0" ] || [ "$IMAP_ACTIVE" = "false" ]; then
-        _health_set "service.imap" "pass" "IMAP service is disabled (control enforced)"
+    # --- IMAP / POP3 Services (Strict Override: Running=PASS, Disabled=WARN) ---
+    local IMAP_ACTIVE="${DATA[service.imap.active]:-0}"
+    local POP3_ACTIVE="${DATA[service.pop3.active]:-0}"
+    if [ "$IMAP_ACTIVE" = "1" ] || [ "$IMAP_ACTIVE" = "true" ]; then
+        _health_set "service.imap" "pass" "IMAP service is running"
     else
-        _health_set "service.imap" "warn" "IMAP service is enabled (control failed)"
+        _health_set "service.imap" "warn" "IMAP service is disabled"
     fi
-    if [ "$POP3_ACTIVE" = "0" ] || [ "$POP3_ACTIVE" = "false" ]; then
-        _health_set "service.pop3" "pass" "POP3 service is disabled (control enforced)"
+    if [ "$POP3_ACTIVE" = "1" ] || [ "$POP3_ACTIVE" = "true" ]; then
+        _health_set "service.pop3" "pass" "POP3 service is running"
     else
-        _health_set "service.pop3" "warn" "POP3 service is enabled (control failed)"
+        _health_set "service.pop3" "warn" "POP3 service is disabled"
     fi
 
     # --- Report Health Summary roll-ups ---
