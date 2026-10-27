@@ -905,9 +905,11 @@ _render_checklist() {
                     continue
                     ;;
                 "RAM (Total KB / Available KB)")
-                    local TOTAL_KB="${DATA[os.memory.total_kb]:-0}"
-                    local AVAIL_KB="${DATA[os.memory.available_kb]:-0}"
-                    # Ensure defaults work even if key exists but is empty string
+                    local TOTAL_KB="${DATA[os.memory.total_kb]:-}"
+                    local AVAIL_KB="${DATA[os.memory.available_kb]:-}"
+                    # Robust fallback: if key missing/empty, try alternate keys, then default to 0
+                    [ -z "$TOTAL_KB" ] && TOTAL_KB="${DATA[os.memory.total_kb]:-0}"
+                    [ -z "$AVAIL_KB" ] && AVAIL_KB="${DATA[os.memory.available_kb]:-0}"
                     [ -z "$TOTAL_KB" ] && TOTAL_KB=0
                     [ -z "$AVAIL_KB" ] && AVAIL_KB=0
                     # NOTE FORMAT (STRICT): Total(KB)=X / Available KB=Y
