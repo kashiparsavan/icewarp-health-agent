@@ -6,6 +6,7 @@
 3. **NEVER USE `git push -f`:** Always push normally. If there is a conflict, stop and ask.
 4. **NO ARBITRARY INFO STATUS:** If a setting is missing or invalid, it must be `WARN` or `CRITICAL`, never `INFO`, unless explicitly allowed.
 5. **STRICT RULE: HEALTH vs. CONFIGURATOR SYNC:** Whenever you change a threshold or expected value in `lib/health.sh` (e.g., Intrusion 50/360, Admin Email, IMAP/POP3), you MUST immediately update the corresponding expected value in `config/recommended.conf`. The Configurator and the Health Engine must always be in perfect sync.
+6. **STRICT RULE: NO PLACEHOLDERS FOR HEALTH CHECKS:** Never add fake values or placeholders (e.g., `admin@example.com`) to `recommended.conf` or any code just to silence a `CRITICAL` or `WARN` health check. If a setting requires human input (like an Admin Email), the health engine MUST remain `CRITICAL` until the operator explicitly sets it. Do not cheat the system.
 
 Guidance for Claude Code (and other AI agents) working in this repository.
 
