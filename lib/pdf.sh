@@ -228,6 +228,17 @@ _layout_cover() {
     _pdf_text "$PDF_MARGIN" 706 "Host: ${HOST}   Generated: ${GEN}   Agent v${VER}" "F1" 9.5 "$PDF_C_WHITE"
 
     _PDF_Y=660
+    local LIC_TYPE="${DATA[icewarp.license.type]:-unknown}"
+    local LIC_EXP="${DATA[icewarp.license.trial_expiration]:-}"
+    local LIC_DISPLAY
+    if [ -n "$LIC_EXP" ]; then
+        LIC_DISPLAY="${LIC_EXP}"
+    elif [ "$LIC_TYPE" = "Evaluation" ]; then
+        LIC_DISPLAY="Evaluation (expiration not detected)"
+    else
+        LIC_DISPLAY="N/A (perpetual license)"
+    fi
+
     local INFO_ROWS=(
         "Company Name|${DATA[general.company]:-Unknown}"
         "Mail Domain|${DATA[domain.primary.name]:-not returned}"
@@ -236,7 +247,8 @@ _layout_cover() {
         "Antispam Last Update|${DATA[icewarp.antispam.last_update]:-unknown}"
         "Antivirus Last Update|${DATA[icewarp.antivirus.last_update]:-unknown}"
         "Last Backup Date/Time|${DATA[icewarp.backup.last_time]:-unknown}"
-        "License Expiration|${DATA[icewarp.license.trial_expiration]:-N/A (perpetual license)}"
+        "License Type|${LIC_TYPE}"
+        "License Expiration|${LIC_DISPLAY}"
         "SSL Expiration|${DATA[icewarp.ssl.expiration]:-not returned}"
     )
     local ROW
