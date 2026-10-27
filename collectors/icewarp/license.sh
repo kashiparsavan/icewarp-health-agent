@@ -15,7 +15,11 @@ collector_run() {
     local TRIAL_EXPIRE
     local FILE_EXISTS="false"
 
-    [ -f /opt/icewarp/license.xml ] && FILE_EXISTS="true"
+    # In Docker, license.xml is at /opt/icewarp-data/config/license.xml (mounted from host /opt/icewarp/config)
+    # On bare metal, it's at /opt/icewarp/license.xml
+    local LICENSE_XML_PATH="/opt/icewarp/license.xml"
+    [ -f /opt/icewarp-data/config/license.xml ] && LICENSE_XML_PATH="/opt/icewarp-data/config/license.xml"
+    [ -f "$LICENSE_XML_PATH" ] && FILE_EXISTS="true"
 
     STATUS_CODE="$(iw_get "C_LicenseStatus" "" "" "")"
     LIC_TYPE="$(iw_get "C_License_Type" "" "" "")"
@@ -48,17 +52,17 @@ collector_run() {
         [ -n "$TRIAL_EXPIRE" ] && collector_set "icewarp.license.trial_expiration_source" "XML LicenseExpiration tag"
     fi
 
-    # Fallback 3: check license.xml file directly if it exists
+    # Fallback 3: check license.xml file directly if it exists (correct path for Docker)
     if [ -z "$TRIAL_EXPIRE" ] && [ "$FILE_EXISTS" = "true" ]; then
-        TRIAL_EXPIRE="$(grep -ioP '<(TrialExpire|TrialExpiration|Expire|ExpirationDate|LicenseExpiration)>\K[^<]+' /opt/icewarp/license.xml 2>/dev/null | head -n1)"
-        [ -n "$TRIAL_EXPIRE" ] && collector_set "icewarp.license.trial_expiration_source" "license.xml file direct read"
+        TRIAL_EXPIRE="$(grep -ioP '<(TrialExpire|TrialExpiration|Expire|ExpirationDate|LicenseExpiration)>\K[^<]+' "$LICENSE_XML_PATH" 2>/dev/null | head -n1)"
+        [ -n "$TRIAL_EXPIRE" ] && collector_set "icewarp.license.trial_expiration_source" "license.xml file direct read ($LICENSE_XML_PATH)"
     fi
 
     # Fallback 4: parse "Days" remaining from XML and calculate expiration date
     if [ -z "$TRIAL_EXPIRE" ] && [ "$FILE_EXISTS" = "true" ]; then
         local DAYS_REMAINING
         # Try multiple possible tags for days remaining
-        DAYS_REMAINING="$(grep -ioP '<(TrialDaysRemaining|DaysRemaining|EvaluationDays|TrialDays)>\K[^<]+' /opt/icewarp/license.xml 2>/dev/null | head -n1)"
+        DAYS_REMAINING="$(grep -ioP '<(TrialDaysRemaining|DaysRemaining|EvaluationDays|TrialDays)>\K[^<]+' "$LICENSE_XML_PATH" 2>/dev/null | head -n1)"
         if [ -n "$DAYS_REMAINING" ] && [[ "$DAYS_REMAINING" =~ ^[0-9]+$ ]]; then
             # Calculate expiration date from days remaining
             local EXP_DATE
@@ -66,6 +70,21 @@ collector_run() {
             if [ -n "$EXP_DATE" ]; then
                 TRIAL_EXPIRE="${EXP_DATE} (${DAYS_REMAINING} days remaining)"
                 collector_set "icewarp.license.trial_expiration_source" "license.xml DaysRemaining calculation"
+            fi
+        fi
+    fi
+
+    # Fallback 5: check for Evaluation/Trial license type directly in XML
+    if [ -z "$TRIAL_EXPIRE" ] && [ "$FILE_EXISTS" = "true" ]; then
+        local LIC_TYPE_XML
+        LIC_TYPE_XML="$(grep -ioP '<(LicenseType|Type|Edition)>\K[^<]+' "$LICENSE_XML_PATH" 2>/dev/null | head -n1)"
+        if echo "$LIC_TYPE_XML" | grep -iq "trial\|evaluation"; then
+            # Check for Expiration or EndDate tags
+            local EXP_DATE
+            EXP_DATE="$(grep -ioP '<(Expiration|EndDate|ValidUntil)>\K[^<]+' "$LICENSE_XML_PATH" 2>/dev/null | head -n1)"
+            if [ -n "$EXP_DATE" ]; then
+                TRIAL_EXPIRE="$EXP_DATE"
+                collector_set "icewarp.license.trial_expiration_source" "license.xml Expiration/EndDate tag"
             fi
         fi
     fi

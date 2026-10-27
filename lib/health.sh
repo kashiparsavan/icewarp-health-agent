@@ -400,6 +400,23 @@ evaluate_health() {
         _health_set "service.pop3" "warn" "POP3 service is disabled"
     fi
 
+    # --- DNSBL Zones Check (New) ---
+    local DNSBL_ZONES="${DATA[security.dnsbl.zones]:-}"
+    local DNSBL_COUNT="${DATA[security.dnsbl.zones.count]:-0}"
+    if [ -z "$DNSBL_ZONES" ] || [ "$DNSBL_COUNT" -eq 0 ]; then
+        _health_set "dnsbl_zones" "warn" "No DNSBL zones configured"
+    else
+        # Check for recommended zones
+        local HAS_SPAMCOP=0 HAS_SPAMHAUS=0
+        echo "$DNSBL_ZONES" | grep -qi "bl.spamcop.net" && HAS_SPAMCOP=1
+        echo "$DNSBL_ZONES" | grep -qi "zen.spamhaus.org" && HAS_SPAMHAUS=1
+        if [ "$HAS_SPAMCOP" -eq 1 ] || [ "$HAS_SPAMHAUS" -eq 1 ]; then
+            _health_set "dnsbl_zones" "pass" "DNSBL zones configured: $DNSBL_ZONES (includes recommended)"
+        else
+            _health_set "dnsbl_zones" "warn" "DNSBL zones configured: $DNSBL_ZONES (missing recommended: bl.spamcop.net, zen.spamhaus.org)"
+        fi
+    fi
+
     # --- Report Health Summary roll-ups ---
     # The technical and management reports show nine executive pillars rather
     # than every low-level rule. Each pillar is derived from the detailed
@@ -443,6 +460,21 @@ evaluate_health() {
     if [ "${DATA[dns.spf.found]:-}" = "true" ] && [ "${DATA[dns.spf.includes_server_ip]:-}" = "false" ]; then
         MF_ISSUES+=("SPF does not include this server's IP")
         [ "$MF_RES" != "fail" ] && MF_RES="warn"
+    fi
+    # Add DNSBL zones to mail flow check
+    local DNSBL_ZONES="${DATA[security.dnsbl.zones]:-}"
+    local DNSBL_COUNT="${DATA[security.dnsbl.zones.count]:-0}"
+    if [ -z "$DNSBL_ZONES" ] || [ "$DNSBL_COUNT" -eq 0 ]; then
+        MF_ISSUES+=("No DNSBL zones configured")
+        [ "$MF_RES" != "fail" ] && MF_RES="warn"
+    else
+        local HAS_SPAMCOP=0 HAS_SPAMHAUS=0
+        echo "$DNSBL_ZONES" | grep -qi "bl.spamcop.net" && HAS_SPAMCOP=1
+        echo "$DNSBL_ZONES" | grep -qi "zen.spamhaus.org" && HAS_SPAMHAUS=1
+        if [ "$HAS_SPAMCOP" -eq 0 ] && [ "$HAS_SPAMHAUS" -eq 0 ]; then
+            MF_ISSUES+=("DNSBL zones missing recommended: bl.spamcop.net, zen.spamhaus.org")
+            [ "$MF_RES" != "fail" ] && MF_RES="warn"
+        fi
     fi
     if [ "$MF_ANY" -eq 0 ]; then
         _health_set "mail_flow" "skip" "Mail-flow DNS and STARTTLS checks did not return data"

@@ -8,6 +8,7 @@
 5. **STRICT RULE: HEALTH vs. CONFIGURATOR SYNC:** Whenever you change a threshold or expected value in `lib/health.sh` (e.g., Intrusion 50/360, Admin Email, IMAP/POP3), you MUST immediately update the corresponding expected value in `config/recommended.conf`. The Configurator and the Health Engine must always be in perfect sync.
 6. **STRICT RULE: NO PLACEHOLDERS FOR HEALTH CHECKS:** Never add fake values or placeholders (e.g., `admin@example.com`) to `recommended.conf` or any code just to silence a `CRITICAL` or `WARN` health check. If a setting requires human input (like an Admin Email), the health engine MUST remain `CRITICAL` until the operator explicitly sets it. Do not cheat the system.
 7. **STRICT RULE: LICENSE FALLBACK FOR EVALUATION LICENSES:** If `C_License_TrialExpire` is empty, ALWAYS fallback to parsing `license.xml` for Evaluation licenses. Try multiple XML tags (TrialExpire, TrialExpiration, Expire, ExpirationDate, LicenseExpiration, TrialDaysRemaining, DaysRemaining). Calculate expiration from days remaining if needed. Never assume a missing value means 'perpetual'.
+8. **STRICT RULE: DOCKER CONFIG PATHS:** When running in Docker, ALWAYS check `/opt/icewarp-data/config/` for XML/config files (e.g., `license.xml`), NOT `/opt/icewarp/config/`. The host `/opt/icewarp/config` is mounted to container `/opt/icewarp-data/config/`. Collectors must check the mounted path first.
 
 Guidance for Claude Code (and other AI agents) working in this repository.
 
