@@ -117,6 +117,14 @@ If `C_License_TrialExpire` is empty:
 - **Everything else** → escaped string
 - Keys sorted alphabetically in output
 
+### 3.10 Dates and Secrets
+- **Never pass an IceWarp date string to `date -d`.** Use `norm_date` / `_days_ago` from `lib/common.sh`
+  (the only copy; do not redefine). `_days_ago` prints nothing for an unparseable date: callers must
+  treat empty as unknown (`warn`), never as `0` or `999`.
+- Date keys in `DATA[]` are ISO `YYYY-MM-DD`; keep the original string in a sibling `*_raw` key.
+- **Never put a DSN password into `DATA[]`.** Wrap every DSN value in `redact_dsn` at collection time.
+  `lib/json.sh` re-applies it to `*dsn*|*connection_string*` keys as a safety net.
+
 ### 3.9 Nine Executive Pillars (SUMMARY_KEYS)
 The health summary roll-up uses exactly these 9 keys:
 ```bash

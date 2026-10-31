@@ -522,13 +522,7 @@ endobj
 # SECTION 7: DATE AND VALIDATION HELPERS
 # =============================================================================
 
-_days_ago() {
-    local date_str="$1"
-    [[ -z "$date_str" ]] && echo "999"
-    local date_epoch=$(date -d "$date_str" +%s 2>/dev/null)
-    [[ -z "$date_epoch" ]] && echo "999"
-    echo $(( ( $(date +%s) - date_epoch ) / 86400 ))
-}
+# _days_ago / norm_date live in lib/common.sh (single copy)
 
 _validate_intrusion_value() {
     local KEY="$1"
@@ -657,8 +651,10 @@ _mr_render_checklist() {
             local BACKUP_TIME="${DATA[icewarp.backup.last_time]:-}"
             local STATUS="NA"
             if [ -n "$BACKUP_TIME" ]; then
-                local DAYS=$(_days_ago "$BACKUP_TIME")
-                if [ "$DAYS" -lt 2 ]; then STATUS="PASS"
+                local DAYS
+                DAYS="$(_days_ago "$BACKUP_TIME")"
+                if [ -z "$DAYS" ]; then STATUS="WARN"
+                elif [ "$DAYS" -lt 2 ]; then STATUS="PASS"
                 elif [ "$DAYS" -lt 4 ]; then STATUS="WARN"
                 else STATUS="CRITICAL"
                 fi
@@ -996,8 +992,10 @@ _mr_render_checklist() {
                     local LAST_UPDATE="${DATA[os.last_update_date]:-}"
                     local STATUS="INFO"
                     if [ -n "$LAST_UPDATE" ] && [ "$LAST_UPDATE" != "N/A" ] && [ "$LAST_UPDATE" != "null" ]; then
-                        local DAYS=$(_days_ago "$LAST_UPDATE")
-                        if [ "$DAYS" -le 7 ]; then STATUS="PASS"
+                        local DAYS
+                        DAYS="$(_days_ago "$LAST_UPDATE")"
+                        if [ -z "$DAYS" ]; then STATUS="WARN"
+                        elif [ "$DAYS" -le 7 ]; then STATUS="PASS"
                         elif [ "$DAYS" -le 30 ]; then STATUS="WARN"
                         else STATUS="CRITICAL"
                         fi
@@ -1072,8 +1070,10 @@ _mr_render_checklist() {
                     local LAST_UPDATE="${DATA[os.last_update_date]:-}"
                     local STATUS="INFO"
                     if [ -n "$LAST_UPDATE" ] && [ "$LAST_UPDATE" != "N/A" ] && [ "$LAST_UPDATE" != "null" ]; then
-                        local DAYS=$(_days_ago "$LAST_UPDATE")
-                        if [ "$DAYS" -le 7 ]; then STATUS="PASS"
+                        local DAYS
+                        DAYS="$(_days_ago "$LAST_UPDATE")"
+                        if [ -z "$DAYS" ]; then STATUS="WARN"
+                        elif [ "$DAYS" -le 7 ]; then STATUS="PASS"
                         elif [ "$DAYS" -le 30 ]; then STATUS="WARN"
                         else STATUS="CRITICAL"
                         fi

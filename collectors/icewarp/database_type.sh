@@ -36,7 +36,9 @@ collector_run() {
         fi
     fi
 
-    collector_set "database.connection_string_raw" "$CONN"
+    # Password is masked before it enters DATA[] (JSON, PDFs, transport). $CONN keeps
+    # the real value locally for detection only.
+    collector_set "database.connection_string_raw" "$(redact_dsn "$CONN")"
 
     if [ -z "$CONN" ]; then
         collector_set "database.type" "sqlite"
@@ -85,6 +87,8 @@ collector_run() {
     IFS=';' read -ra _DSN_PARTS <<< "$CONN"
     local F1="${_DSN_PARTS[0]:-}"
     local F4="${_DSN_PARTS[3]:-}"
+    # Field 4 may carry a port ("127.0.0.1:3306") - strip it before the host test.
+    if [[ "$F4" == *:* && "$F4" != *::* ]]; then F4="${F4%:*}"; fi
 
     if [ -n "$F4" ] && [[ "$F4" =~ ^[a-zA-Z0-9.-]+$ ]] && [[ "$F1" != *.db ]]; then
         collector_set "database.type" "mysql"

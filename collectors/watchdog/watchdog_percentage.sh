@@ -3,14 +3,6 @@
 
 collector_run() {
 
-    days_ago() {
-        local date_str="${1:-}"
-        [[ -z "$date_str" ]] && { echo "0"; return; }
-        local date_epoch=$(date -d "$date_str" +%s 2>/dev/null)
-        [[ -z "$date_epoch" ]] && { echo "0"; return; }
-        echo $(( ( $(date +%s) - date_epoch ) / 86400 ))
-    }
-
     # ----- Disk -----
     DISK_PCT=$(echo "${DATA[storage.root_fs.used_percent]:-0}" | sed 's/%//')
     if [[ "$DISK_PCT" =~ ^[0-9]+$ ]] && [[ "$DISK_PCT" -ge 80 ]]; then
@@ -65,8 +57,11 @@ collector_run() {
     # ----- OS Update -----
     LAST_UPDATE="${DATA[os.last_update_date]:-}"
     if [[ -n "$LAST_UPDATE" ]] && [[ "$LAST_UPDATE" != "null" ]]; then
-        DAYS=$(days_ago "$LAST_UPDATE")
-        if [[ "$DAYS" -gt 3 ]]; then
+        DAYS="$(_days_ago "$LAST_UPDATE")"
+        if [[ -z "$DAYS" ]]; then
+            DATA["watchdog.os_update.status"]="WARN"
+            DATA["watchdog.os_update.message"]="OS last update date could not be parsed: ${LAST_UPDATE}"
+        elif [[ "$DAYS" -gt 3 ]]; then
             DATA["watchdog.os_update.status"]="WARN"
             DATA["watchdog.os_update.message"]="OS last update was $DAYS days ago (threshold: 3 days)"
         else

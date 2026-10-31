@@ -5,6 +5,26 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Security
+
+- DSN passwords are redacted at collection time (`redact_dsn`): `database.connection_string_raw`,
+  `directory_cache.connection_string` and all `backup.db.*.target_dsn` now show
+  `db;user;***;host;type;flag`. `lib/json.sh` re-applies the redaction to any key matching
+  `*dsn*|*connection_string*` as a safety net. Real MySQL installs previously exposed the
+  password in `health.json`, both PDFs and the monitoring POST.
+
+### Fixed
+
+- Date parsing: IceWarp `D-M-YY` strings (e.g. `27-10-26`) were fed to `date -d`, which read
+  them as year 2027 / 2005 / 0009, producing false passes (future date) or false failures
+  (thousands of days old). New shared `norm_date` / `_days_ago` in `lib/common.sh` (ISO, `D-M-YY`
+  and `M/D/YYYY`); the three duplicate `_days_ago` copies are removed. Unparseable dates now
+  give `warn`, never `0`/`999`.
+- `icewarp.antispam.last_update` and `icewarp.antivirus.last_update` are now ISO `YYYY-MM-DD`
+  (empty when never updated); the original string is kept in `*.last_update_raw`.
+- `database.type` was `unknown` for MySQL DSNs whose host carries a port
+  (`127.0.0.1:3306`), which also raised a false `health.database` warning.
+
 ### Added
 
 - `tool.v14.3.0.13.help`, the IceWarp 14.3.0.13 Linux `APIConst.pas` API
