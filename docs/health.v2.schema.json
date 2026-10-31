@@ -1,0 +1,222 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tools.parsavan.com/schema/health.v2.schema.json",
+  "title": "IceWarp Health Report v2",
+  "type": "object",
+  "required": ["schema_version", "generated_at", "agent", "server", "run", "summary", "checks", "metrics", "raw"],
+  "additionalProperties": false,
+  "$defs": {
+    "status": { "enum": ["ok", "warn", "crit", "unknown"] },
+    "pillarId": { "enum": ["backup", "mail_flow", "tls", "access", "threat", "resources", "os_update", "monitoring", "database"] },
+    "nullableInt": { "type": ["integer", "null"] },
+    "nullableNum": { "type": ["number", "null"] },
+    "nullableDate": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "nullableDateTime": { "type": ["string", "null"], "format": "date-time" },
+    "scalar": { "type": ["string", "number", "boolean", "null"] }
+  },
+  "properties": {
+    "schema_version": { "const": "2.0" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "agent": {
+      "type": "object",
+      "required": ["version", "platform"],
+      "additionalProperties": false,
+      "properties": {
+        "version": { "type": "string" },
+        "platform": { "enum": ["linux", "windows"] },
+        "checklist_version": { "type": ["string", "null"] }
+      }
+    },
+    "server": {
+      "type": "object",
+      "required": ["id", "hostname"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "format": "uuid", "description": "Persistent per-server UUID created on first run" },
+        "hostname": { "type": "string" },
+        "company": { "type": ["string", "null"] },
+        "technician": { "type": ["string", "null"] },
+        "primary_domain": { "type": ["string", "null"] },
+        "domains": { "type": "array", "items": { "type": "string" } },
+        "os": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": ["string", "null"] },
+            "version": { "type": ["string", "null"], "description": "Always a string (9.10 != 9.1)" }
+          }
+        },
+        "icewarp_version": { "type": ["string", "null"] }
+      }
+    },
+    "run": {
+      "type": "object",
+      "required": ["id", "started_at", "finished_at"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "format": "uuid", "description": "Idempotency key for ingest" },
+        "started_at": { "type": "string", "format": "date-time" },
+        "finished_at": { "type": "string", "format": "date-time" },
+        "duration_ms": { "type": "integer", "minimum": 0 },
+        "collectors": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "total": { "type": "integer", "minimum": 0 },
+            "ok": { "type": "integer", "minimum": 0 },
+            "failed": { "type": "integer", "minimum": 0 },
+            "failed_list": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["overall", "counts", "pillars"],
+      "additionalProperties": false,
+      "properties": {
+        "overall": { "$ref": "#/$defs/status" },
+        "score": { "type": ["integer", "null"], "minimum": 0, "maximum": 100 },
+        "counts": {
+          "type": "object",
+          "required": ["ok", "warn", "crit", "unknown"],
+          "additionalProperties": false,
+          "properties": {
+            "ok": { "type": "integer", "minimum": 0 },
+            "warn": { "type": "integer", "minimum": 0 },
+            "crit": { "type": "integer", "minimum": 0 },
+            "unknown": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "pillars": {
+          "type": "array",
+          "minItems": 9,
+          "maxItems": 9,
+          "items": {
+            "type": "object",
+            "required": ["id", "status", "message"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "$ref": "#/$defs/pillarId" },
+              "status": { "$ref": "#/$defs/status" },
+              "message": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "pillar", "status", "title", "message"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_.]+$", "description": "Stable key, e.g. intrusion.block_connections" },
+          "pillar": { "$ref": "#/$defs/pillarId" },
+          "status": { "$ref": "#/$defs/status" },
+          "optional": { "type": "boolean", "description": "true for the former 'info' checks; never makes a pillar worse" },
+          "title": { "type": "string" },
+          "message": { "type": "string" },
+          "expected": { "$ref": "#/$defs/scalar" },
+          "actual": { "$ref": "#/$defs/scalar" }
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cpu": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "cores": { "$ref": "#/$defs/nullableInt" },
+            "usage_percent": { "$ref": "#/$defs/nullableNum", "description": "Explicit percent on both platforms (Windows load1 is already a percent)" },
+            "load1": { "$ref": "#/$defs/nullableNum" },
+            "load5": { "$ref": "#/$defs/nullableNum" },
+            "load15": { "$ref": "#/$defs/nullableNum" }
+          }
+        },
+        "memory": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "total_kb": { "$ref": "#/$defs/nullableInt" },
+            "available_kb": { "$ref": "#/$defs/nullableInt" },
+            "used_percent": { "$ref": "#/$defs/nullableNum" }
+          }
+        },
+        "swap": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "total_kb": { "$ref": "#/$defs/nullableInt" },
+            "used_percent": { "$ref": "#/$defs/nullableNum" }
+          }
+        },
+        "disks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["mount"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "mount": { "type": "string" },
+              "total_gb": { "$ref": "#/$defs/nullableNum" },
+              "free_gb": { "$ref": "#/$defs/nullableNum" },
+              "used_percent": { "$ref": "#/$defs/nullableNum" },
+              "roles": { "type": "array", "items": { "enum": ["root", "install", "mail", "archive", "home"] }, "description": "Deduplicated: one entry per physical mount" }
+            }
+          }
+        },
+        "certificate": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "expires_at": { "$ref": "#/$defs/nullableDate" },
+            "days_left": { "$ref": "#/$defs/nullableInt" }
+          }
+        },
+        "backup": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "last_run_at": { "$ref": "#/$defs/nullableDateTime" },
+            "auto_enabled": { "type": ["boolean", "null"] }
+          }
+        },
+        "definitions": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "antispam_updated_at": { "$ref": "#/$defs/nullableDate" },
+            "antivirus_updated_at": { "$ref": "#/$defs/nullableDate" }
+          }
+        },
+        "os_updated_at": { "$ref": "#/$defs/nullableDate" },
+        "license": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": { "type": ["string", "null"] },
+            "expires_at": { "$ref": "#/$defs/nullableDate" },
+            "max_users": { "$ref": "#/$defs/nullableInt" },
+            "used_users": { "$ref": "#/$defs/nullableInt" }
+          }
+        },
+        "database": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "type": { "enum": ["mysql", "sqlite", "unknown", null] } }
+        }
+      }
+    },
+    "raw": {
+      "type": "object",
+      "description": "The existing flat dotted-key output, unchanged except: DSN passwords redacted, *_date keys ISO-8601, version strings always strings.",
+      "additionalProperties": { "$ref": "#/$defs/scalar" }
+    }
+  }
+}
