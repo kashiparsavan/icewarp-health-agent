@@ -334,14 +334,7 @@ _render_health_summary() {
 # SECTION 8: DATE, VALUE RENDER, INTRUSION VALIDATION HELPERS
 # =============================================================================
 
-_days_ago() {
-    local date_str="$1"
-    [[ -z "$date_str" ]] && echo "999"
-    local date_epoch
-    date_epoch="$(date -d "$date_str" +%s 2>/dev/null)"
-    [[ -z "$date_epoch" ]] && echo "999"
-    echo $(( ( $(date +%s) - date_epoch ) / 86400 ))
-}
+# _days_ago / norm_date live in lib/common.sh (single copy)
 
 _cl_value_render() {
     local KEYS="$1"
@@ -527,9 +520,14 @@ _render_checklist() {
         if [ "$LABEL" = "Last Backup Date and Time" ]; then
             local BACKUP_TIME="${DATA[icewarp.backup.last_time]:-}"
             if [ -n "$BACKUP_TIME" ]; then
-                local DAYS=$(_days_ago "$BACKUP_TIME")
+                local DAYS
+                DAYS="$(_days_ago "$BACKUP_TIME")"
                 local BKIND="INFO"
                 local BTEXT="INFO"
+                if [ -z "$DAYS" ]; then
+                    _layout_row "$LABEL" "$BACKUP_TIME" "WARN" "WARN" "Backup time could not be parsed"
+                    continue
+                fi
                 if [ "$DAYS" -lt 2 ]; then
                     BKIND="PASS"
                     BTEXT="PASS"
@@ -959,8 +957,11 @@ _render_checklist() {
                     local BTEXT="INFO"
                     local MSG=""
                     if [ -n "$LAST_UPDATE" ] && [ "$LAST_UPDATE" != "N/A" ] && [ "$LAST_UPDATE" != "null" ]; then
-                        local DAYS=$(_days_ago "$LAST_UPDATE")
-                        if [ "$DAYS" -le 7 ]; then
+                        local DAYS
+                        DAYS="$(_days_ago "$LAST_UPDATE")"
+                        if [ -z "$DAYS" ]; then
+                            BKIND="WARN"; BTEXT="WARN"; MSG="OS last update date could not be parsed"
+                        elif [ "$DAYS" -le 7 ]; then
                             BKIND="PASS"; BTEXT="PASS"; MSG="OS updated recently (${DAYS} days ago)"
                         elif [ "$DAYS" -le 30 ]; then
                             BKIND="WARN"; BTEXT="WARN"; MSG="OS update is ${DAYS} days old (consider updating)"

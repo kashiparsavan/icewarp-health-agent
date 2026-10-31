@@ -23,13 +23,7 @@ _health_set() {
 
 _is_num() { [[ "$1" =~ ^-?[0-9]+(\.[0-9]+)?$ ]]; }
 
-_days_ago() {
-    local date_str="$1"
-    [[ -z "$date_str" ]] && echo "999"
-    local date_epoch=$(date -d "$date_str" +%s 2>/dev/null)
-    [[ -z "$date_epoch" ]] && echo "999"
-    echo $(( ( $(date +%s) - date_epoch ) / 86400 ))
-}
+# _days_ago / norm_date live in lib/common.sh (single copy)
 
 _health_worst() {
     local WORST="pass" ANY=0 R
@@ -250,8 +244,11 @@ evaluate_health() {
 
     # Last backup time
     if [ -n "$LAST_TIME" ] && [ "$LAST_TIME" != "null" ] && [ "$LAST_TIME" != "N/A" ]; then
-        local DAYS=$(_days_ago "$LAST_TIME")
-        if [ "$DAYS" -lt 2 ]; then
+        local DAYS
+        DAYS="$(_days_ago "$LAST_TIME")"
+        if [ -z "$DAYS" ]; then
+            _health_set "backup.last_time" "warn" "Last backup time could not be parsed: $LAST_TIME"
+        elif [ "$DAYS" -lt 2 ]; then
             _health_set "backup.last_time" "pass" "Last backup run: $LAST_TIME ($DAYS days ago)"
         elif [ "$DAYS" -lt 7 ]; then
             _health_set "backup.last_time" "warn" "Last backup run: $LAST_TIME ($DAYS days ago) - consider recent backup"
@@ -327,8 +324,11 @@ evaluate_health() {
     # --- OS Last Update ---
     local LAST_UPDATE="${DATA[os.last_update_date]:-}"
     if [ -n "$LAST_UPDATE" ] && [ "$LAST_UPDATE" != "N/A" ] && [ "$LAST_UPDATE" != "null" ]; then
-        local DAYS=$(_days_ago "$LAST_UPDATE")
-        if [ "$DAYS" -le 7 ]; then
+        local DAYS
+        DAYS="$(_days_ago "$LAST_UPDATE")"
+        if [ -z "$DAYS" ]; then
+            _health_set "os_update" "warn" "OS last update date could not be parsed: ${LAST_UPDATE}"
+        elif [ "$DAYS" -le 7 ]; then
             _health_set "os_update" "pass" "OS updated recently (${DAYS} days ago)"
         elif [ "$DAYS" -le 30 ]; then
             _health_set "os_update" "warn" "OS update is ${DAYS} days old (consider updating within a week)"
@@ -529,7 +529,9 @@ evaluate_health() {
     if [ -n "$TH_DATE" ] && [ "$TH_DATE" != "N/A" ] && [ "$TH_DATE" != "null" ]; then
         TH_ANY=1
         TH_DAYS="$(_days_ago "$TH_DATE")"
-        if [ "$TH_DAYS" -gt 30 ]; then
+        if [ -z "$TH_DAYS" ]; then
+            [ "$TH_RES" != "fail" ] && TH_RES="warn"; TH_ISSUES+=("antispam update date could not be parsed")
+        elif [ "$TH_DAYS" -gt 30 ]; then
             TH_RES="fail"; TH_ISSUES+=("antispam definitions are ${TH_DAYS} days old")
         elif [ "$TH_DAYS" -gt 7 ]; then
             [ "$TH_RES" != "fail" ] && TH_RES="warn"; TH_ISSUES+=("antispam definitions are ${TH_DAYS} days old")
@@ -541,7 +543,9 @@ evaluate_health() {
     if [ -n "$TH_DATE" ] && [ "$TH_DATE" != "N/A" ] && [ "$TH_DATE" != "null" ]; then
         TH_ANY=1
         TH_DAYS="$(_days_ago "$TH_DATE")"
-        if [ "$TH_DAYS" -gt 30 ]; then
+        if [ -z "$TH_DAYS" ]; then
+            [ "$TH_RES" != "fail" ] && TH_RES="warn"; TH_ISSUES+=("antivirus update date could not be parsed")
+        elif [ "$TH_DAYS" -gt 30 ]; then
             TH_RES="fail"; TH_ISSUES+=("antivirus definitions are ${TH_DAYS} days old")
         elif [ "$TH_DAYS" -gt 7 ]; then
             [ "$TH_RES" != "fail" ] && TH_RES="warn"; TH_ISSUES+=("antivirus definitions are ${TH_DAYS} days old")

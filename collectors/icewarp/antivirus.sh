@@ -28,7 +28,8 @@ collector_run() {
     UPDATE_SIZE="$(iw_get "C_AV_Info_UpdateSize" "" "" "")"
 
     if [ -n "$UPDATE_DATE" ]; then
-        collector_set "icewarp.antivirus.last_update" "$UPDATE_DATE"
+        collector_set "icewarp.antivirus.last_update_raw" "$UPDATE_DATE"
+        collector_set "icewarp.antivirus.last_update" "$(norm_date "$UPDATE_DATE")"
         collector_set "icewarp.antivirus.last_update_source" "tool_sh"
         collector_set "icewarp.antivirus.db_version" "$UPDATE_VERSION"
         collector_set "icewarp.antivirus.last_update_size_bytes" "$UPDATE_SIZE"
@@ -45,7 +46,7 @@ collector_run() {
     fi
 
     if [ -n "$IDE_TS" ]; then
-        collector_set "icewarp.antivirus.last_update" "$(date -d @"$IDE_TS" '+%F %T' 2>/dev/null)"
+        collector_set "icewarp.antivirus.last_update" "$(date -d @"$IDE_TS" '+%F' 2>/dev/null)"
         collector_set "icewarp.antivirus.last_update_source" "sophos_update_json_ide"
     else
         collector_set "icewarp.antivirus.last_update" ""

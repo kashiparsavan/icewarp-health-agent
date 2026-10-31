@@ -27,7 +27,10 @@ collector_run() {
     UPDATE_VERSION="$(iw_get "C_AS_Info_UpdateVersion" "" "" "")"
     UPDATE_SIZE="$(iw_get "C_AS_Info_UpdateSize" "" "" "")"
 
-    collector_set "icewarp.antispam.last_update" "$UPDATE_DATE"
+    # Raw IceWarp string is D-M-YY ("27-10-26"); publish ISO so nothing downstream
+    # ever feeds it to `date -d`. Empty when never updated ("-/-/-") or unparseable.
+    collector_set "icewarp.antispam.last_update_raw" "$UPDATE_DATE"
+    collector_set "icewarp.antispam.last_update" "$(norm_date "$UPDATE_DATE")"
     collector_set "icewarp.antispam.last_update_source" "tool_sh"
     collector_set "icewarp.antispam.update_version" "$UPDATE_VERSION"
     collector_set "icewarp.antispam.last_update_size_bytes" "$UPDATE_SIZE"

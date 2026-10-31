@@ -6,7 +6,7 @@ collector_run() {
     # Accounts database backup (c_system_tools_backup_db_accounts)
     local DSN_ACCOUNTS
     DSN_ACCOUNTS="$(iw_get "c_system_tools_backup_db_accounts" "" "" "")"
-    collector_set "backup.db.accounts.target_dsn" "$DSN_ACCOUNTS"
+    collector_set "backup.db.accounts.target_dsn" "$(redact_dsn "$DSN_ACCOUNTS")"
     if [ -n "$DSN_ACCOUNTS" ]; then
         collector_set "backup.db.accounts.enabled" "1"
     else
@@ -19,7 +19,7 @@ collector_run() {
     # Anti-Spam database backup (c_system_tools_backup_db_as)
     local DSN_AS
     DSN_AS="$(iw_get "c_system_tools_backup_db_as" "" "" "")"
-    collector_set "backup.db.as.target_dsn" "$DSN_AS"
+    collector_set "backup.db.as.target_dsn" "$(redact_dsn "$DSN_AS")"
     if [ -n "$DSN_AS" ]; then
         collector_set "backup.db.as.enabled" "1"
     else
@@ -31,7 +31,7 @@ collector_run() {
     # GroupWare database backup (c_system_tools_backup_db_gw)
     local DSN_GW
     DSN_GW="$(iw_get "c_system_tools_backup_db_gw" "" "" "")"
-    collector_set "backup.db.gw.target_dsn" "$DSN_GW"
+    collector_set "backup.db.gw.target_dsn" "$(redact_dsn "$DSN_GW")"
     if [ -n "$DSN_GW" ]; then
         collector_set "backup.db.gw.enabled" "1"
     else
@@ -43,7 +43,7 @@ collector_run() {
     # Directory Cache database backup (c_system_tools_backup_db_directorycache) - optional
     local DSN_CACHE
     DSN_CACHE="$(iw_get "c_system_tools_backup_db_directorycache" "" "" "")"
-    collector_set "backup.db.cache.target_dsn" "$DSN_CACHE"
+    collector_set "backup.db.cache.target_dsn" "$(redact_dsn "$DSN_CACHE")"
     if [ -n "$DSN_CACHE" ]; then
         collector_set "backup.db.cache.enabled" "1"
     else

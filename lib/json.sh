@@ -45,6 +45,12 @@ build_json() {
 
             local VALUE="${DATA[$KEY]}"
 
+            # Safety net: never let a DSN password reach the output, even if a
+            # collector forgot to redact it.
+            case "$KEY" in
+                *dsn*|*connection_string*) VALUE="$(redact_dsn "$VALUE")" ;;
+            esac
+
             if [ $FIRST -eq 0 ]
             then
                 echo ","
