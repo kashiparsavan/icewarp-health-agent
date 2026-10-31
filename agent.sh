@@ -131,6 +131,7 @@ fi
 [ -f "$LIB_DIR/health.sh" ] && source "$LIB_DIR/health.sh"
 [ -f "$LIB_DIR/pdf.sh" ] && source "$LIB_DIR/pdf.sh"
 [ -f "$LIB_DIR/json.sh" ] && source "$LIB_DIR/json.sh"
+[ -f "$LIB_DIR/json_v2.sh" ] && source "$LIB_DIR/json_v2.sh"
 [ -f "$LIB_DIR/management_report.sh" ] && source "$LIB_DIR/management_report.sh"
 [ -f "$LIB_DIR/transport.sh" ] && source "$LIB_DIR/transport.sh"
 [ -f "$LIB_DIR/configurator.sh" ] && source "$LIB_DIR/configurator.sh"
@@ -148,6 +149,7 @@ fi
 
 # ---------- Initialize ----------
 agent_init
+AGENT_RUN_START_MS="$(date +%s%3N)"
 
 if [ -n "$ARG_TECHNICIAN" ]; then
     DATA["general.technician"]="$ARG_TECHNICIAN"
@@ -192,6 +194,11 @@ evaluate_health
 
 echo "[INFO] Building JSON..."
 build_json
+
+echo "[INFO] Building JSON v2..."
+if declare -F build_json_v2 >/dev/null; then
+    build_json_v2 || echo "[WARN] health.v2.json could not be written" >&2
+fi
 
 echo "[INFO] Sending JSON to monitoring server (if enabled)..."
 send_json

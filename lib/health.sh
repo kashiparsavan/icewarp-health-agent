@@ -12,11 +12,18 @@ HEALTH_MIN_DISK_FREE_PERCENT="${HEALTH_MIN_DISK_FREE_PERCENT:-10}"
 
 declare -Ag HEALTH
 declare -Ag HEALTH_MSG
+declare -Ag HEALTH_EXPECTED
+declare -Ag HEALTH_ACTUAL
 
+# _health_set <name> <result> [message] [expected] [actual]
+# expected/actual are optional and only feed health.v2.json checks[]; they are
+# NOT written to DATA[], so the flat key set is unchanged.
 _health_set() {
-    local NAME="$1" RESULT="$2" MSG="${3:-}"
+    local NAME="$1" RESULT="$2" MSG="${3:-}" EXP="${4:-}" ACT="${5:-}"
     HEALTH["$NAME"]="$RESULT"
     HEALTH_MSG["$NAME"]="$MSG"
+    [ -n "$EXP" ] && HEALTH_EXPECTED["$NAME"]="$EXP"
+    [ -n "$ACT" ] && HEALTH_ACTUAL["$NAME"]="$ACT"
     collector_set "health.${NAME}.result" "$RESULT"
     [ -n "$MSG" ] && collector_set "health.${NAME}.message" "$MSG"
 }
@@ -149,9 +156,9 @@ evaluate_health() {
     local PW_MIN="${DATA[security.password_policy.min_length]:-}"
     if [ "$PW_ACTIVE" = "1" ] && _is_num "$PW_MIN"; then
         if [ "$PW_MIN" -lt "$HEALTH_MIN_PASSWORD_LENGTH" ]; then
-            _health_set "password_policy" "warn" "Password policy active but min length (${PW_MIN}) below recommended ${HEALTH_MIN_PASSWORD_LENGTH}"
+            _health_set "password_policy" "warn" "Password policy active but min length (${PW_MIN}) below recommended ${HEALTH_MIN_PASSWORD_LENGTH}" ">=${HEALTH_MIN_PASSWORD_LENGTH}" "$PW_MIN"
         else
-            _health_set "password_policy" "pass" "Password policy active, min length ${PW_MIN} meets recommendation"
+            _health_set "password_policy" "pass" "Password policy active, min length ${PW_MIN} meets recommendation" ">=${HEALTH_MIN_PASSWORD_LENGTH}" "$PW_MIN"
         fi
     else
         _health_set "password_policy" "fail" "Password policy is not active"
@@ -236,10 +243,12 @@ evaluate_health() {
     fi
 
     # Directory Cache is optional – informational only
+    # Optional feature: either state is acceptable, so it is always "pass"
+    # (v2 JSON marks it optional). No INFO status (CLAUDE.md 3.3).
     if [ "$DB_CACHE" = "1" ]; then
-        _health_set "backup.db.cache" "info" "Directory Cache database backup is enabled (optional)"
+        _health_set "backup.db.cache" "pass" "Directory Cache database backup is enabled (optional)"
     else
-        _health_set "backup.db.cache" "info" "Directory Cache database backup is disabled (optional)"
+        _health_set "backup.db.cache" "pass" "Directory Cache database backup is disabled (optional)"
     fi
 
     # Last backup time
@@ -351,21 +360,21 @@ evaluate_health() {
     local CPMS_VAL="${DATA[security.intrusion.block_connections_per_minute.value]:-}"
     local CPMS_EXPECTED="50"
     if [ -z "$CPMS_VAL" ]; then
-        _health_set "intrusion.block_connections" "critical" "Block IP - Connections in 1 Minute setting not found"
+        _health_set "intrusion.block_connections" "critical" "Block IP - Connections in 1 Minute setting not found" "$CPMS_EXPECTED" ""
     elif [ "$CPMS_VAL" = "$CPMS_EXPECTED" ]; then
-        _health_set "intrusion.block_connections" "pass" "Block IP - Connections in 1 Minute is ${CPMS_VAL} (expected ${CPMS_EXPECTED})"
+        _health_set "intrusion.block_connections" "pass" "Block IP - Connections in 1 Minute is ${CPMS_VAL} (expected ${CPMS_EXPECTED})" "$CPMS_EXPECTED" "$CPMS_VAL"
     else
-        _health_set "intrusion.block_connections" "warn" "Block IP - Connections in 1 Minute is ${CPMS_VAL} (expected ${CPMS_EXPECTED})"
+        _health_set "intrusion.block_connections" "warn" "Block IP - Connections in 1 Minute is ${CPMS_VAL} (expected ${CPMS_EXPECTED})" "$CPMS_EXPECTED" "$CPMS_VAL"
     fi
 
     local BLOCK_DUR_VAL="${DATA[security.intrusion.block_duration_minutes]:-}"
     local BLOCK_DUR_EXPECTED="360"
     if [ -z "$BLOCK_DUR_VAL" ]; then
-        _health_set "intrusion.block_duration" "critical" "Amount of Time IP is Blocked setting not found"
+        _health_set "intrusion.block_duration" "critical" "Amount of Time IP is Blocked setting not found" "$BLOCK_DUR_EXPECTED" ""
     elif [ "$BLOCK_DUR_VAL" = "$BLOCK_DUR_EXPECTED" ]; then
-        _health_set "intrusion.block_duration" "pass" "Amount of Time IP is Blocked is ${BLOCK_DUR_VAL} minutes (expected ${BLOCK_DUR_EXPECTED})"
+        _health_set "intrusion.block_duration" "pass" "Amount of Time IP is Blocked is ${BLOCK_DUR_VAL} minutes (expected ${BLOCK_DUR_EXPECTED})" "$BLOCK_DUR_EXPECTED" "$BLOCK_DUR_VAL"
     else
-        _health_set "intrusion.block_duration" "warn" "Amount of Time IP is Blocked is ${BLOCK_DUR_VAL} minutes (expected ${BLOCK_DUR_EXPECTED})"
+        _health_set "intrusion.block_duration" "warn" "Amount of Time IP is Blocked is ${BLOCK_DUR_VAL} minutes (expected ${BLOCK_DUR_EXPECTED})" "$BLOCK_DUR_EXPECTED" "$BLOCK_DUR_VAL"
     fi
 
     # --- Admin Email (Strict Override: empty=CRITICAL, invalid=WARN) ---
@@ -400,11 +409,17 @@ evaluate_health() {
         _health_set "service.pop3" "warn" "POP3 service is disabled"
     fi
 
-    # --- DNSBL Zones Check (New) ---
+    # --- DNSBL Zones Check ---
+    # The zone list is read from IceWarp config files (no tool.sh property).
+    # "not_found" means the file could not be read - say so instead of claiming
+    # that nothing is configured.
     local DNSBL_ZONES="${DATA[security.dnsbl.zones]:-}"
     local DNSBL_COUNT="${DATA[security.dnsbl.zones.count]:-0}"
+    local DNSBL_SRC="${DATA[security.dnsbl.zones.source]:-not_found}"
+    local DNSBL_EMPTY_MSG="No recommended DNSBL zones found in the IceWarp config (bl.spamcop.net, zen.spamhaus.org)"
+    [ "$DNSBL_SRC" = "not_found" ] && DNSBL_EMPTY_MSG="DNSBL zone list could not be read from the IceWarp config (verify manually)"
     if [ -z "$DNSBL_ZONES" ] || [ "$DNSBL_COUNT" -eq 0 ]; then
-        _health_set "dnsbl_zones" "warn" "No DNSBL zones configured"
+        _health_set "dnsbl_zones" "warn" "$DNSBL_EMPTY_MSG"
     else
         # Check for recommended zones
         local HAS_SPAMCOP=0 HAS_SPAMHAUS=0
@@ -465,7 +480,7 @@ evaluate_health() {
     local DNSBL_ZONES="${DATA[security.dnsbl.zones]:-}"
     local DNSBL_COUNT="${DATA[security.dnsbl.zones.count]:-0}"
     if [ -z "$DNSBL_ZONES" ] || [ "$DNSBL_COUNT" -eq 0 ]; then
-        MF_ISSUES+=("No DNSBL zones configured")
+        MF_ISSUES+=("$DNSBL_EMPTY_MSG")
         [ "$MF_RES" != "fail" ] && MF_RES="warn"
     else
         local HAS_SPAMCOP=0 HAS_SPAMHAUS=0

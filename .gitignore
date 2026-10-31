@@ -2,6 +2,7 @@
 output/*
 logs/*
 .agent.lock
+.server_id
 .agent.update.lock/
 
 # Windows runtime artifacts - independent of the Linux runtime paths

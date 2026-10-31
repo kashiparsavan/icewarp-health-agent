@@ -5,6 +5,33 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- `lib/json_v2.sh` / `build_json_v2`: writes `output/health.v2.json`, a versioned envelope
+  (`schema_version`, `agent`, `server` with a persistent `.server_id` UUID, `run`, `summary`
+  with the nine pillars and a 0-100 score, `checks[]` with `expected`/`actual`, typed `metrics`,
+  and the unchanged flat keys under `raw`). Schema: `docs/schema/health.v2.schema.json`.
+  `health.json` (v1) keeps its key set. Status vocabulary in v2: `ok|warn|crit|unknown`.
+- `_health_set` accepts optional `expected` and `actual` arguments (used by the intrusion and
+  password-policy checks); they only feed v2 and never enter `DATA[]`.
+- New keys: `security.dnsbl.zones.source`, `directory_cache.schedule_source`.
+
+### Changed
+
+- JSON coercion (`lib/json.sh`) is strict: `007`/`00123` and numbers over 15 digits are strings
+  (they were emitted as invalid JSON numbers), the literal `null` becomes JSON `null`, control
+  characters are stripped, and `*version`/`*.ip`/`*.domain`/`*.hostname`/`*.host` keys are always
+  strings (`general.os.version` `9.8` -> `"9.8"`, `icewarp.antispam.update_version` is always a string).
+- `health.backup.db.cache.result` is `pass` (optional feature) instead of `info`.
+
+### Fixed
+
+- DNSBL zones: the collector read guessed `C_*` properties that do not exist, so every server
+  reported "No DNSBL zones configured". It now scans the IceWarp config files for known zones and
+  records the source; `health.sh` says "could not be read" when no config file is readable.
+- Directory Cache schedule was always empty (single-field `awk` parse of a multi-field Schedule
+  value). It is now read whole via `display`, then `get`, then the config files.
+
 ### Security
 
 - DSN passwords are redacted at collection time (`redact_dsn`): `database.connection_string_raw`,

@@ -34,6 +34,7 @@
 │  │     └─ Collectors write: collector_set "<dotted.key>" "<value>" → DATA[] │
 │  ├─ 5. evaluate_health() → HEALTH[] + health.<item>.result/.message         │
 │  ├─ 6. build_json() → output/health.json (sorted, type-coerced)            │
+│  │     build_json_v2() → output/health.v2.json (envelope, schema v2.0)      │
 │  ├─ 7. send_json() → POST to $MONITOR_URL (if SEND_DATA=1)                 │
 │  ├─ 8. build_pdf() → output/report.pdf                                      │
 │  └─ 9. build_management_pdf() → output/management_report.pdf                │
@@ -111,11 +112,19 @@ If `C_License_TrialExpire` is empty:
 - Example: `license.xml` at `/opt/icewarp-data/config/license.xml` in Docker
 
 ### 3.8 JSON Coercion Rules (lib/json.sh)
-- **Empty string** → `null`
-- **Numeric pattern** (`^-?[0-9]+(\.[0-9]+)?$`) → unquoted number
+- **Empty string or literal `null`** → `null`
+- **Numeric pattern** (`^-?(0|[1-9][0-9]{0,14})(\.[0-9]{1,6})?$` — no leading zeros) → unquoted number
+- **Keys ending `version`, `.ip`, `.domain`, `.hostname`, `.host`** → always string
 - **Boolean** (`true` or `false`) → unquoted boolean
 - **Everything else** → escaped string
 - Keys sorted alphabetically in output
+
+### 3.11 health.v2.json
+- `build_json_v2` is read-only over `DATA[]`/`HEALTH[]`; `health.json` (v1) must keep its key set.
+- A new health check needs an entry in `_V2_META` (`lib/json_v2.sh`): pillar, title, and flags
+  (`ru` = rolled into its pillar by `health.sh`, `opt` = optional feature). Pass `expected`/`actual`
+  as the 4th/5th `_health_set` arguments where a threshold exists.
+- Validate with `docs/schema/health.v2.schema.json` after any change to the envelope.
 
 ### 3.10 Dates and Secrets
 - **Never pass an IceWarp date string to `date -d`.** Use `norm_date` / `_days_ago` from `lib/common.sh`
@@ -236,7 +245,8 @@ icewarp-health-agent/
 │   ├── auto_update.sh          # Git self-update (runs first)
 │   ├── common.sh               # Shared helpers, DATA[], collector_set()
 │   ├── health.sh               # Health evaluation (654 lines, 9 pillars)
-│   ├── json.sh                 # Type-aware JSON builder
+│   ├── json.sh                 # Type-aware JSON builder (v1, flat)
+│   ├── json_v2.sh              # health.v2.json envelope builder
 │   ├── pdf.sh                  # Technical report (native PDF)
 │   ├── management_report.sh    # Executive report (native PDF)
 │   ├── transport.sh            # JSON POST to monitoring server
@@ -260,6 +270,7 @@ icewarp-health-agent/
 │   ├── collector_tester.sh     # Run single collector
 │   └── collectors_validity_checker.sh  # Validate all collectors
 ├── docs/                       # Documentation
+│   ├── schema/health.v2.schema.json  # JSON Schema for health.v2.json
 │   ├── checklist-map.md        # Checklist item → collector mapping
 │   ├── checklist-coverage.md   # Coverage analysis
 │   ├── auto-update.md          # Automatic update operator guide
@@ -351,6 +362,7 @@ CHECKLIST_VERSION=1.14
 MONITOR_URL=<webhook_url>
 SEND_DATA=0|1
 OUTPUT_JSON=output/health.json
+OUTPUT_JSON_V2=output/health.v2.json
 TOOL_TIMEOUT=5
 AUTO_UPDATE_ENABLED=0|1
 AUTO_UPDATE_REMOTE=origin
