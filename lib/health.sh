@@ -99,6 +99,7 @@ HEALTH_REGISTRY_LINES=(
     "digest_md5|access|DIGEST-MD5 disabled|"
     "admin_email|access|Admin email|"
     "session_timeout|access|Session timeout|"
+    "access.stats_mailbox|access|Statistics mailbox (customers-stat)|d"
     "access.2fa|access|Two-factor authentication|"
     "threat.antispam|threat|Anti-Spam definitions|"
     "threat.antivirus|threat|Anti-Virus definitions|"
@@ -159,6 +160,13 @@ declare -Ag HEALTH_LABEL_MAP=(
     ["Check for Certificates"]="tls.certificate"
     ["2FA"]="access.2fa"
     ["Set Admin Email"]="admin_email"
+    ["Set customers-stat@parsavan.com"]="access.stats_mailbox"
+    ["Check PTR"]="mail.ptr"
+    ["Check SPF"]="mail.spf"
+    ["Check DKIM"]="mail.dkim"
+    ["Check DMARC"]="mail.dmarc"
+    ["Check TLS and Start TLS"]="mail.starttls"
+    ["Test DNS Lookup"]="mail.dns_lookup"
     ["Session Timeout"]="session_timeout"
     ["Disable DIGEST-MD5"]="digest_md5"
     ["Disable IMAP"]="service.imap"
@@ -265,11 +273,11 @@ _health_age() {
     if [ -z "$DAYS" ]; then
         _health_set "$ID" "warn" "${LABEL} date could not be parsed: ${DATE}" "<=${PASS_MAX} days" "" "$DATE"
     elif [ "$DAYS" -le "$PASS_MAX" ]; then
-        _health_set "$ID" "pass" "${LABEL} is ${DAYS} days old" "<=${PASS_MAX} days" "$DAYS" "${DATE} (${DAYS} days ago)"
+        _health_set "$ID" "pass" "${LABEL}: ${DAYS} days old" "<=${PASS_MAX} days" "$DAYS" "${DATE} (${DAYS} days ago)"
     elif [ "$DAYS" -le "$WARN_MAX" ]; then
-        _health_set "$ID" "warn" "${LABEL} is ${DAYS} days old (expected <= ${PASS_MAX})" "<=${PASS_MAX} days" "$DAYS" "${DATE} (${DAYS} days ago)"
+        _health_set "$ID" "warn" "${LABEL}: ${DAYS} days old (expected <= ${PASS_MAX})" "<=${PASS_MAX} days" "$DAYS" "${DATE} (${DAYS} days ago)"
     else
-        _health_set "$ID" "$BAD" "${LABEL} is ${DAYS} days old (expected <= ${PASS_MAX})" "<=${PASS_MAX} days" "$DAYS" "${DATE} (${DAYS} days ago)"
+        _health_set "$ID" "$BAD" "${LABEL}: ${DAYS} days old (expected <= ${PASS_MAX})" "<=${PASS_MAX} days" "$DAYS" "${DATE} (${DAYS} days ago)"
     fi
 }
 
@@ -315,7 +323,7 @@ evaluate_health() {
     # Display value format (STRICT): Total(GB)=<total> / Used %=<used>
     local DISK_FLOOR_MB="${DATA[monitor.disk.alert_below_mb]:-}"
     local MOUNT_KEY MOUNT_NAME FREE_GB FREE_MB TOTAL_GB TOTAL_MB DEVICE MOUNT DEDUPE_KEY WORST="pass"
-    local DISK_EXPECT=""
+    local DISK_EXPECT="" MIN_FREE_MB=""
     _is_num "$DISK_FLOOR_MB" && DISK_EXPECT=">=${DISK_FLOOR_MB} MB free"
     declare -A _SEEN_DISK=()
     for MOUNT_KEY in "${!DATA[@]}"; do
@@ -335,6 +343,7 @@ evaluate_health() {
         FREE_GB="${DATA[$MOUNT_KEY]}"
         _is_num "$FREE_GB" || continue
         FREE_MB="$(awk -v g="$FREE_GB" 'BEGIN{printf "%d", g*1024}')"
+        if [ -z "$MIN_FREE_MB" ] || [ "$FREE_MB" -lt "$MIN_FREE_MB" ]; then MIN_FREE_MB="$FREE_MB"; fi
         TOTAL_GB="${DATA[storage.${MOUNT_NAME}.total_gb]:-}"
         USED_PERCENT="${DATA[storage.${MOUNT_NAME}.used_percent]:-}"
         local DISK_NOTE="Total(GB)=${TOTAL_GB:-0} / Used %=${USED_PERCENT:-0}"
@@ -363,11 +372,11 @@ evaluate_health() {
     done
     local ROOT_NOTE="Total(GB)=${DATA[storage.root_fs.total_gb]:-0} / Used %=${DATA[storage.root_fs.used_percent]:-0}"
     if [ "$WORST" = "fail" ]; then
-        _health_set "disk.overall" "fail" "One or more monitored disks are below the configured free-space threshold" "$DISK_EXPECT" "" "$ROOT_NOTE"
+        _health_set "disk.overall" "fail" "One or more monitored disks are below the configured free-space threshold" "$DISK_EXPECT" "$MIN_FREE_MB" "$ROOT_NOTE"
     elif [ "$WORST" = "warn" ]; then
-        _health_set "disk.overall" "warn" "Disk alert thresholds need review" "$DISK_EXPECT" "" "$ROOT_NOTE"
+        _health_set "disk.overall" "warn" "Disk alert thresholds need review" "$DISK_EXPECT" "$MIN_FREE_MB" "$ROOT_NOTE"
     else
-        _health_set "disk.overall" "pass" "All monitored disks have adequate free space" "$DISK_EXPECT" "" "$ROOT_NOTE"
+        _health_set "disk.overall" "pass" "All monitored disks have adequate free space" "$DISK_EXPECT" "$MIN_FREE_MB" "$ROOT_NOTE"
     fi
 
     # --- CPU ---
@@ -436,7 +445,9 @@ evaluate_health() {
     local CERT_DAYS="${DATA[icewarp.ssl.days_left]:-}"
     local CERT_EXP="${DATA[icewarp.ssl.expiration]:-}"
     if _is_num "$CERT_DAYS" && [ -n "$CERT_EXP" ] && [ "$CERT_EXP" != "N/A" ] && [ "$CERT_EXP" != "not returned" ]; then
-        local CERT_DSP="expires ${CERT_EXP} (${CERT_DAYS} days left)"
+        local CERT_ISO CERT_DSP
+        CERT_ISO="$(date -d "$CERT_EXP" +%F 2>/dev/null)"   # openssl "Mon DD HH:MM:SS YYYY GMT", not an IceWarp date
+        CERT_DSP="${CERT_DAYS} days left (${CERT_ISO:-$CERT_EXP})"
         if [ "$CERT_DAYS" -lt 0 ]; then
             _health_set "tls.certificate" "fail" "The TLS certificate has expired" ">=90 days" "$CERT_DAYS" "$CERT_DSP"
         elif [ "$CERT_DAYS" -lt 30 ]; then
@@ -585,6 +596,13 @@ evaluate_health() {
         _health_set "admin_email" "warn" "Admin email is set but invalid format: ${ADMIN_EMAIL}" "valid email address" "$ADMIN_EMAIL" "$ADMIN_EMAIL"
     fi
 
+    # --- Statistics mailbox (Parsavan policy: alerts also go to customers-stat; detail only) ---
+    if [[ "$ADMIN_EMAIL" == *customers-stat* ]]; then
+        _health_set "access.stats_mailbox" "pass" "Statistics mailbox customers-stat is configured" "customers-stat@parsavan.com" "$ADMIN_EMAIL" "$ADMIN_EMAIL"
+    else
+        _health_set "access.stats_mailbox" "critical" "Expected: customers-stat@parsavan.com" "customers-stat@parsavan.com" "$ADMIN_EMAIL" "${ADMIN_EMAIL:-empty}"
+    fi
+
     # --- Session Timeout (Strict Override: has value=PASS, missing/empty/0=WARN) ---
     local SESSION_TIMEOUT="${DATA[icewarp.session_timeout_minutes]:-}"
     if [ -n "$SESSION_TIMEOUT" ] && [ "$SESSION_TIMEOUT" != "null" ] && [ "$SESSION_TIMEOUT" != "N/A" ] && [ "$SESSION_TIMEOUT" != "0" ]; then
@@ -621,6 +639,16 @@ evaluate_health() {
     _mail_check "mail.starttls"   "STARTTLS"    "smtp.starttls_live_test" "fail"
     _mail_check "mail.dns_lookup" "DNS lookup"  "dns.lookup_test.ok"      "fail"
     unset -f _mail_check
+    # STARTTLS evidence from the collector (hostname / loopback / none + reason)
+    local ST_VIA="${DATA[smtp.starttls.via]:-}" ST_ERR="${DATA[smtp.starttls.error]:-}"
+    local ST_TARGET="${DATA[smtp.starttls.target]:-port 25}" ST_TRIES="${DATA[smtp.starttls.attempts]:-1}"
+    if [ "$ST_VIA" = "loopback" ]; then
+        _health_set "mail.starttls" "warn" "STARTTLS works locally but not through ${ST_TARGET}: ${ST_ERR}" "true" "loopback only" "Loopback only"
+    elif [ "$ST_VIA" = "none" ] && [ -n "$ST_ERR" ]; then
+        _health_set "mail.starttls" "fail" "STARTTLS failed on ${ST_TARGET}: ${ST_ERR} (${ST_TRIES} attempts)" "true" "false" "Failed"
+    elif [ "$ST_VIA" = "hostname" ] && [ "$ST_TRIES" -gt 1 ] 2>/dev/null; then
+        _health_set "mail.starttls" "pass" "STARTTLS is OK (succeeded on attempt ${ST_TRIES}; the server answers slowly)" "true" "true" "OK"
+    fi
     if [ "${HEALTH[mail.ptr]:-}" = "pass" ] && [ "${DATA[dns.ptr.matches_hostname]:-}" = "false" ]; then
         _health_set "mail.ptr" "warn" "PTR does not match the mail hostname" "matches hostname" "mismatch" "Mismatch"
     fi

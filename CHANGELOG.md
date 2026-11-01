@@ -5,6 +5,32 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-11-01
+
+Findings from the first live run of 0.7.0.
+
+### Fixed
+
+- STARTTLS false-fail (`collectors/dns/starttls.sh`): the probe ran once, with the shared 5 s
+  `TOOL_TIMEOUT`, and counted success only when openssl printed "Verify return code". A server that
+  answers slowly (IceWarp does reverse-DNS/DNSBL lookups per connection) was killed before the TLS
+  summary and reported as "STARTTLS failed". Reproduced with a fake SMTP server whose banner is
+  delayed 7 s: old collector `false`, new collector `true`. Now: `STARTTLS_TIMEOUT` (15 s), one retry,
+  loopback fallback, strict success criterion (a real TLS session) and recorded evidence
+  (`smtp.starttls.via|protocol|attempts|error|target`). `mail.starttls` is `warn` when only loopback
+  works and `fail` with the reason when nothing works.
+- PDF rows `Check PTR/SPF/DKIM/DMARC/TLS and Start TLS/Test DNS Lookup` and `Set customers-stat`
+  now read their health check, so they agree with the Mail Flow / Access pillars (the PTR row said
+  PASS while the pillar said WARN). New detail-only check `access.stats_mailbox`.
+- Management report: Key Signals show the four worst pillars (the fixed set hid the CRITICAL
+  Database pillar); Priority/Recommended actions list Action before Review.
+- Swap collector: the 7-day journal search matched dracut/initramfs file listings
+  (`swap.target`, `swapoff`) and reported "swap usage detected" on every kernel update. It now only
+  matches real swap events; swap in use is still CRITICAL by policy.
+- `disk.overall` carries the lowest free MB as `actual`; certificate display is
+  `40 days left (2026-12-11)` instead of a truncated openssl date; messages read "Antispam
+  definitions: 5 days old"; `smtp.hide_server_version` is a number, not the string `"1"`.
+
 ## [0.7.0] - 2026-11-01
 
 ### Added

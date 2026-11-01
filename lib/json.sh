@@ -41,6 +41,9 @@ _json_is_bool() {
 # Keys whose value is an identifier, not a quantity: "9.10" must not become 9.1.
 _json_force_string() {
     case "$1" in
+        *hide_server_version) return 1 ;;   # a 0/1 flag, not an identifier
+    esac
+    case "$1" in
         *version|*version_raw|*.ip|*.checked_ip|*.domain|*.hostname|*.host) return 0 ;;
     esac
     return 1

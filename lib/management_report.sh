@@ -569,17 +569,6 @@ _mr_render_checklist() {
             continue
         fi
 
-        # ---- Special case: customers-stat email ----
-        if [ "$LABEL" = "Set customers-stat@parsavan.com" ]; then
-            local RAW="${DATA[monitor.alert_email]:-}"
-            if [[ "$RAW" == *"customers-stat@parsavan.com"* ]] || [[ "$RAW" == *"customers-stat"* ]]; then
-                _mr_grid_item "$LABEL" "PASS"
-            else
-                _mr_grid_item "$LABEL" "CRITICAL"
-            fi
-            continue
-        fi
-
         # ---- Special case: Hide Server Version ----
         if [ "$LABEL" = "Hide Server Version" ]; then
             local RAW="${DATA[smtp.hide_server_version]:-}"
@@ -1251,10 +1240,21 @@ _mr_executive_overview() {
     fi
 
     local SIGNAL_Y=$((_MR_Y - 62))
-    local -a SIG_LABELS=("BACKUP & RECOVERY" "TRANSPORT SECURITY" "MAIL FLOW & DNS" "OS & PATCHING")
-    local -a SIG_KEYS=("backup" "tls" "mail_flow" "os_update")
+    # Key signals: the four worst pillars (fail, then warn, then the rest), in pillar order
+    local -a SIG_KEYS=() SIG_LABELS=()
+    local -A _PIL_LABEL=([backup]="BACKUP & RECOVERY" [mail_flow]="MAIL FLOW & DNS" [tls]="TRANSPORT SECURITY" [access]="ACCESS & AUTHENTICATION" [threat]="THREAT PROTECTION" [resources]="SERVER RESOURCES" [os_update]="OS & PATCHING" [monitoring]="MONITORING & WATCHDOG" [database]="DATABASE PLATFORM")
+    local _PASS _PK _PR
+    for _PASS in fail warn pass skip; do
+        for _PK in "${HEALTH_PILLARS[@]}"; do
+            _PR="${HEALTH[$_PK]:-skip}"; [ "$_PR" = "critical" ] && _PR="fail"
+            [ "$_PR" = "$_PASS" ] || continue
+            [ "${#SIG_KEYS[@]}" -ge 4 ] && continue
+            SIG_KEYS+=("$_PK"); SIG_LABELS+=("${_PIL_LABEL[$_PK]}")
+        done
+    done
     local K
     for K in 0 1 2 3; do
+        [ -n "${SIG_KEYS[$K]:-}" ] || continue
         local SK="${SIG_KEYS[$K]}"
         local SRES="${HEALTH[$SK]:-skip}"
         [ "$SRES" = "critical" ] && SRES="fail"
@@ -1434,7 +1434,7 @@ build_management_pdf() {
         local ISSUE_LINE
         while IFS= read -r ISSUE_LINE; do
             [ -n "$ISSUE_LINE" ] && _MR_SORTED_ISSUES+=("$ISSUE_LINE")
-        done < <(printf '%s\n' "${_MR_ISSUES[@]}" | sort -t'|' -k1,1n -k2,2n)
+        done < <(printf '%s\n' "${_MR_ISSUES[@]}" | sort -t'|' -k2,2n -k1,1n)   # severity first (Action before Review), then section priority
     fi
 
     _mr_cover_letter

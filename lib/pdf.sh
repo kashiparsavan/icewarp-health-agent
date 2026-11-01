@@ -404,17 +404,6 @@ _render_checklist() {
             continue
         fi
 
-        # ---- Special case: customers-stat email ----
-        if [ "$LABEL" = "Set customers-stat@parsavan.com" ]; then
-            local RAW="${DATA[monitor.alert_email]:-}"
-            if [[ "$RAW" == *"customers-stat@parsavan.com"* ]] || [[ "$RAW" == *"customers-stat"* ]]; then
-                _layout_row "$LABEL" "$RAW" "PASS" "PASS" "$NOTE"
-            else
-                _layout_row "$LABEL" "$RAW" "CRITICAL" "CRITICAL" "Expected: customers-stat@parsavan.com"
-            fi
-            continue
-        fi
-
         # ---- Special case: Hide Server Version ----
         if [ "$LABEL" = "Hide Server Version" ]; then
             local RAW="${DATA[smtp.hide_server_version]:-}"

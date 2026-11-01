@@ -25,7 +25,10 @@ collector_run() {
     fi
 
     if [ -z "$SWAP_HISTORY" ] && command -v journalctl &>/dev/null; then
-        SWAP_MESSAGES=$(journalctl --since "7 days ago" 2>/dev/null | grep -i swap | head -5)
+        # Only real swap events. Plain "grep swap" also matched dracut/initramfs file
+        # listings (swap.target, swapoff, ...) after every kernel update.
+        SWAP_MESSAGES=$(journalctl --since "7 days ago" 2>/dev/null | grep -i swap \
+            | grep -viE 'dracut|swap\.target|swapoff|swapon|\.swap\b|systemd\[1\]: (Activat|Deactivat|Dependency)' | head -5)
     fi
 
     local USED_PERCENT=0
