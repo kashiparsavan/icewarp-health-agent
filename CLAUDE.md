@@ -6,7 +6,7 @@
 
 ### Key Characteristics
 - **Platform:** Linux (RHEL/Rocky/AlmaLinux, Debian/Ubuntu)
-- **Version:** 0.6.0
+- **Version:** 0.7.0
 - **Runtime:** Bash 4+, GNU coreutils only — no package manager, database, or web server
 - **Schema:** 411-key flat dotted namespace in `output/health.json`
 - **Outputs:**
@@ -61,10 +61,10 @@
 - **ALL `.sh` files MUST have LF (Unix) line endings.** Never save with CRLF.
 
 ### 3.2 PDF Renderer Sync
-- If you change a threshold or logic in `lib/health.sh`, you **MUST** apply the exact same change in:
-  - `lib/pdf.sh` (technical report)
-  - `lib/management_report.sh` (executive report)
-- Never leave hardcoded values in PDF renderers that differ from health engine.
+- Thresholds live **only** in `lib/health.sh`. `lib/pdf.sh` and `lib/management_report.sh` read the result through
+  `health_row_for_label` (see 3.11); changing a rule in `health.sh` updates both PDFs automatically.
+- Never add a threshold or a comparison against a number to a PDF renderer. If a checklist row needs a new rule,
+  add the check to `health.sh` and the label to `HEALTH_LABEL_MAP`.
 
 ### 3.3 Health Status Discipline
 - **NO arbitrary INFO statuses:** Missing/invalid settings → `WARN` or `CRITICAL`, never `INFO`
@@ -96,6 +96,11 @@
 | **Database Type** | `database.type` = `mysql` | `pass` | MySQL is active |
 | **Database Type** | `database.type` = `sqlite` | `warn` | SQLite in use; MySQL recommended |
 | **Database Type** | Unknown/empty | `warn` | Type could not be determined |
+| **Intrusion (5 count rules)** | Unknown user / relay denied / RSET / failed logins ≠ 5, spam score ≠ 9.00 | `warn` | Expected value; missing = `critical` |
+| **Watchdog (per service)** | SMTP / POP3-IMAP / IM-VoIP / GroupWare disabled | `critical` | Feeds `monitoring` |
+| **Directory Cache** | Schedule empty / not scheduled | `critical` | Feeds `database` |
+| **TLS certificate** | < 90 days warn, < 30 days or expired fail | `warn` / `fail` | Feeds `tls` |
+| **2FA** | Bypass enabled | `warn` | Feeds `access` |
 
 ### 3.6 License Fallback (Evaluation Licenses)
 If `C_License_TrialExpire` is empty:
@@ -119,11 +124,16 @@ If `C_License_TrialExpire` is empty:
 - **Everything else** → escaped string
 - Keys sorted alphabetically in output
 
-### 3.11 health.v2.json
-- `build_json_v2` is read-only over `DATA[]`/`HEALTH[]`; `health.json` (v1) must keep its key set.
-- A new health check needs an entry in `_V2_META` (`lib/json_v2.sh`): pillar, title, and flags
-  (`ru` = rolled into its pillar by `health.sh`, `opt` = optional feature). Pass `expected`/`actual`
-  as the 4th/5th `_health_set` arguments where a threshold exists.
+### 3.11 health.v2.json and the check registry
+- `build_json_v2` is read-only over `DATA[]`/`HEALTH[]`; `health.json` (v1) may gain `health.<id>.*` keys but must not lose or rename any.
+- **One registry** (`HEALTH_REGISTRY_LINES` in `lib/health.sh`, `id|pillar|title|flags`) is the single source for pillar
+  membership. Flags: `d` = detail only (not rolled up), `opt` = optional feature, `p` = the check is the pillar itself.
+  Pillar roll-ups (`_pillar_rollup`), v2 `checks[]` and `rolled_up` all read it. A new check = one registry line +
+  one `_health_set <id> <result> <msg> <expected> <actual> <display>` call. No hand-written pillar lists.
+- Every check passes `expected`/`actual` where a threshold exists; `display` is the PDF "Value" column.
+- **PDF renderers hold no thresholds.** `lib/pdf.sh` and `lib/management_report.sh` call
+  `health_row_for_label "$LABEL" "$NOTE"` (map: `HEALTH_LABEL_MAP`) and render `HR_KIND/HR_VALUE/HR_NOTE`.
+  To show a new checklist row from health, add the label to `HEALTH_LABEL_MAP`; never re-implement the rule in a renderer.
 - Validate with `docs/schema/health.v2.schema.json` after any change to the envelope.
 
 ### 3.10 Dates and Secrets
@@ -232,7 +242,7 @@ graphify cluster-only . --no-label
 ```
 icewarp-health-agent/
 ├── agent.sh                    # Entry point
-├── VERSION                     # Agent version (0.6.0)
+├── VERSION                     # Agent version (0.7.0)
 ├── CLAUDE.md                   # This file
 ├── README.md                   # User documentation
 ├── CHANGELOG.md                # Version history
@@ -244,7 +254,7 @@ icewarp-health-agent/
 ├── lib/
 │   ├── auto_update.sh          # Git self-update (runs first)
 │   ├── common.sh               # Shared helpers, DATA[], collector_set()
-│   ├── health.sh               # Health evaluation (654 lines, 9 pillars)
+│   ├── health.sh               # Health evaluation + check registry (9 pillars)
 │   ├── json.sh                 # Type-aware JSON builder (v1, flat)
 │   ├── json_v2.sh              # health.v2.json envelope builder
 │   ├── pdf.sh                  # Technical report (native PDF)
@@ -345,7 +355,8 @@ bash -n agent.sh lib/*.sh collectors/**/*.sh        # Syntax check
 | **Login Blocking** | Threshold > 10 | `warn` |
 | **Backup** | Auto disabled | `critical` |
 | **Backup** | DB (Accounts) disabled | `critical` |
-| **Backup** | Last run > 7 days | `critical` |
+| **Backup** | Last run ≥ 2 days | `warn` |
+| **Backup** | Last run ≥ 7 days | `critical` |
 | **Watchdog** | Master/service disabled | `critical` |
 | **OS Update** | > 30 days | `critical` |
 | **OS Update** | 8–30 days | `warn` |
@@ -357,7 +368,7 @@ bash -n agent.sh lib/*.sh collectors/**/*.sh        # Syntax check
 
 ### config/agent.conf
 ```
-AGENT_VERSION=0.6.0
+AGENT_VERSION=0.7.0
 CHECKLIST_VERSION=1.14
 MONITOR_URL=<webhook_url>
 SEND_DATA=0|1
@@ -420,6 +431,6 @@ After committing, replace the `pending` commit hash in the activity log.
 
 ---
 
-**Last Updated:** 2026-10-31  
-**Agent Version:** 0.6.0  
+**Last Updated:** 2026-11-01  
+**Agent Version:** 0.7.0  
 **Checklist Version:** 1.14

@@ -524,29 +524,6 @@ endobj
 
 # _days_ago / norm_date live in lib/common.sh (single copy)
 
-_validate_intrusion_value() {
-    local KEY="$1"
-    local VALUE="$2"
-    local EXPECTED=""
-    case "$KEY" in
-        "security.intrusion.block_connections_per_minute.value") EXPECTED="50" ;;
-        "security.intrusion.block_unknown_user_count.value") EXPECTED="5" ;;
-        "security.intrusion.block_relay_denied_count.value") EXPECTED="5" ;;
-        "security.intrusion.block_rset_count.value") EXPECTED="5" ;;
-        "security.intrusion.block_spam_score.value") EXPECTED="9.00" ;;
-        "security.intrusion.block_failed_logins.value") EXPECTED="5" ;;
-        "security.intrusion.block_duration_minutes") EXPECTED="360" ;;
-        *) echo "WARN" ;;
-    esac
-    if [ -z "$VALUE" ]; then
-        echo "CRITICAL"
-    elif [[ "$VALUE" == "$EXPECTED" ]]; then
-        echo "PASS"
-    else
-        echo "WARN"
-    fi
-}
-
 # =============================================================================
 # SECTION 8: MAIN CHECKLIST RENDERER
 # =============================================================================
@@ -586,16 +563,9 @@ _mr_render_checklist() {
             continue
         fi
 
-        # ---- Special case: Database Type (Strict Override: SQLite=WARN, MySQL=PASS, no INFO) ----
-        if [ "$LABEL" = "Database Type" ]; then
-            local DB_TYPE="${DATA[database.type]:-}"
-            if [ "$DB_TYPE" = "sqlite" ]; then
-                _mr_grid_item "$LABEL" "WARN"
-            elif [ "$DB_TYPE" = "mysql" ]; then
-                _mr_grid_item "$LABEL" "PASS"
-            else
-                _mr_grid_item "$LABEL" "WARN"
-            fi
+        # ---- Health-backed rows: status comes from lib/health.sh (no thresholds here) ----
+        if health_row_for_label "$LABEL" "$NOTE"; then
+            _mr_grid_item "$LABEL" "$HR_KIND"
             continue
         fi
 
@@ -606,72 +576,6 @@ _mr_render_checklist() {
                 _mr_grid_item "$LABEL" "PASS"
             else
                 _mr_grid_item "$LABEL" "CRITICAL"
-            fi
-            continue
-        fi
-
-        # ---- Special case: Set Admin Email (Strict Override: empty=CRITICAL, invalid=WARN) ----
-        if [ "$LABEL" = "Set Admin Email" ]; then
-            local RAW="${DATA[monitor.alert_email]:-}"
-            if [ -z "$RAW" ] || [ "$RAW" = "null" ] || [ "$RAW" = "N/A" ]; then
-                _mr_grid_item "$LABEL" "CRITICAL"
-            elif [[ "$RAW" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
-                _mr_grid_item "$LABEL" "PASS"
-            else
-                _mr_grid_item "$LABEL" "WARN"
-            fi
-            continue
-        fi
-
-        # ---- Special case: Session Timeout (Strict Override: has value=PASS, missing=WARN) ----
-        if [ "$LABEL" = "Session Timeout" ]; then
-            local RAW="${DATA[icewarp.session_timeout_minutes]:-}"
-            if [ -n "$RAW" ] && [ "$RAW" != "null" ] && [ "$RAW" != "N/A" ] && [ "$RAW" != "0" ]; then
-                _mr_grid_item "$LABEL" "PASS"
-            else
-                _mr_grid_item "$LABEL" "WARN"
-            fi
-            continue
-        fi
-
-        # ---- Special case: Certificates ----
-        if [ "$LABEL" = "Check for Certificates" ]; then
-            local DAYS_LEFT="${DATA[icewarp.ssl.days_left]:-0}"
-            local STATUS="INFO"
-            if [[ "$DAYS_LEFT" -gt 90 ]]; then STATUS="PASS"
-            elif [[ "$DAYS_LEFT" -gt 30 ]]; then STATUS="WARN"
-            else STATUS="CRITICAL"
-            fi
-            _mr_grid_item "$LABEL" "$STATUS"
-            continue
-        fi
-
-        # ---- Special case: Last Backup Date ----
-        if [ "$LABEL" = "Last Backup Date and Time" ]; then
-            local BACKUP_TIME="${DATA[icewarp.backup.last_time]:-}"
-            local STATUS="NA"
-            if [ -n "$BACKUP_TIME" ]; then
-                local DAYS
-                DAYS="$(_days_ago "$BACKUP_TIME")"
-                if [ -z "$DAYS" ]; then STATUS="WARN"
-                elif [ "$DAYS" -lt 2 ]; then STATUS="PASS"
-                elif [ "$DAYS" -lt 4 ]; then STATUS="WARN"
-                else STATUS="CRITICAL"
-                fi
-            else
-                STATUS="CRITICAL"
-            fi
-            _mr_grid_item "$LABEL" "$STATUS"
-            continue
-        fi
-
-        # ---- Special case: 2FA ----
-        if [ "$LABEL" = "2FA" ]; then
-            local RAW="${DATA[security.login.2fa_bypass_enabled]:-}"
-            if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
-                _mr_grid_item "$LABEL" "WARN"
-            else
-                _mr_grid_item "$LABEL" "PASS"
             fi
             continue
         fi
@@ -695,17 +599,6 @@ _mr_render_checklist() {
             else
                 _mr_grid_item "$LABEL" "CRITICAL"
             fi
-            continue
-        fi
-
-        # ---- Special case: AntiSpam Folders ----
-        if [ "$LABEL" = "Remove Old AntiSpam Folders" ]; then
-            local STATUS="${DATA[security.cyren_folder.status]:-INFO}"
-            case "$STATUS" in
-                OK) _mr_grid_item "$LABEL" "PASS" ;;
-                WARN) _mr_grid_item "$LABEL" "WARN" ;;
-                *) _mr_grid_item "$LABEL" "INFO" ;;
-            esac
             continue
         fi
 
@@ -740,30 +633,6 @@ _mr_render_checklist() {
                 _mr_grid_item "$LABEL" "WARN"
             else
                 _mr_grid_item "$LABEL" "NA"
-            fi
-            continue
-        fi
-
-        # ---- Special case: DIGEST-MD5 ----
-        if [ "$LABEL" = "Disable DIGEST-MD5" ]; then
-            local RAW="${DATA[security.digest_md5.enabled]:-}"
-            if [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
-                _mr_grid_item "$LABEL" "CRITICAL"
-            elif [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
-                _mr_grid_item "$LABEL" "PASS"
-            else
-                _mr_grid_item "$LABEL" "CRITICAL"
-            fi
-            continue
-        fi
-
-        # ---- Special case: IMAP / POP3 (Strict Override: Running=PASS, Disabled=WARN) ----
-        if [ "$LABEL" = "Disable IMAP" ] || [ "$LABEL" = "Disable POP3" ]; then
-            local RAW="${DATA[${KEYS}]:-0}"
-            if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
-                _mr_grid_item "$LABEL" "PASS"
-            else
-                _mr_grid_item "$LABEL" "WARN"
             fi
             continue
         fi
@@ -805,121 +674,6 @@ _mr_render_checklist() {
             continue
         fi
 
-        # ---- Special case: System Backup ----
-        if [ "$LABEL" = "Enable System Backup" ]; then
-            local RAW="${DATA[icewarp.backup.auto_enabled]:-0}"
-            if [ "$RAW" = "1" ]; then
-                _mr_grid_item "$LABEL" "PASS"
-            else
-                _mr_grid_item "$LABEL" "CRITICAL"
-            fi
-            continue
-        fi
-
-        # ---- Special case: Database Backup (legacy) ----
-        if [ "$LABEL" = "Enable Database Backup" ]; then
-            local RAW="${DATA[icewarp.database_backup.enabled]:-0}"
-            if [ "$RAW" = "1" ]; then
-                _mr_grid_item "$LABEL" "PASS"
-            else
-                _mr_grid_item "$LABEL" "CRITICAL"
-            fi
-            continue
-        fi
-
-        # ---- Special case: Maximum Threads ----
-        if [ "$LABEL" = "Maximum Number of Simultaneous Threads" ]; then
-            local RAW="${DATA[smtp.incoming_queue_threads]:-}"
-            local STATUS="INFO"
-            if [ -z "$RAW" ]; then
-                STATUS="CRITICAL"
-            elif [ "$RAW" = "10" ]; then
-                STATUS="PASS"
-            else
-                STATUS="WARN"
-            fi
-            _mr_grid_item "$LABEL" "$STATUS"
-            continue
-        fi
-
-        # ---- Special case: Directory Cache ----
-        if [ "$LABEL" = "Set Directory Cache Schedule" ]; then
-            local RAW="${DATA[directory_cache.scheduled]:-}"
-            if [ "$RAW" = "1" ] || [ "$RAW" = "true" ]; then
-                _mr_grid_item "$LABEL" "PASS"
-            else
-                _mr_grid_item "$LABEL" "CRITICAL"
-            fi
-            continue
-        fi
-
-        # ---- Watchdog items (main + individual) ----
-        if [ "$LABEL" = "Enable System Watchdog" ]; then
-            local CTRL="${DATA[watchdog.control]:-0}"
-            if [ "$CTRL" = "1" ]; then
-                _mr_grid_item "$LABEL" "PASS"
-            else
-                _mr_grid_item "$LABEL" "CRITICAL"
-            fi
-            continue
-        fi
-
-        if [ "$LABEL" = "Watchdog - SMTP" ]; then
-            local VAL="${DATA[watchdog.smtp]:-0}"
-            if [ "$VAL" = "1" ]; then
-                _mr_grid_item "$LABEL" "PASS"
-            else
-                _mr_grid_item "$LABEL" "CRITICAL"
-            fi
-            continue
-        fi
-
-        if [ "$LABEL" = "Watchdog - POP3/IMAP" ]; then
-            local VAL="${DATA[watchdog.pop3]:-0}"
-            if [ "$VAL" = "1" ]; then
-                _mr_grid_item "$LABEL" "PASS"
-            else
-                _mr_grid_item "$LABEL" "CRITICAL"
-            fi
-            continue
-        fi
-
-        if [ "$LABEL" = "Watchdog - IM/VoIP" ]; then
-            local VAL="${DATA[watchdog.im]:-0}"
-            if [ "$VAL" = "1" ]; then
-                _mr_grid_item "$LABEL" "PASS"
-            else
-                _mr_grid_item "$LABEL" "CRITICAL"
-            fi
-            continue
-        fi
-
-        if [ "$LABEL" = "Watchdog - GroupWare" ]; then
-            local VAL="${DATA[watchdog.gw]:-0}"
-            if [ "$VAL" = "1" ]; then
-                _mr_grid_item "$LABEL" "PASS"
-            else
-                _mr_grid_item "$LABEL" "CRITICAL"
-            fi
-            continue
-        fi
-
-        if [ "$LABEL" = "Watchdog Interval" ]; then
-            local INTERVAL="${DATA[watchdog.interval_minutes]:-0}"
-            local STATUS="INFO"
-            if [ "$INTERVAL" -eq 0 ]; then
-                STATUS="PASS"
-            elif [ "$INTERVAL" -ge 1 ] && [ "$INTERVAL" -le 60 ]; then
-                STATUS="PASS"
-            elif [ "$INTERVAL" -gt 60 ] && [ "$INTERVAL" -le 1440 ]; then
-                STATUS="WARN"
-            else
-                STATUS="CRITICAL"
-            fi
-            _mr_grid_item "$LABEL" "$STATUS"
-            continue
-        fi
-
         # ---- NEW: Special case for Integrate Archive with IMAP Folder ----
         if [ "$LABEL" = "Integrate Archive with IMAP Folder" ]; then
             local RAW="${DATA[archive.integrate_with_imap]:-0}"
@@ -934,84 +688,11 @@ _mr_render_checklist() {
         # ============================================================
         # Intrusion Prevention validation (BEFORE general V handling)
         # ============================================================
-        if [ "$KIND" = "V" ] && [[ "$KEYS" == security.intrusion.*.value* || "$KEYS" == "security.intrusion.block_duration_minutes" ]]; then
-            local RAW="${DATA[$KEYS]:-}"
-            local STATUS="$(_validate_intrusion_value "$KEYS" "$RAW")"
-            _mr_grid_item "$LABEL" "$STATUS"
-            continue
-        fi
-
         # ============================================================
         # APP OS / Infrastructure items (KIND=V with specific LABELs)
         # ============================================================
         if [ "$KIND" = "V" ]; then
             case "$LABEL" in
-                "Disk (Total GB / Used %)")
-                    local USED_PERCENT="${DATA[storage.root_fs.used_percent]:-0}"
-                    local STATUS="INFO"
-                    if _is_num "$USED_PERCENT"; then
-                        if [ "$USED_PERCENT" -ge 95 ]; then STATUS="CRITICAL"
-                        elif [ "$USED_PERCENT" -ge 80 ]; then STATUS="WARN"
-                        else STATUS="PASS"
-                        fi
-                    fi
-                    _mr_grid_item "$LABEL" "$STATUS"
-                    continue
-                    ;;
-                "CPU Usage")
-                    local LOAD15="${DATA[os.cpu.load15]:-0}"
-                    local CORES="${DATA[os.cpu.count]:-1}"
-                    local CPU_PERCENT=0
-                    local STATUS="INFO"
-                    if _is_num "$LOAD15" && _is_num "$CORES" && [ "$CORES" -gt 0 ]; then
-                        CPU_PERCENT=$(awk -v l="$LOAD15" -v c="$CORES" 'BEGIN{printf "%.2f", (l/c)*100}')
-                        if awk -v cpu="$CPU_PERCENT" -v lim=95 'BEGIN{exit !(cpu > lim)}'; then STATUS="CRITICAL"
-                        elif awk -v cpu="$CPU_PERCENT" -v lim=50 'BEGIN{exit !(cpu > lim)}'; then STATUS="WARN"
-                        else STATUS="PASS"
-                        fi
-                    fi
-                    _mr_grid_item "$LABEL" "$STATUS"
-                    continue
-                    ;;
-                "RAM (Total KB / Available KB)")
-                    local TOTAL_KB="${DATA[os.memory.total_kb]:-0}"
-                    local AVAIL_KB="${DATA[os.memory.available_kb]:-0}"
-                    local USED_PERCENT=0
-                    local STATUS="INFO"
-                    if _is_num "$TOTAL_KB" && _is_num "$AVAIL_KB" && [ "$TOTAL_KB" -gt 0 ]; then
-                        USED_PERCENT=$(awk -v t="$TOTAL_KB" -v a="$AVAIL_KB" 'BEGIN{printf "%.2f", ((t-a)/t)*100}')
-                        if awk -v used="$USED_PERCENT" -v lim=90 'BEGIN{exit !(used > lim)}'; then STATUS="CRITICAL"
-                        elif awk -v used="$USED_PERCENT" -v lim=40 'BEGIN{exit !(used > lim)}'; then STATUS="WARN"
-                        else STATUS="PASS"
-                        fi
-                    fi
-                    _mr_grid_item "$LABEL" "$STATUS"
-                    continue
-                    ;;
-                "APP OS Last Update")
-                    local LAST_UPDATE="${DATA[os.last_update_date]:-}"
-                    local STATUS="INFO"
-                    if [ -n "$LAST_UPDATE" ] && [ "$LAST_UPDATE" != "N/A" ] && [ "$LAST_UPDATE" != "null" ]; then
-                        local DAYS
-                        DAYS="$(_days_ago "$LAST_UPDATE")"
-                        if [ -z "$DAYS" ]; then STATUS="WARN"
-                        elif [ "$DAYS" -le 7 ]; then STATUS="PASS"
-                        elif [ "$DAYS" -le 30 ]; then STATUS="WARN"
-                        else STATUS="CRITICAL"
-                        fi
-                    fi
-                    _mr_grid_item "$LABEL" "$STATUS"
-                    continue
-                    ;;
-                "Swap Usage (7 days)")
-                    local STATUS="${DATA[system.swap.status]:-INFO}"
-                    case "$STATUS" in
-                        PASS) _mr_grid_item "$LABEL" "PASS" ;;
-                        CRITICAL) _mr_grid_item "$LABEL" "CRITICAL" ;;
-                        *) _mr_grid_item "$LABEL" "INFO" ;;
-                    esac
-                    continue
-                    ;;
                 "Database Scope")
                     local SCOPE="${DATA[database.scope]:-unknown}"
                     _mr_grid_item "$LABEL" "PASS"
@@ -1138,7 +819,7 @@ _mr_render_checklist() {
                 IFS=',' read -ra _HK <<< "$KEYS"
                 for K in "${_HK[@]}"; do
                     RESULT="${HEALTH[$K]:-skip}"
-                    [ "$RESULT" = "fail" ] && WORST="CRITICAL"
+                    { [ "$RESULT" = "fail" ] || [ "$RESULT" = "critical" ]; } && WORST="CRITICAL"
                     [ "$RESULT" = "warn" ] && [ "$WORST" != "CRITICAL" ] && WORST="WARN"
                 done
                 _mr_grid_item "$LABEL" "$WORST"

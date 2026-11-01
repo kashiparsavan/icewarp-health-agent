@@ -24,6 +24,12 @@ collector_run() {
 
     for D in "${DIRS[@]}"; do
         [ -n "$D" ] && [ -d "$D" ] || continue
+        # pass 0: rbl.dat is where IceWarp keeps the DNSBL server list (confirmed on the lab server)
+        if [ -f "$D/rbl.dat" ]; then
+            ZONES="$(_dnsbl_scan_file "$D/rbl.dat")"
+            if [ -n "$ZONES" ]; then SOURCE="rbl.dat"; break; fi
+            SOURCE="scanned_no_match"
+        fi
         # pass 1: obviously named files; pass 2: remaining top-level config files
         while IFS= read -r F; do
             ZONES="$(_dnsbl_scan_file "$F")"

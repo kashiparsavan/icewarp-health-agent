@@ -5,6 +5,40 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-01
+
+### Added
+
+- Check registry in `lib/health.sh` (`HEALTH_REGISTRY_LINES`): one line per check
+  (`id|pillar|title|flags`). Pillar roll-ups, `health.v2.json` `checks[]` and the PDF/management
+  statuses all derive from it. Every check now carries `pillar`, `expected` and `actual`.
+- New checks (new `health.<id>.result|message` keys; no existing key removed or renamed):
+  `intrusion.unknown_user|relay_denied|rset|spam_score|failed_logins` (expected 5/5/5/9.00/5),
+  `tls.certificate`, `access.2fa`, `mail.spf|dkim|dmarc|ptr|starttls|dns_lookup`,
+  `threat.antispam|antivirus|rbl|cyren`, `smtp.threads`, `swap`, `database.platform`.
+- `health_row_for_label` / `health_kind` / `health_meta` / `health_rolled_up` helpers.
+  `_health_set` takes a 6th `display` argument (the PDF "Value" column).
+
+### Changed
+
+- **Roll-ups now include** intrusion 50/360 and the five other intrusion rules (threat),
+  IMAP/POP3 running (mail_flow), per-service watchdogs SMTP/POP3-IMAP/IM-VoIP/GroupWare
+  (monitoring), Directory Cache schedule and database platform (database), TLS certificate expiry
+  (tls) and 2FA bypass (access). They affect the pillar status, overall score and both PDFs.
+  `backup.db.accounts|as|gw`, `backup.db.cache`, `smtp.threads` and `swap` stay detail-only.
+- The PDF renderers no longer hold thresholds. `lib/pdf.sh` and `lib/management_report.sh` read the
+  health result for every mapped checklist row (`HEALTH_LABEL_MAP`); about 650 lines of duplicated
+  threshold code were removed. Where they disagreed, `health.sh` now wins: backup age (warn 2-6,
+  critical 7+ days; PDFs used 4), certificate (30 days is now warn), CPU (System Monitor
+  threshold on 1-min load; PDFs used 15-min load 50/95%), disk (System Monitor free-space floor;
+  PDFs used 80/95% used), the management report no longer ignores `critical` in grouped rows.
+- Pillar `database` is now `database.platform` + `directory_cache`; the check formerly named
+  `database` is `database.platform` (the pillar keeps the id `database`).
+- Directory Cache: an empty schedule value is "not scheduled" (CRITICAL), confirmed on the lab server.
+- `collectors/security/dnsbl_zones.sh` reads `rbl.dat` first (IceWarp's DNSBL server list).
+- `config/checklist.conf.pdf` notes no longer quote thresholds.
+- `VERSION` and `config/agent.conf` bumped to `0.7.0`.
+
 ### Added
 
 - `lib/json_v2.sh` / `build_json_v2`: writes `output/health.v2.json`, a versioned envelope

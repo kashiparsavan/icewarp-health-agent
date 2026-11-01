@@ -13,41 +13,8 @@
 #
 ###############################################################################
 
-_V2_PILLARS=(backup mail_flow tls access threat resources os_update monitoring database)
 
-# check id -> "pillar|title|flags"   flags: ru = rolled up into its pillar by
-# health.sh, opt = optional feature (never makes a pillar worse)
-declare -Ag _V2_META=(
-    [backup.auto]="backup|Automatic system backup|ru"
-    [backup.db]="backup|Database backup|ru"
-    [backup.db.accounts]="backup|Accounts database backup|"
-    [backup.db.as]="backup|Anti-Spam database backup|"
-    [backup.db.gw]="backup|GroupWare database backup|"
-    [backup.db.cache]="backup|Directory Cache database backup|opt"
-    [backup.last_time]="backup|Last backup run|ru"
-    [tls_delivery]="tls|TLS/SSL for delivery|ru"
-    [login_blocking]="access|Login blocking|ru"
-    [password_policy]="access|Password policy|ru"
-    [digest_md5]="access|DIGEST-MD5 disabled|ru"
-    [admin_email]="access|Admin email|ru"
-    [session_timeout]="access|Session timeout|ru"
-    [service.imap]="mail_flow|IMAP service|"
-    [service.pop3]="mail_flow|POP3 service|"
-    [dnsbl_zones]="mail_flow|DNSBL zones|ru"
-    [intrusion.block_connections]="threat|Intrusion: connections per minute|"
-    [intrusion.block_duration]="threat|Intrusion: block duration|"
-    [memory]="resources|Memory|ru"
-    [cpu]="resources|CPU|ru"
-    [disk.overall]="resources|Disk space|ru"
-    [monitor.enabled]="monitoring|System Monitor|ru"
-    [watchdog.control]="monitoring|Watchdog|ru"
-    [watchdog.smtp]="monitoring|SMTP watchdog|"
-    [watchdog.pop3]="monitoring|POP3/IMAP watchdog|"
-    [watchdog.im]="monitoring|IM/VoIP watchdog|"
-    [watchdog.gw]="monitoring|GroupWare watchdog|"
-    [watchdog.interval]="monitoring|Watchdog interval|ru"
-    [directory_cache]="database|Directory Cache schedule|"
-)
+# Check metadata (pillar, title, flags) lives in the registry in lib/health.sh.
 
 _v2_status() {
     case "$1" in
@@ -103,22 +70,20 @@ _v2_pct() {
 }
 
 _v2_checks() {
-    local K META PILLAR TITLE FLAGS RES ST EXP ACT FIRST=1 RU OPT ID
+    local K META PILLAR TITLE FLAGS RES ST FIRST=1 RU OPT ID
     local -a IDS=()
     for K in "${!HEALTH[@]}"; do
         [[ "${HEALTH[$K]}" == same_as:* ]] && continue
-        [ -n "${_V2_META[$K]:-}" ] && IDS+=("$K")
-        # per-mount disks: disk.<name> (not overall)
-        [[ "$K" == disk.* && "$K" != "disk.overall" && -z "${_V2_META[$K]:-}" ]] && IDS+=("$K")
+        [ -n "$(health_meta "$K")" ] && IDS+=("$K")
     done
     printf '['
     for ID in $(printf '%s\n' "${IDS[@]}" | sort); do
-        META="${_V2_META[$ID]:-resources|Disk ${ID#disk.}|}"
+        META="$(health_meta "$ID")"
         IFS='|' read -r PILLAR TITLE FLAGS <<< "$META"
         RES="${HEALTH[$ID]}"; ST="$(_v2_status "$RES")"
         RU=false; OPT=false
-        [[ "$FLAGS" == *ru* ]] && RU=true
-        [[ "$FLAGS" == *opt* || "$RES" == "info" ]] && OPT=true
+        health_rolled_up "$ID" && RU=true
+        [[ ",${FLAGS}," == *,opt,* || "$RES" == "info" ]] && OPT=true
         [ $FIRST -eq 0 ] && printf ','
         FIRST=0
         printf '\n    {"id":"%s","pillar":"%s","status":"%s","optional":%s,"rolled_up":%s,"title":"%s","message":"%s","expected":%s,"actual":%s}' \
@@ -168,7 +133,7 @@ build_json_v2() {
     START_ISO="$(date -d "@$((START_MS/1000))" -Iseconds 2>/dev/null || echo "$NOW_ISO")"
 
     # ---- pillar roll-up counts + score (ok=100, warn=50, crit=0; unknown excluded) ----
-    for P in "${_V2_PILLARS[@]}"; do
+    for P in "${HEALTH_PILLARS[@]}"; do
         ST="$(_v2_status "${HEALTH[$P]:-skip}")"
         case "$ST" in
             ok)   COUNT_OK=$((COUNT_OK+1));     SCORE_SUM=$((SCORE_SUM+100)); SCORE_N=$((SCORE_N+1)) ;;
@@ -210,7 +175,7 @@ build_json_v2() {
     printf '  "summary":{"overall":"%s","score":%s,"counts":{"ok":%s,"warn":%s,"crit":%s,"unknown":%s},"pillars":[' \
         "$OVERALL" "$SCORE" "$COUNT_OK" "$COUNT_WARN" "$COUNT_CRIT" "$COUNT_UNK"
     FIRST=1
-    for P in "${_V2_PILLARS[@]}"; do
+    for P in "${HEALTH_PILLARS[@]}"; do
         [ $FIRST -eq 0 ] && printf ','
         FIRST=0
         printf '\n    {"id":"%s","status":"%s","message":"%s"}' "$P" "$(_v2_status "${HEALTH[$P]:-skip}")" "$(_json_escape "${HEALTH_MSG[$P]:-}")"

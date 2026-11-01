@@ -11,7 +11,7 @@ anything from the Linux `lib/` directory.
 
 | Platform | Entry point | Version | Status |
 |---|---|---|---|
-| Linux | `./agent.sh` | 0.6.0 | Production |
+| Linux | `./agent.sh` | 0.7.0 | Production |
 | Windows | `windows/agent.ps1` | 0.1.0 | Scaffold |
 
 ## Output Files
@@ -51,7 +51,7 @@ cd icewarp-health-agent
 | `--auto-update` | Force an update check even if disabled in config |
 | `--no-update` | Deprecated no-op; use `--no-auto-update` |
 
-Current Linux version: **0.6.0**. Current Windows scaffold version: **0.1.0**
+Current Linux version: **0.7.0**. Current Windows scaffold version: **0.1.0**
 (`windows/VERSION`).
 
 When `--company` is omitted, the agent uses `domain.primary.name`, then

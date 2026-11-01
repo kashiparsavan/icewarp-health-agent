@@ -354,59 +354,6 @@ _cl_value_render() {
     fi
 }
 
-_validate_intrusion_value() {
-    local KEY="$1"
-    local VALUE="$2"
-    local EXPECTED=""
-    local BKIND="INFO"
-    local BTEXT="INFO"
-    local NOTE=""
-
-    case "$KEY" in
-        "security.intrusion.block_connections_per_minute.value")
-            EXPECTED="50"
-            ;;
-        "security.intrusion.block_unknown_user_count.value")
-            EXPECTED="5"
-            ;;
-        "security.intrusion.block_relay_denied_count.value")
-            EXPECTED="5"
-            ;;
-        "security.intrusion.block_rset_count.value")
-            EXPECTED="5"
-            ;;
-        "security.intrusion.block_spam_score.value")
-            EXPECTED="9.00"
-            ;;
-        "security.intrusion.block_failed_logins.value")
-            EXPECTED="5"
-            ;;
-        "security.intrusion.block_duration_minutes")
-            EXPECTED="360"
-            ;;
-        *)
-            printf 'WARN|WARN|%s' "$VALUE"
-            return
-            ;;
-    esac
-
-    if [ -z "$VALUE" ]; then
-        BKIND="CRITICAL"
-        BTEXT="CRITICAL"
-        NOTE="Setting not found"
-    elif [[ "$VALUE" == "$EXPECTED" ]]; then
-        BKIND="PASS"
-        BTEXT="PASS"
-        NOTE="Expected: $EXPECTED"
-    else
-        BKIND="WARN"
-        BTEXT="WARN"
-        NOTE="Expected: $EXPECTED (current: $VALUE)"
-    fi
-
-    printf '%s|%s|%s' "$BKIND" "$BTEXT" "$NOTE"
-}
-
 # =============================================================================
 # SECTION 9: MAIN CHECKLIST RENDERER
 # =============================================================================
@@ -451,16 +398,9 @@ _render_checklist() {
             continue
         fi
 
-        # ---- Special case: Database Type (Strict Override: SQLite=WARN, MySQL=PASS, no INFO) ----
-        if [ "$LABEL" = "Database Type" ]; then
-            local DB_TYPE="${DATA[database.type]:-}"
-            if [ "$DB_TYPE" = "sqlite" ]; then
-                _layout_row "$LABEL" "sqlite" "WARN" "WARN" "SQLite is not recommended for production - use MySQL"
-            elif [ "$DB_TYPE" = "mysql" ]; then
-                _layout_row "$LABEL" "mysql" "PASS" "PASS" "MySQL database platform is active"
-            else
-                _layout_row "$LABEL" "${DB_TYPE:-unknown}" "WARN" "WARN" "Database type could not be determined (unknown/empty)"
-            fi
+        # ---- Health-backed rows: status comes from lib/health.sh (no thresholds here) ----
+        if health_row_for_label "$LABEL" "$NOTE"; then
+            _layout_row "$LABEL" "$HR_VALUE" "$HR_KIND" "$HR_KIND" "$HR_NOTE"
             continue
         fi
 
@@ -471,98 +411,6 @@ _render_checklist() {
                 _layout_row "$LABEL" "$RAW" "PASS" "PASS" "$NOTE"
             else
                 _layout_row "$LABEL" "$RAW" "CRITICAL" "CRITICAL" "Expected: customers-stat@parsavan.com"
-            fi
-            continue
-        fi
-
-        # ---- Special case: Set Admin Email (Strict Override: empty=CRITICAL, invalid=WARN) ----
-        if [ "$LABEL" = "Set Admin Email" ]; then
-            local RAW="${DATA[monitor.alert_email]:-}"
-            if [ -z "$RAW" ] || [ "$RAW" = "null" ] || [ "$RAW" = "N/A" ]; then
-                _layout_row "$LABEL" "empty" "CRITICAL" "CRITICAL" "Admin email is not set"
-            elif [[ "$RAW" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
-                _layout_row "$LABEL" "$RAW" "PASS" "PASS" "$NOTE"
-            else
-                _layout_row "$LABEL" "$RAW" "WARN" "WARN" "Admin email is set but invalid format"
-            fi
-            continue
-        fi
-
-        # ---- Special case: Certificates ----
-        if [ "$LABEL" = "Check for Certificates" ]; then
-            local EXPIRY="${DATA[icewarp.ssl.expiration]:-}"
-            local DAYS_LEFT="${DATA[icewarp.ssl.days_left]:-0}"
-            local BKIND="INFO"
-            local BTEXT="INFO"
-            local VALUE=""
-            if [[ -n "$EXPIRY" ]] && [[ "$EXPIRY" != "N/A" ]] && [[ "$EXPIRY" != "not returned" ]]; then
-                VALUE="expires $EXPIRY ($DAYS_LEFT days left)"
-                if [[ "$DAYS_LEFT" -gt 90 ]]; then
-                    BKIND="PASS"
-                    BTEXT="PASS"
-                elif [[ "$DAYS_LEFT" -gt 30 ]]; then
-                    BKIND="WARN"
-                    BTEXT="WARN"
-                else
-                    BKIND="CRITICAL"
-                    BTEXT="CRITICAL"
-                fi
-            else
-                VALUE="N/A"
-                BKIND="INFO"
-                BTEXT="INFO"
-            fi
-            _layout_row "$LABEL" "$VALUE" "$BKIND" "$BTEXT" "$NOTE"
-            continue
-        fi
-
-        # ---- Special case: Last Backup Date ----
-        if [ "$LABEL" = "Last Backup Date and Time" ]; then
-            local BACKUP_TIME="${DATA[icewarp.backup.last_time]:-}"
-            if [ -n "$BACKUP_TIME" ]; then
-                local DAYS
-                DAYS="$(_days_ago "$BACKUP_TIME")"
-                local BKIND="INFO"
-                local BTEXT="INFO"
-                if [ -z "$DAYS" ]; then
-                    _layout_row "$LABEL" "$BACKUP_TIME" "WARN" "WARN" "Backup time could not be parsed"
-                    continue
-                fi
-                if [ "$DAYS" -lt 2 ]; then
-                    BKIND="PASS"
-                    BTEXT="PASS"
-                elif [ "$DAYS" -lt 4 ]; then
-                    BKIND="WARN"
-                    BTEXT="WARN"
-                else
-                    BKIND="CRITICAL"
-                    BTEXT="CRITICAL"
-                fi
-                _layout_row "$LABEL" "$BACKUP_TIME ($DAYS days ago)" "$BKIND" "$BTEXT" "Backup age: $DAYS days"
-            else
-                _layout_row "$LABEL" "Never" "CRITICAL" "CRITICAL" "No backup found"
-            fi
-            continue
-        fi
-
-        # ---- Special case: 2FA ----
-        if [ "$LABEL" = "2FA" ]; then
-            local RAW="${DATA[security.login.2fa_bypass_enabled]:-}"
-            if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
-                _layout_row "$LABEL" "Bypass enabled (2FA off)" "WARN" "WARN" "$NOTE"
-            else
-                _layout_row "$LABEL" "2FA active" "PASS" "PASS" "$NOTE"
-            fi
-            continue
-        fi
-
-        # ---- Special case: Session Timeout (Strict Override: has value=PASS, missing=WARN) ----
-        if [ "$LABEL" = "Session Timeout" ]; then
-            local RAW="${DATA[icewarp.session_timeout_minutes]:-}"
-            if [ -n "$RAW" ] && [ "$RAW" != "null" ] && [ "$RAW" != "N/A" ] && [ "$RAW" != "0" ]; then
-                _layout_row "$LABEL" "${RAW} minutes" "PASS" "PASS" "$NOTE"
-            else
-                _layout_row "$LABEL" "not set" "WARN" "WARN" "Session timeout is not configured"
             fi
             continue
         fi
@@ -586,21 +434,6 @@ _render_checklist() {
             else
                 _layout_row "$LABEL" "Not Blocked" "CRITICAL" "CRITICAL" "$NOTE"
             fi
-            continue
-        fi
-
-        # ---- Special case: AntiSpam Folders ----
-        if [ "$LABEL" = "Remove Old AntiSpam Folders" ]; then
-            local STATUS="${DATA[security.cyren_folder.status]:-INFO}"
-            local MSG="${DATA[security.cyren_folder.message]:-}"
-            local BKIND="INFO"
-            local BTEXT="INFO"
-            case "$STATUS" in
-                OK) BKIND="PASS"; BTEXT="PASS" ;;
-                WARN) BKIND="WARN"; BTEXT="WARN" ;;
-                *) BKIND="INFO"; BTEXT="INFO" ;;
-            esac
-            _layout_row "$LABEL" "$STATUS" "$BKIND" "$BTEXT" "$MSG"
             continue
         fi
 
@@ -635,30 +468,6 @@ _render_checklist() {
                 _layout_row "$LABEL" "Enabled" "WARN" "WARN" "$NOTE"
             else
                 _layout_row "$LABEL" "N/A" "INFO" "INFO" "$NOTE"
-            fi
-            continue
-        fi
-
-        # ---- Special case: DIGEST-MD5 ----
-        if [ "$LABEL" = "Disable DIGEST-MD5" ]; then
-            local RAW="${DATA[security.digest_md5.enabled]:-}"
-            if [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
-                _layout_row "$LABEL" "Enabled" "CRITICAL" "CRITICAL" "$NOTE"
-            elif [[ "$RAW" == "false" ]] || [[ "$RAW" == "FALSE" ]] || [[ "$RAW" == "False" ]]; then
-                _layout_row "$LABEL" "Disabled" "PASS" "PASS" "$NOTE"
-            else
-                _layout_row "$LABEL" "N/A" "CRITICAL" "CRITICAL" "Auth scheme list not available - cannot verify DIGEST-MD5 status"
-            fi
-            continue
-        fi
-
-        # ---- Special case: IMAP / POP3 (Strict Override: Running=PASS, Disabled=WARN) ----
-        if [ "$LABEL" = "Disable IMAP" ] || [ "$LABEL" = "Disable POP3" ]; then
-            local RAW="${DATA[${KEYS}]:-0}"
-            if [[ "$RAW" == "1" ]] || [[ "$RAW" == "true" ]] || [[ "$RAW" == "TRUE" ]] || [[ "$RAW" == "True" ]]; then
-                _layout_row "$LABEL" "Running" "PASS" "PASS" "${NOTE:-Service is running}"
-            else
-                _layout_row "$LABEL" "Disabled" "WARN" "WARN" "${NOTE:-Service is disabled}"
             fi
             continue
         fi
@@ -700,129 +509,6 @@ _render_checklist() {
             continue
         fi
 
-        # ---- Special case: System Backup ----
-        if [ "$LABEL" = "Enable System Backup" ]; then
-            local RAW="${DATA[icewarp.backup.auto_enabled]:-0}"
-            if [ "$RAW" = "1" ]; then
-                _layout_row "$LABEL" "Enabled" "PASS" "PASS" "$NOTE"
-            else
-                _layout_row "$LABEL" "Disabled" "CRITICAL" "CRITICAL" "$NOTE"
-            fi
-            continue
-        fi
-
-        # ---- Special case: Database Backup (legacy) ----
-        if [ "$LABEL" = "Enable Database Backup" ]; then
-            local RAW="${DATA[icewarp.database_backup.enabled]:-0}"
-            if [ "$RAW" = "1" ]; then
-                _layout_row "$LABEL" "Enabled" "PASS" "PASS" "$NOTE"
-            else
-                _layout_row "$LABEL" "Disabled" "CRITICAL" "CRITICAL" "$NOTE"
-            fi
-            continue
-        fi
-
-        # ---- Special case: Maximum Threads ----
-        if [ "$LABEL" = "Maximum Number of Simultaneous Threads" ]; then
-            local RAW="${DATA[smtp.incoming_queue_threads]:-}"
-            local BKIND="INFO"
-            local BTEXT="INFO"
-            local MSG=""
-            if [ -z "$RAW" ]; then
-                BKIND="CRITICAL"; BTEXT="CRITICAL"; MSG="Setting not found"
-            elif [ "$RAW" = "10" ]; then
-                BKIND="PASS"; BTEXT="PASS"; MSG="Expected: 10 (OK)"
-            else
-                BKIND="WARN"; BTEXT="WARN"; MSG="Expected: 10 (current: $RAW)"
-            fi
-            _layout_row "$LABEL" "$RAW" "$BKIND" "$BTEXT" "$MSG"
-            continue
-        fi
-
-        # ---- Special case: Directory Cache ----
-        if [ "$LABEL" = "Set Directory Cache Schedule" ]; then
-            local RAW="${DATA[directory_cache.scheduled]:-}"
-            local BKIND="INFO"
-            local BTEXT="INFO"
-            local MSG=""
-            if [ "$RAW" = "1" ] || [ "$RAW" = "true" ]; then
-                BKIND="PASS"; BTEXT="PASS"; MSG="Schedule is configured"
-            else
-                BKIND="CRITICAL"; BTEXT="CRITICAL"; MSG="Schedule is NOT configured"
-            fi
-            _layout_row "$LABEL" "$RAW" "$BKIND" "$BTEXT" "$MSG"
-            continue
-        fi
-
-        # ---- Watchdog items (main + individual) ----
-        if [ "$LABEL" = "Enable System Watchdog" ]; then
-            local CTRL="${DATA[watchdog.control]:-0}"
-            if [ "$CTRL" = "1" ]; then
-                _layout_row "$LABEL" "Enabled" "PASS" "PASS" "$NOTE"
-            else
-                _layout_row "$LABEL" "Disabled" "CRITICAL" "CRITICAL" "$NOTE"
-            fi
-            continue
-        fi
-
-        if [ "$LABEL" = "Watchdog - SMTP" ]; then
-            local VAL="${DATA[watchdog.smtp]:-0}"
-            if [ "$VAL" = "1" ]; then
-                _layout_row "$LABEL" "Enabled" "PASS" "PASS" "$NOTE"
-            else
-                _layout_row "$LABEL" "Disabled" "CRITICAL" "CRITICAL" "$NOTE"
-            fi
-            continue
-        fi
-
-        if [ "$LABEL" = "Watchdog - POP3/IMAP" ]; then
-            local VAL="${DATA[watchdog.pop3]:-0}"
-            if [ "$VAL" = "1" ]; then
-                _layout_row "$LABEL" "Enabled" "PASS" "PASS" "$NOTE"
-            else
-                _layout_row "$LABEL" "Disabled" "CRITICAL" "CRITICAL" "$NOTE"
-            fi
-            continue
-        fi
-
-        if [ "$LABEL" = "Watchdog - IM/VoIP" ]; then
-            local VAL="${DATA[watchdog.im]:-0}"
-            if [ "$VAL" = "1" ]; then
-                _layout_row "$LABEL" "Enabled" "PASS" "PASS" "$NOTE"
-            else
-                _layout_row "$LABEL" "Disabled" "CRITICAL" "CRITICAL" "$NOTE"
-            fi
-            continue
-        fi
-
-        if [ "$LABEL" = "Watchdog - GroupWare" ]; then
-            local VAL="${DATA[watchdog.gw]:-0}"
-            if [ "$VAL" = "1" ]; then
-                _layout_row "$LABEL" "Enabled" "PASS" "PASS" "$NOTE"
-            else
-                _layout_row "$LABEL" "Disabled" "CRITICAL" "CRITICAL" "$NOTE"
-            fi
-            continue
-        fi
-
-        if [ "$LABEL" = "Watchdog Interval" ]; then
-            local INTERVAL="${DATA[watchdog.interval_minutes]:-0}"
-            local BKIND="INFO"
-            local BTEXT="INFO"
-            local MSG=""
-            if [ "$INTERVAL" -eq 0 ]; then
-                BKIND="PASS"; BTEXT="PASS"; MSG="Every minute (0) - optimal"
-            elif [ "$INTERVAL" -ge 1 ] && [ "$INTERVAL" -le 60 ]; then
-                BKIND="PASS"; BTEXT="PASS"; MSG="${INTERVAL} minutes (optimal)"
-            elif [ "$INTERVAL" -gt 60 ] && [ "$INTERVAL" -le 1440 ]; then
-                BKIND="WARN"; BTEXT="WARN"; MSG="${INTERVAL} minutes (>1h - consider reducing)"
-            else
-                BKIND="CRITICAL"; BTEXT="CRITICAL"; MSG="${INTERVAL} minutes (invalid)"
-            fi
-            _layout_row "$LABEL" "$INTERVAL" "$BKIND" "$BTEXT" "$MSG"
-            continue
-        fi
-
         # ---- NEW: Special case for Integrate Archive with IMAP Folder (show value) ----
         if [ "$LABEL" = "Integrate Archive with IMAP Folder" ]; then
             local RAW="${DATA[archive.integrate_with_imap]:-0}"
@@ -847,146 +533,11 @@ _render_checklist() {
         # IMPORTANT: Intrusion Prevention validation
         # MUST be checked BEFORE general KIND=V handling
         # ============================================================
-        if [ "$KIND" = "V" ] && [[ "$KEYS" == security.intrusion.*.value* || "$KEYS" == "security.intrusion.block_duration_minutes" ]]; then
-            local RAW="${DATA[$KEYS]:-}"
-            local VALIDATION
-            VALIDATION="$(_validate_intrusion_value "$KEYS" "$RAW" "$LABEL")"
-            local BKIND="${VALIDATION%%|*}"
-            local BTEXT="$(echo "$VALIDATION" | cut -d'|' -f2)"
-            local NOTE_VALID="$(echo "$VALIDATION" | cut -d'|' -f3-)"
-            local VALUE="$RAW"
-            local FINAL_NOTE="$NOTE"
-            [ -n "$NOTE_VALID" ] && FINAL_NOTE="${FINAL_NOTE}${FINAL_NOTE:+ | }${NOTE_VALID}"
-            _layout_row "$LABEL" "$VALUE" "$BKIND" "$BTEXT" "$FINAL_NOTE"
-            continue
-        fi
-
         # ============================================================
         # APP OS / Infrastructure items (KIND=V with specific LABELs)
         # ============================================================
         if [ "$KIND" = "V" ]; then
             case "$LABEL" in
-                "Disk (Total GB / Used %)")
-                    local TOTAL_GB="${DATA[storage.root_fs.total_gb]:-0}"
-                    local USED_PERCENT="${DATA[storage.root_fs.used_percent]:-0}"
-                    # Ensure defaults work even if key exists but is empty string
-                    [ -z "$TOTAL_GB" ] && TOTAL_GB=0
-                    [ -z "$USED_PERCENT" ] && USED_PERCENT=0
-                    # NOTE FORMAT (STRICT): Total(GB)=X / Used %=Y
-                    local VALUE="Total(GB)=${TOTAL_GB} / Used %=${USED_PERCENT}"
-                    local BKIND="PASS"
-                    local BTEXT="PASS"
-                    local MSG=""
-                    if _is_num "$USED_PERCENT"; then
-                        if [ "$USED_PERCENT" -ge 95 ]; then
-                            BKIND="CRITICAL"; BTEXT="CRITICAL"
-                            MSG="Disk usage ${USED_PERCENT}% (CRITICAL - above 95%)"
-                        elif [ "$USED_PERCENT" -ge 80 ]; then
-                            BKIND="WARN"; BTEXT="WARN"
-                            MSG="Disk usage ${USED_PERCENT}% (WARN - above 80%)"
-                        else
-                            BKIND="PASS"; BTEXT="PASS"
-                            MSG="Disk usage ${USED_PERCENT}% (OK)"
-                        fi
-                    else
-                        MSG="Unable to calculate disk usage"
-                    fi
-                    _layout_row "$LABEL" "$VALUE" "$BKIND" "$BTEXT" "$MSG"
-                    continue
-                    ;;
-                "CPU Usage")
-                    local LOAD15="${DATA[os.cpu.load15]:-0}"
-                    local CORES="${DATA[os.cpu.count]:-1}"
-                    local CPU_PERCENT=0
-                    local VALUE="$LOAD15"
-                    local BKIND="PASS"
-                    local BTEXT="PASS"
-                    local MSG=""
-                    if _is_num "$LOAD15" && _is_num "$CORES" && [ "$CORES" -gt 0 ]; then
-                        CPU_PERCENT=$(awk -v l="$LOAD15" -v c="$CORES" 'BEGIN{printf "%.2f", (l/c)*100}')
-                        local CRIT_LIMIT=$(awk 'BEGIN{print 95}')
-                        local WARN_LIMIT=$(awk 'BEGIN{print 50}')
-                        if awk -v cpu="$CPU_PERCENT" -v lim="$CRIT_LIMIT" 'BEGIN{exit !(cpu > lim)}'; then
-                            BKIND="CRITICAL"; BTEXT="CRITICAL"; MSG="CPU load is ${CPU_PERCENT}% (CRITICAL - above 95%)"
-                        elif awk -v cpu="$CPU_PERCENT" -v lim="$WARN_LIMIT" 'BEGIN{exit !(cpu > lim)}'; then
-                            BKIND="WARN"; BTEXT="WARN"; MSG="CPU load is ${CPU_PERCENT}% (WARN - above 50%)"
-                        else
-                            BKIND="PASS"; BTEXT="PASS"; MSG="CPU load is ${CPU_PERCENT}% (OK)"
-                        fi
-                    else
-                        MSG="Unable to calculate CPU load percentage"
-                    fi
-                    _layout_row "$LABEL" "$VALUE" "$BKIND" "$BTEXT" "$MSG"
-                    continue
-                    ;;
-                "RAM (Total KB / Available KB)")
-                    local TOTAL_KB="${DATA[os.memory.total_kb]}"
-                    local AVAIL_KB="${DATA[os.memory.available_kb]}"
-                    # Robust extraction: if key unset/empty, default to 0
-                    [ -z "$TOTAL_KB" ] && TOTAL_KB=0
-                    [ -z "$AVAIL_KB" ] && AVAIL_KB=0
-                    # NOTE FORMAT (STRICT): Total(KB)=X / Available KB=Y
-                    local VALUE="Total(KB)=${TOTAL_KB} / Available KB=${AVAIL_KB}"
-                    local BKIND="PASS"
-                    local BTEXT="PASS"
-                    local MSG=""
-                    if _is_num "$TOTAL_KB" && _is_num "$AVAIL_KB" && [ "$TOTAL_KB" -gt 0 ]; then
-                        local USED_PERCENT=$(awk -v t="$TOTAL_KB" -v a="$AVAIL_KB" 'BEGIN{printf "%.2f", ((t-a)/t)*100}')
-                        local CRIT_LIMIT=$(awk 'BEGIN{print 90}')
-                        local WARN_LIMIT=$(awk 'BEGIN{print 40}')
-                        if awk -v used="$USED_PERCENT" -v lim="$CRIT_LIMIT" 'BEGIN{exit !(used > lim)}'; then
-                            BKIND="CRITICAL"; BTEXT="CRITICAL"
-                            MSG="RAM usage ${USED_PERCENT}% (CRITICAL - above 90%)"
-                        elif awk -v used="$USED_PERCENT" -v lim="$WARN_LIMIT" 'BEGIN{exit !(used > lim)}'; then
-                            BKIND="WARN"; BTEXT="WARN"
-                            MSG="RAM usage ${USED_PERCENT}% (WARN - above 40%)"
-                        else
-                            BKIND="PASS"; BTEXT="PASS"
-                            MSG="RAM usage ${USED_PERCENT}% (OK)"
-                        fi
-                    else
-                        MSG="Unable to calculate RAM usage"
-                    fi
-                    _layout_row "$LABEL" "$VALUE" "$BKIND" "$BTEXT" "$MSG"
-                    continue
-                    ;;
-                "APP OS Last Update")
-                    local LAST_UPDATE="${DATA[os.last_update_date]:-}"
-                    local VALUE="${LAST_UPDATE:-unknown}"
-                    local BKIND="INFO"
-                    local BTEXT="INFO"
-                    local MSG=""
-                    if [ -n "$LAST_UPDATE" ] && [ "$LAST_UPDATE" != "N/A" ] && [ "$LAST_UPDATE" != "null" ]; then
-                        local DAYS
-                        DAYS="$(_days_ago "$LAST_UPDATE")"
-                        if [ -z "$DAYS" ]; then
-                            BKIND="WARN"; BTEXT="WARN"; MSG="OS last update date could not be parsed"
-                        elif [ "$DAYS" -le 7 ]; then
-                            BKIND="PASS"; BTEXT="PASS"; MSG="OS updated recently (${DAYS} days ago)"
-                        elif [ "$DAYS" -le 30 ]; then
-                            BKIND="WARN"; BTEXT="WARN"; MSG="OS update is ${DAYS} days old (consider updating)"
-                        else
-                            BKIND="CRITICAL"; BTEXT="CRITICAL"; MSG="OS is outdated (${DAYS} days since last update)"
-                        fi
-                    else
-                        MSG="OS last update date not available"
-                    fi
-                    _layout_row "$LABEL" "$VALUE" "$BKIND" "$BTEXT" "$MSG"
-                    continue
-                    ;;
-                "Swap Usage (7 days)")
-                    local STATUS="${DATA[system.swap.status]:-INFO}"
-                    local MSG="${DATA[system.swap.message]:-}"
-                    local BKIND="INFO"
-                    local BTEXT="INFO"
-                    case "$STATUS" in
-                        PASS) BKIND="PASS"; BTEXT="PASS" ;;
-                        CRITICAL) BKIND="CRITICAL"; BTEXT="CRITICAL" ;;
-                        *) BKIND="INFO"; BTEXT="INFO" ;;
-                    esac
-                    _layout_row "$LABEL" "${DATA[system.swap.used_percent]:-0}%" "$BKIND" "$BTEXT" "$MSG"
-                    continue
-                    ;;
                 "Database Scope")
                     local SCOPE="${DATA[database.scope]:-unknown}"
                     local VALUE="${SCOPE}"
@@ -1114,7 +665,7 @@ _render_checklist() {
                     local RESULT="${HEALTH[$K]:-skip}"
                     [ -n "${HEALTH_MSG[$K]:-}" ] && MSGS+=("${HEALTH_MSG[$K]}")
                     case "$RESULT" in
-                        fail) WORST="fail" ;;
+                        fail|critical) WORST="fail" ;;
                         warn) [ "$WORST" != "fail" ] && WORST="warn" ;;
                     esac
                 done

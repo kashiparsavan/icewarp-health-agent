@@ -90,10 +90,10 @@ Protocol and Access Hardening~Watchdog - IM/VoIP~B~watchdog.im~IM/VoIP service w
 Protocol and Access Hardening~Watchdog - GroupWare~B~watchdog.gw~GroupWare service watchdog
 Protocol and Access Hardening~Watchdog Interval~V~watchdog.interval_minutes~Watchdog check interval
 APP OS / Infrastructure~APP OS Version~V~general.os.pretty~OS version
-APP OS / Infrastructure~Disk (Total GB / Used %)~V~storage.root_fs.total_gb~Disk usage (>=80% WARN, >=95% CRITICAL)
-APP OS / Infrastructure~CPU Usage~V~os.cpu.load15~CPU load 15-min (>50% WARN, >95% CRITICAL)
-APP OS / Infrastructure~RAM (Total KB / Available KB)~V~os.memory.total_kb~RAM usage (>40% WARN, >90% CRITICAL)
-APP OS / Infrastructure~APP OS Last Update~V~os.last_update_date~OS update age (<7d PASS, 7-30d WARN, >30d CRITICAL)
+APP OS / Infrastructure~Disk (Total GB / Used %)~V~storage.root_fs.total_gb~Disk free space vs System Monitor threshold
+APP OS / Infrastructure~CPU Usage~V~os.cpu.load15~CPU load vs System Monitor threshold
+APP OS / Infrastructure~RAM (Total KB / Available KB)~V~os.memory.total_kb~RAM usage vs threshold
+APP OS / Infrastructure~APP OS Last Update~V~os.last_update_date~OS update age
 APP OS / Infrastructure~Repository Access~B~os.repository_access~Package repo access
 APP OS / Infrastructure~Time Sync (OS-level NTP)~B~os.time_sync.synced~NTP sync
 APP OS / Infrastructure~Swap Usage (7 days)~V~system.swap.status~Swap usage in last 7 days
