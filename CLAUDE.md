@@ -450,6 +450,6 @@ After committing, replace the `pending` commit hash in the activity log.
 
 ---
 
-**Last Updated:** 2026-11-01  
-**Agent Version:** 0.7.1  
+**Last Updated:** 2026-11-02  
+**Agent Version:** 0.7.2  
 **Checklist Version:** 1.14

@@ -5,6 +5,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [Unreleased]
+
+### Fixed
+
+- Technical report (`lib/pdf.sh`): a stray ellipsis character in
+  `_pdf_text_trunc` (`${TXT:0:$((MAXC…-1))}`) made the truncation arithmetic
+  invalid, so `build_pdf` aborted with
+  `syntax error: invalid arithmetic operator (error token is "…-1")` and
+  `output/report.pdf` was never written. Restored to `${TXT:0:$((MAXCHARS-1))}`.
+
 ## [0.7.2] - 2026-11-02
 
 ### Added

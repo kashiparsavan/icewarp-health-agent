@@ -64,7 +64,7 @@ _pdf_text() {
 _pdf_text_trunc() {
     local MAXCHARS="$7"
     local TXT="$3"
-    [ "${#TXT}" -gt "$MAXCHARS" ] && TXT="${TXT:0:$((MAXC…-1))}."
+    [ "${#TXT}" -gt "$MAXCHARS" ] && TXT="${TXT:0:$((MAXCHARS-1))}."
     _pdf_text "$1" "$2" "$TXT" "$4" "$5" "$6"
 }
 
