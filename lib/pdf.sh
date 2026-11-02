@@ -143,7 +143,12 @@ _layout_row() {
     # KB=<n>" and "Total(GB)=<n> / Used %=<n>" are never cut off. The badge
     # still clears: 46 chars at 9pt ~ 207u from x=276 ends at 483, badge at 496.
     local ROW_H=16
-    [ -n "$NOTE" ] && ROW_H=42
+    # Compromise note-row height: tall enough for the two wrapped note lines and
+    # their descenders, short enough that the ~100 checklist rows do not blow the
+    # page count out. 20 is the floor; a two-line note's descender reaches
+    # ROW_TOP-37 against a rect bottom of ROW_TOP-36, so raise to 24 if descents
+    # reappear.
+    [ -n "$NOTE" ] && ROW_H=20
     _layout_ensure "$ROW_H"
     local BG="$PDF_C_WHITE"
     [ $(( _layout_row_index % 2 )) -eq 1 ] && BG="$PDF_C_GRAY_LIGHT"
@@ -865,6 +870,10 @@ build_pdf() {
         local -a APP_KEYS=()
         while IFS= read -r APP_KEY; do
             [ "$(_appendix_category "$APP_KEY")" = "$APP_CAT" ] || continue
+            # health.<id>.message is a duplicate of the note already shown in the
+            # Health Summary section; keep .result (and the pillar roll-ups, which
+            # are also .result) and drop the messages to halve the appendix.
+            [[ "$APP_KEY" == health.*.message ]] && continue
             APP_KEYS+=("$APP_KEY")
         done < <(printf '%s\n' "${!DATA[@]}" | sort)
         [ "${#APP_KEYS[@]}" -eq 0 ] && continue
