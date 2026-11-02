@@ -6,7 +6,7 @@
 
 ### Key Characteristics
 - **Platform:** Linux (RHEL/Rocky/AlmaLinux, Debian/Ubuntu)
-- **Version:** 0.7.2
+- **Version:** 0.7.3
 - **Runtime:** Bash 4+, GNU coreutils only — no package manager, database, or web server
 - **Schema:** 411-key flat dotted namespace in `output/health.json`
 - **Outputs:**
@@ -260,7 +260,7 @@ graphify cluster-only . --no-label
 ```
 icewarp-health-agent/
 ├── agent.sh                    # Entry point
-├── VERSION                     # Agent version (0.7.2)
+├── VERSION                     # Agent version (0.7.3)
 ├── CLAUDE.md                   # This file
 ├── README.md                   # User documentation
 ├── CHANGELOG.md                # Version history
@@ -386,7 +386,7 @@ bash -n agent.sh lib/*.sh collectors/**/*.sh        # Syntax check
 
 ### config/agent.conf
 ```
-AGENT_VERSION=0.7.2
+AGENT_VERSION=0.7.3
 CHECKLIST_VERSION=1.14
 MONITOR_URL=<webhook_url>
 SEND_DATA=0|1
@@ -451,5 +451,5 @@ After committing, replace the `pending` commit hash in the activity log.
 ---
 
 **Last Updated:** 2026-11-02  
-**Agent Version:** 0.7.2  
+**Agent Version:** 0.7.3  
 **Checklist Version:** 1.14

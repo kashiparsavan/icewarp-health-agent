@@ -5,7 +5,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
-## [Unreleased]
+## [0.7.3] - 2026-11-02
+
+### Changed
+
+- Release housekeeping for the fixes landed on the `step3/health-registry-rollup`
+  branch: `VERSION`, `config/agent.conf` (`AGENT_VERSION=0.7.3`), `README.md`,
+  `CLAUDE.md` and the changelog/version footer all moved to 0.7.3.
 
 ### Fixed
 
