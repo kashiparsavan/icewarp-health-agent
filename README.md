@@ -11,7 +11,7 @@ anything from the Linux `lib/` directory.
 
 | Platform | Entry point | Version | Status |
 |---|---|---|---|
-| Linux | `./agent.sh` | 0.7.1 | Production |
+| Linux | `./agent.sh` | 0.7.2 | Production |
 | Windows | `windows/agent.ps1` | 0.1.0 | Scaffold |
 
 ## Output Files

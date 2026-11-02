@@ -17,7 +17,9 @@
 #   smtp.starttls.via        hostname | loopback | none
 #   smtp.starttls.protocol   TLSv1.3 ...        smtp.starttls.attempts  N
 #   smtp.starttls.error      reason of the last failure (empty when via=hostname)
-#   smtp.starttls.target     host:port actually probed first
+#   smtp.starttls.target     host actually probed first (no port, so the health
+#                            message never repeats "via host:port")
+#   smtp.starttls.trust      "not verified" - the probe never validates the chain
 
 # _starttls_probe <connect host> <port> <sni> <timeout>
 # sets _ST_OK (0/1), _ST_PROTO, _ST_ERR
@@ -51,11 +53,20 @@ _starttls_probe() {
 collector_run() {
 
     local HOST PORT TMO ATTEMPTS=0 VIA="none" PROTO="" ERR=""
-    HOST="$(resolve_mail_hostname)"
+    # Probe the real mail host: MAIL_HOSTNAME, else the primary domain's MX
+    # target. The first mail domain is NOT used - it may not be the host that
+    # actually answers SMTP.
+    HOST="$(resolve_mail_mx)"
+    [ -z "$HOST" ] && HOST="$(resolve_mail_hostname)"
     [ -z "$HOST" ] && HOST="localhost"
     PORT="${STARTTLS_PORT:-25}"
     TMO="${STARTTLS_TIMEOUT:-15}"
     [[ "$TMO" =~ ^[0-9]+$ ]] || TMO=15
+    # Wall-clock budget for the whole probe (hostname + retry + loopback).
+    # Each openssl run is already capped by TMO; this bounds the total.
+    local STARTTLS_BUDGET="${STARTTLS_BUDGET:-45}"
+    [[ "$STARTTLS_BUDGET" =~ ^[0-9]+$ ]] || STARTTLS_BUDGET=45
+    local DEADLINE=$(( $(date +%s) + STARTTLS_BUDGET ))
 
     # 1) public hostname, one retry (transient slowness)
     ATTEMPTS=$((ATTEMPTS+1))
@@ -64,7 +75,7 @@ collector_run() {
     else
         ERR="$_ST_ERR"
         # a server that does not offer STARTTLS is deterministic: do not retry
-        if [ "$ERR" != "STARTTLS not offered by the server" ]; then
+        if [ "$ERR" != "STARTTLS not offered by the server" ] && [ "$(date +%s)" -lt "$DEADLINE" ]; then
             ATTEMPTS=$((ATTEMPTS+1))
             if _starttls_probe "$HOST" "$PORT" "$HOST" "$TMO"; then
                 VIA="hostname"; PROTO="$_ST_PROTO"; ERR=""
@@ -72,13 +83,15 @@ collector_run() {
                 ERR="$_ST_ERR"
             fi
         fi
-        if [ "$VIA" = "none" ] && [ "$ERR" != "STARTTLS not offered by the server" ]; then
+        if [ "$VIA" = "none" ] && [ "$ERR" != "STARTTLS not offered by the server" ] && [ "$(date +%s)" -lt "$DEADLINE" ]; then
             # 2) loopback: service itself vs the public path to it
             if [ "$HOST" != "localhost" ]; then
                 ATTEMPTS=$((ATTEMPTS+1))
                 if _starttls_probe "127.0.0.1" "$PORT" "$HOST" "$TMO"; then
                     VIA="loopback"; PROTO="$_ST_PROTO"
-                    ERR="${ERR} via ${HOST}:${PORT}; works on 127.0.0.1"
+                    # "via host:port" appears once, in the health message; the
+                    # collector error text says what works locally, not where.
+                    ERR="${ERR}; works on 127.0.0.1"
                 fi
             fi
         fi
@@ -93,6 +106,9 @@ collector_run() {
     collector_set "smtp.starttls.protocol" "$PROTO"
     collector_set "smtp.starttls.attempts" "$ATTEMPTS"
     collector_set "smtp.starttls.error" "$ERR"
-    collector_set "smtp.starttls.target" "${HOST}:${PORT}"
+    collector_set "smtp.starttls.target" "$HOST"
+    # The probe never validates the certificate chain - it only negotiates a
+    # session - so trust is explicitly "not verified" rather than implied.
+    collector_set "smtp.starttls.trust" "not verified"
 
 }

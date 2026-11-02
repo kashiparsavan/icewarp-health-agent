@@ -184,7 +184,7 @@ _mr_paragraph() {
     LEAD="${LEAD%%.*}"
     local -a WORDS=()
     read -ra WORDS <<< "$TEXT"
-    local LINE="" CAND="" COUNT=0 W
+    local LINE="" CAND="" COUNT=0 W TRAIL
     for W in "${WORDS[@]}"; do
         if [ -z "$LINE" ]; then
             CAND="$W"
@@ -193,16 +193,26 @@ _mr_paragraph() {
         fi
         if [ "${#CAND}" -le "$MAXC" ]; then
             LINE="$CAND"
-        else
-            _mr_text "$X" "$Y" "$LINE" "$FONT" "$SIZE" "$COLOR"
-            Y=$((Y - LEAD))
-            COUNT=$((COUNT + 1))
-            if [ "$MAXLINES" -gt 0 ] && [ "$COUNT" -ge "$MAXLINES" ]; then
-                _MR_LAST_Y=$Y
-                return
-            fi
-            LINE="$W"
+            continue
         fi
+        # CAND does not fit: emit the accumulated line.
+        if [ -z "$LINE" ]; then
+            # A single over-long word: truncate it and never emit an empty line.
+            _mr_text "$X" "$Y" "${W:0:$((MAXC-3))}..." "$FONT" "$SIZE" "$COLOR"
+            Y=$((Y - LEAD)); COUNT=$((COUNT + 1)); LINE=""
+            [ "$MAXLINES" -gt 0 ] && [ "$COUNT" -ge "$MAXLINES" ] && { _MR_LAST_Y=$Y; return; }
+            continue
+        fi
+        TRAIL=""
+        if [ "$MAXLINES" -gt 0 ] && [ "$COUNT" -ge "$((MAXLINES-1))" ]; then
+            TRAIL="..."
+        fi
+        _mr_text "$X" "$Y" "${LINE}${TRAIL}" "$FONT" "$SIZE" "$COLOR"
+        Y=$((Y - LEAD)); COUNT=$((COUNT + 1))
+        if [ "$MAXLINES" -gt 0 ] && [ "$COUNT" -ge "$MAXLINES" ]; then
+            _MR_LAST_Y=$Y; return
+        fi
+        LINE="$W"
     done
     if [ -n "$LINE" ]; then
         _mr_text "$X" "$Y" "$LINE" "$FONT" "$SIZE" "$COLOR"
@@ -840,6 +850,10 @@ _mr_cover_letter() {
     local OVERALL="${_MR_OVERALL:-pass}"
     local SCORE="${_MR_SCORE:-0}"
     local AREAS="${#_MR_SECTION_ORDER[@]}"
+    # Cover text is rendered at a large point size and can overrun the page if
+    # a customer name or domain is unusually long: truncate, never overlap.
+    [ "${#COMPANY}" -gt 46 ] && COMPANY="${COMPANY:0:43}..."
+    [ "${#DOMAIN}" -gt 86 ] && DOMAIN="${DOMAIN:0:83}..."
 
     _MR_FOOTER=0
     _MR_BG="$MR_C_INK"
@@ -1183,12 +1197,13 @@ _mr_executive_overview() {
     local TOTAL_ALL=$((_MR_PASS + _MR_WARN + _MR_CRIT + _MR_INFO + _MR_NA))
     _mr_round_rect "$BAR_X" "$BAR_Y" "$BAR_W" "$BAR_H" 4 "0.890 0.910 0.940"
     if [ "$TOTAL_ALL" -gt 0 ]; then
-        local PW WW CW IW NW PX="$BAR_X"
+        local PW WW CW IW PX="$BAR_X"
         PW=$(awk -v w="$BAR_W" -v n="$_MR_PASS" -v t="$TOTAL_ALL" 'BEGIN{printf "%d", (w*n/t)}')
         WW=$(awk -v w="$BAR_W" -v n="$_MR_WARN" -v t="$TOTAL_ALL" 'BEGIN{printf "%d", (w*n/t)}')
         CW=$(awk -v w="$BAR_W" -v n="$_MR_CRIT" -v t="$TOTAL_ALL" 'BEGIN{printf "%d", (w*n/t)}')
         IW=$(awk -v w="$BAR_W" -v n="$_MR_INFO" -v t="$TOTAL_ALL" 'BEGIN{printf "%d", (w*n/t)}')
-        NW=$((BAR_W - PW - WW - CW - IW))
+        # The rounding remainder is NOT painted as INFO/N-A colour: it is left
+        # as the muted track background so the bar always sums to the truth.
         [ "$PW" -gt 0 ] && _mr_rect "$PX" "$BAR_Y" "$PW" "$BAR_H" "$MR_C_GREEN"
         PX=$((PX + PW))
         [ "$WW" -gt 0 ] && _mr_rect "$PX" "$BAR_Y" "$WW" "$BAR_H" "$MR_C_AMBER"
@@ -1197,7 +1212,6 @@ _mr_executive_overview() {
         PX=$((PX + CW))
         [ "$IW" -gt 0 ] && _mr_rect "$PX" "$BAR_Y" "$IW" "$BAR_H" "$MR_C_VIOLET"
         PX=$((PX + IW))
-        [ "$NW" -gt 0 ] && _mr_rect "$PX" "$BAR_Y" "$NW" "$BAR_H" "$MR_C_SLATE"
     fi
     _MR_Y=$((BAR_Y - 16))
 
@@ -1313,14 +1327,15 @@ _mr_render_control_areas() {
                 PW=$(awk -v w="$TRACK_W" -v n="${_MR_SEC_PASS[$SEC]:-0}" -v t="$TOTAL" 'BEGIN{printf "%d", (w*n/t)}')
                 WW=$(awk -v w="$TRACK_W" -v n="${_MR_SEC_WARN[$SEC]:-0}" -v t="$TOTAL" 'BEGIN{printf "%d", (w*n/t)}')
                 CW=$(awk -v w="$TRACK_W" -v n="${_MR_SEC_CRIT[$SEC]:-0}" -v t="$TOTAL" 'BEGIN{printf "%d", (w*n/t)}')
-                IW=$((TRACK_W - PW - WW - CW))
+                # The rounding remainder is left as the muted track background so
+                # the bar always sums to the full width; it is not painted as
+                # INFO/N-A colour, which would overstate those categories.
                 [ "$PW" -gt 0 ] && _mr_rect "$PX" "$((ROW_Y - 50))" "$PW" 4 "$MR_C_GREEN"
                 PX=$((PX + PW))
                 [ "$WW" -gt 0 ] && _mr_rect "$PX" "$((ROW_Y - 50))" "$WW" 4 "$MR_C_AMBER"
                 PX=$((PX + WW))
                 [ "$CW" -gt 0 ] && _mr_rect "$PX" "$((ROW_Y - 50))" "$CW" 4 "$MR_C_ROSE"
                 PX=$((PX + CW))
-                [ "$IW" -gt 0 ] && _mr_rect "$PX" "$((ROW_Y - 50))" "$IW" 4 "$MR_C_VIOLET"
             fi
         fi
         if [ "$COL" -eq 1 ]; then
@@ -1415,15 +1430,49 @@ build_management_pdf() {
     _MR_FOOTER=0
     _MR_Y=$MR_TOP_Y
 
+    # Reset every accumulator so a second (or re-run) build starts clean.
+    # build_management_pdf may be called more than once in a process; without
+    # this the counts, section order and issue list would double up.
+    _MR_TOTAL=0
+    _MR_PASS=0
+    _MR_WARN=0
+    _MR_CRIT=0
+    _MR_INFO=0
+    _MR_NA=0
+    _MR_SECTION_ORDER=()
+    _MR_ISSUES=()
+    _MR_SORTED_ISSUES=()
+    _MR_OVERALL="pass"
+    _MR_SCORE=0
+    _MR_SEC_SEEN=()
+    _MR_SEC_PASS=()
+    _MR_SEC_WARN=()
+    _MR_SEC_CRIT=()
+    _MR_SEC_INFO=()
+    _MR_SEC_NA=()
+
     # Evaluate first so the cover, score and priority list use final counts.
     _mr_render_checklist
 
+    # Overall posture: worst of the health summary (health.summary.overall) and
+    # the row-derived result. Skipped / INFO-only checks never inflate the score
+    # - they are excluded from the denominator, never counted as failures.
+    local HS_OVERALL="${DATA[health.summary.overall]:-}"
     local SCORED=$((_MR_PASS + _MR_WARN + _MR_CRIT))
     _MR_SCORE=0
     [ "$SCORED" -gt 0 ] && _MR_SCORE=$((_MR_PASS * 100 / SCORED))
-    if [ "$_MR_CRIT" -gt 0 ]; then
+    local ROW_WORST="pass"
+    [ "$_MR_CRIT" -gt 0 ] && ROW_WORST="fail"
+    [ "$_MR_WARN" -gt 0 ] && [ "$ROW_WORST" = "pass" ] && ROW_WORST="warn"
+    case "${HS_OVERALL:-}" in
+        fail|critical) HS_OVERALL="fail" ;;
+        warn)          : ;;
+        pass)          HS_OVERALL="pass" ;;
+        *)             HS_OVERALL="$ROW_WORST" ;;
+    esac
+    if [ "$HS_OVERALL" = "fail" ] || [ "$ROW_WORST" = "fail" ]; then
         _MR_OVERALL="fail"
-    elif [ "$_MR_WARN" -gt 0 ]; then
+    elif [ "$HS_OVERALL" = "warn" ] || [ "$ROW_WORST" = "warn" ]; then
         _MR_OVERALL="warn"
     else
         _MR_OVERALL="pass"

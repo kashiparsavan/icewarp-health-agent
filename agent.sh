@@ -201,7 +201,12 @@ if declare -F build_json_v2 >/dev/null; then
 fi
 
 echo "[INFO] Sending JSON to monitoring server (if enabled)..."
-send_json
+if send_json; then
+    echo "[INFO] Transport: health.json posted successfully"
+else
+    TRANSPORT_RC=$?
+    echo "[WARN] Transport: send_json failed (exit ${TRANSPORT_RC}) - see logs for details"
+fi
 
 echo "[INFO] Building PDF..."
 build_pdf

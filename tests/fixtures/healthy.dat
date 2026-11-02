@@ -1,0 +1,74 @@
+# A healthy server: every check that has data passes, nothing is skipped.
+agent.version 0.7.1
+agent.hostname mail01.example.com
+agent.time 2026-11-01 09:00:00
+general.company Example Corp
+general.technician Jane Doe
+domain.primary.name example.com
+icewarp.version 14.3.0.13
+os.memory.total_kb 16384000
+os.memory.available_kb 12288000
+os.cpu.load1 1.20
+os.cpu.count 4
+monitor.cpu.threshold_percent 80
+monitor.memory.alert_below_kb 1048576
+monitor.disk.alert_below_mb 5120
+monitor.enabled 1
+monitor.alert_email customers-stat@parsavan.com
+icewarp.backup.auto_enabled 1
+icewarp.backup.last_time 2026-10-31 02:00:00
+backup.db.accounts.enabled 1
+backup.db.as.enabled 1
+backup.db.gw.enabled 1
+backup.db.cache.enabled 0
+watchdog.control 1
+watchdog.smtp 1
+watchdog.pop3 1
+watchdog.im 1
+watchdog.gw 1
+watchdog.interval_minutes 5
+os.last_update_date 2026-10-28
+directory_cache.schedule_raw 0 2 * * 0
+database.type mysql
+security.password_policy.active 1
+security.password_policy.min_length 12
+security.login.policy_enabled 1
+security.login.max_failed_attempts 5
+security.login.2fa_bypass_enabled 0
+security.digest_md5.enabled false
+smtp.use_tls_ssl 1
+icewarp.ssl.days_left 120
+icewarp.ssl.expiration 2027-02-28
+icewarp.antispam.last_update 2026-10-31
+icewarp.antivirus.last_update 2026-10-31
+security.intrusion.block_connections_per_minute.value 50
+security.intrusion.block_unknown_user_count.value 5
+security.intrusion.block_relay_denied_count.value 5
+security.intrusion.block_rset_count.value 5
+security.intrusion.block_spam_score.value 9.00
+security.intrusion.block_failed_logins.value 5
+security.intrusion.block_duration_minutes 360
+security.rbl_self_check.checked true
+security.rbl_self_check.listed false
+security.dnsbl.zones bl.spamcop.net,zen.spamhaus.org
+security.dnsbl.zones.count 2
+security.dnsbl.zones.source config
+security.cyren_folder.status OK
+service.imap.active 1
+service.pop3.active 1
+icewarp.session_timeout_minutes 30
+dns.spf.found true
+dns.dkim.found true
+dns.dmarc.found true
+dns.ptr.exists true
+dns.lookup_test.ok true
+smtp.starttls_live_test true
+smtp.starttls.via hostname
+smtp.starttls.target mail01.example.com
+smtp.starttls.attempts 1
+smtp.starttls.trust not verified
+storage.root_fs.total_gb 100
+storage.root_fs.used_percent 42
+storage.root_fs.device /dev/sda1
+storage.root_fs.mount /
+storage.root.free_gb 60

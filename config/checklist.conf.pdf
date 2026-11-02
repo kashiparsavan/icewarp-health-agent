@@ -111,3 +111,7 @@ Database~MySQL Time Sync~L~os.time_sync.synced~MySQL NTP sync
 MySQL Server (Remote DB)~MySQL Host~V~mysql.host~MySQL host
 MySQL Server (Remote DB)~MySQL Reachable (port 3306)~B~mysql.reachable~MySQL port reachable
 MySQL Server (Remote DB)~OS-level Stats~V~mysql.os_note~MySQL OS stats
+Health Evaluation~Login Blocking~H~login_blocking~Lockout threshold and failed-login blocking
+Health Evaluation~Anti-Spam Definitions~H~threat.antispam~Definition freshness
+Health Evaluation~Anti-Virus Definitions~H~threat.antivirus~Definition freshness
+Health Evaluation~DNSBL Zones~H~dnsbl_zones~Recommended RBL zones configured

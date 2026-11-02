@@ -189,6 +189,14 @@ declare -Ag HEALTH_LABEL_MAP=(
     ["Enable System Monitor (Mem/Disk/CPU)"]="monitor.enabled"
     ["Set Directory Cache Schedule"]="directory_cache"
     ["Database Type"]="database.platform"
+    ["Password Policy Min Length"]="password_policy"
+    ["Use TLS/SSL (Secured Delivery)"]="tls_delivery"
+    ["Enable SSL/TLS"]="tls_delivery"
+    ["RBL Valli Check (is our IP blacklisted)"]="threat.rbl"
+    ["Login Blocking"]="login_blocking"
+    ["Anti-Spam Definitions"]="threat.antispam"
+    ["Anti-Virus Definitions"]="threat.antivirus"
+    ["DNSBL Zones"]="dnsbl_zones"
     ["Disk (Total GB / Used %)"]="disk.overall"
     ["CPU Usage"]="cpu"
     ["RAM (Total KB / Available KB)"]="memory"
@@ -321,12 +329,15 @@ evaluate_health() {
 
     # --- Disk ---
     # Display value format (STRICT): Total(GB)=<total> / Used %=<used>
+    # The mount list is iterated in sorted key order and every comparison is
+    # numeric-safe, so the de-duplication and the worst-result are
+    # deterministic: two runs on the same DATA[] produce the same result.
     local DISK_FLOOR_MB="${DATA[monitor.disk.alert_below_mb]:-}"
     local MOUNT_KEY MOUNT_NAME FREE_GB FREE_MB TOTAL_GB TOTAL_MB DEVICE MOUNT DEDUPE_KEY WORST="pass"
     local DISK_EXPECT="" MIN_FREE_MB=""
     _is_num "$DISK_FLOOR_MB" && DISK_EXPECT=">=${DISK_FLOOR_MB} MB free"
     declare -A _SEEN_DISK=()
-    for MOUNT_KEY in "${!DATA[@]}"; do
+    while IFS= read -r MOUNT_KEY; do
         [[ "$MOUNT_KEY" == storage.*.free_gb ]] || continue
         MOUNT_NAME="${MOUNT_KEY#storage.}"
         MOUNT_NAME="${MOUNT_NAME%.free_gb}"
@@ -343,6 +354,7 @@ evaluate_health() {
         FREE_GB="${DATA[$MOUNT_KEY]}"
         _is_num "$FREE_GB" || continue
         FREE_MB="$(awk -v g="$FREE_GB" 'BEGIN{printf "%d", g*1024}')"
+        _is_num "$FREE_MB" || continue
         if [ -z "$MIN_FREE_MB" ] || [ "$FREE_MB" -lt "$MIN_FREE_MB" ]; then MIN_FREE_MB="$FREE_MB"; fi
         TOTAL_GB="${DATA[storage.${MOUNT_NAME}.total_gb]:-}"
         USED_PERCENT="${DATA[storage.${MOUNT_NAME}.used_percent]:-}"
@@ -356,7 +368,7 @@ evaluate_health() {
 
         if _is_num "$TOTAL_GB"; then
             TOTAL_MB="$(awk -v g="$TOTAL_GB" 'BEGIN{printf "%d", g*1024}')"
-            if [ "$DISK_FLOOR_MB" -gt "$TOTAL_MB" ]; then
+            if _is_num "$TOTAL_MB" && [ "$DISK_FLOOR_MB" -gt "$TOTAL_MB" ]; then
                 _health_set "disk.${MOUNT_NAME}" "warn" "Disk alert threshold (${DISK_FLOOR_MB} MB) is larger than the disk" "$DISK_EXPECT" "$FREE_MB" "$DISK_NOTE"
                 [ "$WORST" = "pass" ] && WORST="warn"
                 continue
@@ -369,7 +381,7 @@ evaluate_health() {
         else
             _health_set "disk.${MOUNT_NAME}" "pass" "Free space ${FREE_MB} MB (threshold ${DISK_FLOOR_MB} MB)" "$DISK_EXPECT" "$FREE_MB" "$DISK_NOTE"
         fi
-    done
+    done < <(printf '%s\n' "${!DATA[@]}" | grep -E '^storage\.[^.]*\.free_gb$' | sort)
     local ROOT_NOTE="Total(GB)=${DATA[storage.root_fs.total_gb]:-0} / Used %=${DATA[storage.root_fs.used_percent]:-0}"
     if [ "$WORST" = "fail" ]; then
         _health_set "disk.overall" "fail" "One or more monitored disks are below the configured free-space threshold" "$DISK_EXPECT" "$MIN_FREE_MB" "$ROOT_NOTE"
@@ -472,8 +484,12 @@ evaluate_health() {
     fi
 
     # --- Two-factor authentication (bypass enabled = WARN) ---
+    # Missing data is SKIP, never an invented "pass": there is no evidence the
+    # setting was read, so claiming 2FA is active would be a false green.
     local TWOFA_RAW="${DATA[security.login.2fa_bypass_enabled]:-}"
-    if [[ "$TWOFA_RAW" == "1" || "$TWOFA_RAW" == "true" || "$TWOFA_RAW" == "TRUE" || "$TWOFA_RAW" == "True" ]]; then
+    if [ -z "$TWOFA_RAW" ]; then
+        _health_set "access.2fa" "skip" "2FA bypass status could not be determined" "2FA active" "" "not checked"
+    elif [[ "$TWOFA_RAW" == "1" || "$TWOFA_RAW" == "true" || "$TWOFA_RAW" == "TRUE" || "$TWOFA_RAW" == "True" ]]; then
         _health_set "access.2fa" "warn" "2FA bypass is enabled" "2FA active" "bypass enabled" "Bypass enabled (2FA off)"
     else
         _health_set "access.2fa" "pass" "2FA is active (no bypass)" "2FA active" "2FA active" "2FA active"
@@ -537,8 +553,12 @@ evaluate_health() {
     _health_bool "watchdog.gw" "${DATA[watchdog.gw]:-0}" "critical" \
         "GroupWare Watchdog is ENABLED" "GroupWare Watchdog is DISABLED" "Enabled" "Disabled"
 
-    # Watchdog interval: 0..60 pass, <=1440 warn, else critical
-    if ! _is_num "$INTERVAL"; then
+    # Watchdog interval: 0..60 pass, <=1440 warn, else critical.
+    # Missing data is WARN, never an invented "Every minute (0)" pass: a value of
+    # 0 is only meaningful when it was actually read.
+    if [ -z "${DATA[watchdog.interval_minutes]+x}" ]; then
+        _health_set "watchdog.interval" "warn" "Watchdog interval could not be determined" "<=60" "" "not found"
+    elif ! _is_num "$INTERVAL"; then
         _health_set "watchdog.interval" "warn" "Interval is not a number: ${INTERVAL}" "<=60" "" "$INTERVAL"
     elif [ "$INTERVAL" -eq 0 ]; then
         _health_set "watchdog.interval" "pass" "Interval: Every minute (0) - optimal" "<=60" "0" "0"
@@ -551,14 +571,21 @@ evaluate_health() {
     fi
 
     # --- System Monitor ---
-    local MONITOR_ENABLED="${DATA[monitor.enabled]:-0}"
-    if [ "$MONITOR_ENABLED" = "1" ]; then
-        local CPU_TH="${DATA[monitor.cpu.threshold_percent]:-50}"
-        local MEM_TH="${DATA[monitor.memory.alert_below_kb]:-1048576}"
-        local DISK_TH="${DATA[monitor.disk.alert_below_mb]:-5120}"
-        _health_set "monitor.enabled" "pass" "System Monitor ENABLED (CPU>${CPU_TH}% | RAM<${MEM_TH}KB | DISK<${DISK_TH}MB)" "Enabled" "Enabled" "Enabled"
+    # Missing data is WARN (never an invented default threshold): there is no
+    # evidence the setting was read, so it cannot be reported as enabled.
+    local MONITOR_ENABLED="${DATA[monitor.enabled]:-}"
+    if [ -z "${DATA[monitor.enabled]+x}" ]; then
+        _health_set "monitor.enabled" "warn" "System Monitor status could not be determined" "Enabled" "" "not found"
+    elif [ "$MONITOR_ENABLED" = "1" ] || [ "$MONITOR_ENABLED" = "true" ]; then
+        local MON_PARTS=()
+        [ -n "${DATA[monitor.cpu.threshold_percent]:-}" ] && MON_PARTS+=("CPU>${DATA[monitor.cpu.threshold_percent]}%")
+        [ -n "${DATA[monitor.memory.alert_below_kb]:-}" ] && MON_PARTS+=("RAM<${DATA[monitor.memory.alert_below_kb]}KB")
+        [ -n "${DATA[monitor.disk.alert_below_mb]:-}" ] && MON_PARTS+=("DISK<${DATA[monitor.disk.alert_below_mb]}MB")
+        local MON_DETAIL
+        MON_DETAIL="$(IFS=' | '; printf '%s' "${MON_PARTS[*]}")"
+        _health_set "monitor.enabled" "pass" "System Monitor ENABLED${MON_DETAIL:+ ($MON_DETAIL)}" "Enabled" "$MONITOR_ENABLED" "Enabled"
     else
-        _health_set "monitor.enabled" "critical" "System Monitor is DISABLED" "Enabled" "Disabled" "Disabled"
+        _health_set "monitor.enabled" "critical" "System Monitor is DISABLED" "Enabled" "$MONITOR_ENABLED" "Disabled"
     fi
 
     # --- OS Last Update: <=7 days pass, <=30 warn, else critical ---
@@ -641,13 +668,16 @@ evaluate_health() {
     unset -f _mail_check
     # STARTTLS evidence from the collector (hostname / loopback / none + reason)
     local ST_VIA="${DATA[smtp.starttls.via]:-}" ST_ERR="${DATA[smtp.starttls.error]:-}"
-    local ST_TARGET="${DATA[smtp.starttls.target]:-port 25}" ST_TRIES="${DATA[smtp.starttls.attempts]:-1}"
+    local ST_TARGET="${DATA[smtp.starttls.target]:-mail host}" ST_TRIES="${DATA[smtp.starttls.attempts]:-1}"
+    local ST_TRUST="${DATA[smtp.starttls.trust]:-}"
     if [ "$ST_VIA" = "loopback" ]; then
-        _health_set "mail.starttls" "warn" "STARTTLS works locally but not through ${ST_TARGET}: ${ST_ERR}" "true" "loopback only" "Loopback only"
+        _health_set "mail.starttls" "warn" "STARTTLS works locally but not on ${ST_TARGET}: ${ST_ERR}; certificate trust not verified" "true" "loopback only" "Loopback only"
     elif [ "$ST_VIA" = "none" ] && [ -n "$ST_ERR" ]; then
-        _health_set "mail.starttls" "fail" "STARTTLS failed on ${ST_TARGET}: ${ST_ERR} (${ST_TRIES} attempts)" "true" "false" "Failed"
+        _health_set "mail.starttls" "fail" "STARTTLS failed on ${ST_TARGET}: ${ST_ERR} (${ST_TRIES} attempts); certificate trust not verified" "true" "false" "Failed"
     elif [ "$ST_VIA" = "hostname" ] && [ "$ST_TRIES" -gt 1 ] 2>/dev/null; then
-        _health_set "mail.starttls" "pass" "STARTTLS is OK (succeeded on attempt ${ST_TRIES}; the server answers slowly)" "true" "true" "OK"
+        _health_set "mail.starttls" "pass" "STARTTLS is OK on ${ST_TARGET} (succeeded on attempt ${ST_TRIES}; the server answers slowly); certificate trust not verified" "true" "true" "OK"
+    elif [ "$ST_VIA" = "hostname" ]; then
+        _health_set "mail.starttls" "pass" "STARTTLS is OK on ${ST_TARGET}; certificate trust not verified" "true" "true" "OK"
     fi
     if [ "${HEALTH[mail.ptr]:-}" = "pass" ] && [ "${DATA[dns.ptr.matches_hostname]:-}" = "false" ]; then
         _health_set "mail.ptr" "warn" "PTR does not match the mail hostname" "matches hostname" "mismatch" "Mismatch"
@@ -720,16 +750,28 @@ evaluate_health() {
     done
 
     # --- Summary (nine executive pillars) ---
+    # total_checks is the number of registry checks that were actually
+    # evaluated (not skipped); areas_assessed is the number of pillars with a
+    # real result. The PDF cover reads both, so "X checks run across Y areas"
+    # is truthful instead of counting pillars as checks.
     local TOTAL=0 FAIL=0 WARN=0 K RES
+    local AREAS=0
     for K in "${HEALTH_PILLARS[@]}"; do
         RES="${HEALTH[$K]:-skip}"
         [ "$RES" = "skip" ] && continue
-        TOTAL=$((TOTAL+1))
+        AREAS=$((AREAS+1))
         if [ "$RES" = "fail" ] || [ "$RES" = "critical" ]; then FAIL=$((FAIL+1)); fi
         [ "$RES" = "warn" ] && WARN=$((WARN+1))
     done
+    for L in "${HEALTH_REGISTRY_LINES[@]}"; do
+        ID="${L%%|*}"
+        RES="${HEALTH[$ID]:-skip}"
+        [ "$RES" = "skip" ] && continue
+        TOTAL=$((TOTAL+1))
+    done
 
     collector_set "health.summary.total_checks" "$TOTAL"
+    collector_set "health.summary.areas_assessed" "$AREAS"
     collector_set "health.summary.failed" "$FAIL"
     collector_set "health.summary.warnings" "$WARN"
 

@@ -64,8 +64,29 @@ _pdf_text() {
 _pdf_text_trunc() {
     local MAXCHARS="$7"
     local TXT="$3"
-    [ "${#TXT}" -gt "$MAXCHARS" ] && TXT="${TXT:0:$((MAXCHARS-1))}."
+    [ "${#TXT}" -gt "$MAXCHARS" ] && TXT="${TXT:0:$((MAXC…-1))}."
     _pdf_text "$1" "$2" "$TXT" "$4" "$5" "$6"
+}
+
+# _pdf_note_lines <text> <maxchars> -> prints up to 2 wrapped lines (newline
+# separated). A single over-long word is truncated, never emitted as a blank
+# first line, so a long note never pushes its baseline off the row.
+_pdf_note_lines() {
+    local TEXT="$1" MAXC="$2" LINE="" CAND="" W
+    local -a LINES=()
+    for W in $TEXT; do
+        if [ -z "$LINE" ]; then CAND="$W"; else CAND="${LINE} ${W}"; fi
+        if [ "${#CAND}" -le "$MAXC" ]; then
+            LINE="$CAND"
+        else
+            if [ -z "$LINE" ]; then LINE="${W:0:$((MAXC-3))}..."; fi
+            LINES+=("$LINE"); LINE="$W"
+            [ "${#LINES[@]}" -ge 2 ] && break
+        fi
+    done
+    [ -n "$LINE" ] && LINES+=("$LINE")
+    [ "${#LINES[@]}" -eq 0 ] && LINES+=("")
+    printf '%s\n' "${LINES[@]}"
 }
 
 # =============================================================================
@@ -118,8 +139,11 @@ _layout_row_index=0
 
 _layout_row() {
     local LABEL="$1" VALUE="$2" BKIND="$3" BTEXT="$4" NOTE="${5:-}"
+    # Value column widened from 34 to 46 chars so "Total(KB)=<n> / Available
+    # KB=<n>" and "Total(GB)=<n> / Used %=<n>" are never cut off. The badge
+    # still clears: 46 chars at 9pt ~ 207u from x=276 ends at 483, badge at 496.
     local ROW_H=16
-    [ -n "$NOTE" ] && ROW_H=27
+    [ -n "$NOTE" ] && ROW_H=42
     _layout_ensure "$ROW_H"
     local BG="$PDF_C_WHITE"
     [ $(( _layout_row_index % 2 )) -eq 1 ] && BG="$PDF_C_GRAY_LIGHT"
@@ -128,7 +152,7 @@ _layout_row() {
     _pdf_rect "$PDF_MARGIN" "$((ROW_TOP - ROW_H + 4))" "$PDF_CONTENT_W" "$ROW_H" "$BG"
     local TEXT_Y=$((ROW_TOP - 11))
     _pdf_text_trunc "$((PDF_MARGIN + 8))" "$TEXT_Y" "$LABEL" "F1" 9 "$PDF_C_TEXT" 46
-    _pdf_text_trunc "$((PDF_MARGIN + 240))" "$TEXT_Y" "$VALUE" "F1" 9 "$PDF_C_VALUE" 34
+    _pdf_text_trunc "$((PDF_MARGIN + 240))" "$TEXT_Y" "$VALUE" "F1" 9 "$PDF_C_VALUE" 46
     local BADGE_W=76 BADGE_H=13
     local BADGE_X=$((PDF_CONTENT_RIGHT - BADGE_W - 4))
     local BADGE_Y=$((ROW_TOP - 12))
@@ -136,7 +160,16 @@ _layout_row() {
     BCOLOR="$(_badge_color "$BKIND")"
     _pdf_rect "$BADGE_X" "$BADGE_Y" "$BADGE_W" "$BADGE_H" "$BCOLOR"
     _pdf_text_trunc "$((BADGE_X + 6))" "$((BADGE_Y + 4))" "$BTEXT" "F2" 7.5 "$PDF_C_WHITE" 14
-    [ -n "$NOTE" ] && _pdf_text_trunc "$((PDF_MARGIN + 8))" "$((TEXT_Y - 11))" "note: ${NOTE}" "F3" 7.5 "$PDF_C_GRAY" 100
+    if [ -n "$NOTE" ]; then
+        # Notes are no longer clipped at 100 chars: they wrap to two lines, and
+        # the second line sits high enough that its descender clears the row.
+        local -a NLINES=()
+        local N1 N2
+        N1="$(_pdf_note_lines "note: ${NOTE}" 100 | head -n1)"
+        N2="$(_pdf_note_lines "note: ${NOTE}" 100 | sed -n '2p')"
+        _pdf_text "$((PDF_MARGIN + 8))" "$((TEXT_Y - 11))" "$N1" "F3" 7.5 "$PDF_C_GRAY"
+        [ -n "$N2" ] && _pdf_text "$((PDF_MARGIN + 8))" "$((TEXT_Y - 24))" "$N2" "F3" 7.5 "$PDF_C_GRAY"
+    fi
     _PDF_Y=$((_PDF_Y - ROW_H))
 }
 
@@ -270,7 +303,7 @@ _layout_cover() {
     esac
     _pdf_rect "$PDF_MARGIN" "$((_PDF_Y - 44))" "$PDF_CONTENT_W" 44 "$BANNER_COLOR"
     _pdf_text "$((PDF_MARGIN + 14))" "$((_PDF_Y - 20))" "OVERALL: $(echo "$OVERALL" | tr '[:lower:]' '[:upper:]')" "F2" 15 "$PDF_C_WHITE"
-    _pdf_text "$((PDF_MARGIN + 14))" "$((_PDF_Y - 36))" "${CHECKED} checks run  -  ${FAILED} failed  -  ${WARNINGS} warnings" "F1" 9.5 "$PDF_C_WHITE"
+    _pdf_text "$((PDF_MARGIN + 14))" "$((_PDF_Y - 36))" "${CHECKED} checks run across ${AREAS} areas  -  ${FAILED} failed  -  ${WARNINGS} warnings" "F1" 9 "$PDF_C_WHITE"
     _PDF_Y=$((_PDF_Y - 60))
 
     _pdf_text "$PDF_MARGIN" "$_PDF_Y" "Legend:" "F2" 8.5 "$PDF_C_TEXT"

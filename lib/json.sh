@@ -39,12 +39,20 @@ _json_is_bool() {
 }
 
 # Keys whose value is an identifier, not a quantity: "9.10" must not become 9.1.
+# Company/technician/domain names and license identifiers are free text too and
+# must never be coerced to a number even when they happen to look numeric.
 _json_force_string() {
     case "$1" in
         *hide_server_version) return 1 ;;   # a 0/1 flag, not an identifier
     esac
     case "$1" in
+        *.name|*.company|*.technician|*.title|*.label) return 0 ;;
+    esac
+    case "$1" in
         *version|*version_raw|*.ip|*.checked_ip|*.domain|*.hostname|*.host) return 0 ;;
+    esac
+    case "$1" in
+        *license*|*license_id|*license_key|*serial|*seats_note|*status_code|*status|*type|*scope) return 0 ;;
     esac
     return 1
 }
@@ -70,6 +78,11 @@ _json_value() {
 
 build_json() {
 
+    # Atomic write: render to a temp file in the same directory and rename it
+    # over the target. A monitoring client that reads health.json while the
+    # agent is mid-write would otherwise see a truncated document.
+    local TMP_FILE="${OUTPUT_JSON}.tmp.$$"
+
     {
 
         echo "{"
@@ -94,6 +107,8 @@ build_json() {
         echo
         echo "}"
 
-    } > "$OUTPUT_JSON"
+    } > "$TMP_FILE"
+
+    mv -f "$TMP_FILE" "$OUTPUT_JSON"
 
 }

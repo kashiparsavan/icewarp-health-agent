@@ -106,6 +106,21 @@ resolve_mail_domain() {
     printf '%s' "$DOMAIN"
 }
 
+# Mail host for STARTTLS probing: MAIL_HOSTNAME, else the primary domain's MX
+# target, never just the first mail domain (which may not be the host that
+# actually answers SMTP).
+resolve_mail_mx() {
+    local DOMAIN MX
+    DOMAIN="$(resolve_mail_domain)"
+    [ -z "$DOMAIN" ] && printf '%s' "$DOMAIN" && return 0
+    MX="$(dig_resilient MX "$DOMAIN" 2>/dev/null | awk '{print $NF}' | grep -E '^[0-9]+$' | head -n1)"
+    if [ -n "$MX" ]; then
+        printf '%s' "$MX"
+    else
+        printf '%s' "$DOMAIN"
+    fi
+}
+
 _RESOLVED_PUBLIC_IP=""
 resolve_public_ip() {
     if [ -n "${MAIL_PUBLIC_IP:-}" ]; then

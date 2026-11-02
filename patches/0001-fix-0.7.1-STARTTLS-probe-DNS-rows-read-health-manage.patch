@@ -1,0 +1,503 @@
+From 1cb02ac899479225e96c2e4a865d520e38426e06 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 1 Nov 2026 14:24:51 +0330
+Subject: [PATCH 1/2] fix: 0.7.1 - STARTTLS probe, DNS rows read health,
+ management report signals, swap false positive
+
+Findings from the first live run of 0.7.0 (see CHANGELOG 0.7.1).
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Tzwci29MG6BvbX5PEouJTr
+---
+ CHANGELOG.md               | 26 +++++++++++
+ CLAUDE.md                  |  9 ++--
+ README.md                  |  4 +-
+ VERSION                    |  2 +-
+ collectors/dns/starttls.sh | 91 +++++++++++++++++++++++++++++++++++---
+ collectors/system/swap.sh  |  5 ++-
+ config/agent.conf          |  3 +-
+ docs/update-log.md         |  1 +
+ lib/health.sh              | 44 ++++++++++++++----
+ lib/json.sh                |  3 ++
+ lib/management_report.sh   | 28 ++++++------
+ lib/pdf.sh                 | 11 -----
+ 12 files changed, 179 insertions(+), 48 deletions(-)
+
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index fb548aa..8a6e4d1 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -5,6 +5,32 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
+ 
+ ## [Unreleased]
+ 
++## [0.7.1] - 2026-11-01
++
++Findings from the first live run of 0.7.0.
++
++### Fixed
++
++- STARTTLS false-fail (`collectors/dns/starttls.sh`): the probe ran once, with the shared 5 s
++  `TOOL_TIMEOUT`, and counted success only when openssl printed "Verify return code". A server that
++  answers slowly (IceWarp does reverse-DNS/DNSBL lookups per connection) was killed before the TLS
++  summary and reported as "STARTTLS failed". Reproduced with a fake SMTP server whose banner is
++  delayed 7 s: old collector `false`, new collector `true`. Now: `STARTTLS_TIMEOUT` (15 s), one retry,
++  loopback fallback, strict success criterion (a real TLS session) and recorded evidence
++  (`smtp.starttls.via|protocol|attempts|error|target`). `mail.starttls` is `warn` when only loopback
++  works and `fail` with the reason when nothing works.
++- PDF rows `Check PTR/SPF/DKIM/DMARC/TLS and Start TLS/Test DNS Lookup` and `Set customers-stat`
++  now read their health check, so they agree with the Mail Flow / Access pillars (the PTR row said
++  PASS while the pillar said WARN). New detail-only check `access.stats_mailbox`.
++- Management report: Key Signals show the four worst pillars (the fixed set hid the CRITICAL
++  Database pillar); Priority/Recommended actions list Action before Review.
++- Swap collector: the 7-day journal search matched dracut/initramfs file listings
++  (`swap.target`, `swapoff`) and reported "swap usage detected" on every kernel update. It now only
++  matches real swap events; swap in use is still CRITICAL by policy.
++- `disk.overall` carries the lowest free MB as `actual`; certificate display is
++  `40 days left (2026-12-11)` instead of a truncated openssl date; messages read "Antispam
++  definitions: 5 days old"; `smtp.hide_server_version` is a number, not the string `"1"`.
++
+ ## [0.7.0] - 2026-11-01
+ 
+ ### Added
+diff --git a/CLAUDE.md b/CLAUDE.md
+index bd78931..99fa18d 100644
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -6,7 +6,7 @@
+ 
+ ### Key Characteristics
+ - **Platform:** Linux (RHEL/Rocky/AlmaLinux, Debian/Ubuntu)
+-- **Version:** 0.7.0
++- **Version:** 0.7.1
+ - **Runtime:** Bash 4+, GNU coreutils only — no package manager, database, or web server
+ - **Schema:** 411-key flat dotted namespace in `output/health.json`
+ - **Outputs:**
+@@ -242,7 +242,7 @@ graphify cluster-only . --no-label
+ ```
+ icewarp-health-agent/
+ ├── agent.sh                    # Entry point
+-├── VERSION                     # Agent version (0.7.0)
++├── VERSION                     # Agent version (0.7.1)
+ ├── CLAUDE.md                   # This file
+ ├── README.md                   # User documentation
+ ├── CHANGELOG.md                # Version history
+@@ -368,13 +368,14 @@ bash -n agent.sh lib/*.sh collectors/**/*.sh        # Syntax check
+ 
+ ### config/agent.conf
+ ```
+-AGENT_VERSION=0.7.0
++AGENT_VERSION=0.7.1
+ CHECKLIST_VERSION=1.14
+ MONITOR_URL=<webhook_url>
+ SEND_DATA=0|1
+ OUTPUT_JSON=output/health.json
+ OUTPUT_JSON_V2=output/health.v2.json
+ TOOL_TIMEOUT=5
++STARTTLS_TIMEOUT=15
+ AUTO_UPDATE_ENABLED=0|1
+ AUTO_UPDATE_REMOTE=origin
+ AUTO_UPDATE_BRANCH=main
+@@ -432,5 +433,5 @@ After committing, replace the `pending` commit hash in the activity log.
+ ---
+ 
+ **Last Updated:** 2026-11-01  
+-**Agent Version:** 0.7.0  
++**Agent Version:** 0.7.1  
+ **Checklist Version:** 1.14
+diff --git a/README.md b/README.md
+index d6f1d38..2004064 100644
+--- a/README.md
++++ b/README.md
+@@ -11,7 +11,7 @@ anything from the Linux `lib/` directory.
+ 
+ | Platform | Entry point | Version | Status |
+ |---|---|---|---|
+-| Linux | `./agent.sh` | 0.7.0 | Production |
++| Linux | `./agent.sh` | 0.7.1 | Production |
+ | Windows | `windows/agent.ps1` | 0.1.0 | Scaffold |
+ 
+ ## Output Files
+@@ -51,7 +51,7 @@ cd icewarp-health-agent
+ | `--auto-update` | Force an update check even if disabled in config |
+ | `--no-update` | Deprecated no-op; use `--no-auto-update` |
+ 
+-Current Linux version: **0.7.0**. Current Windows scaffold version: **0.1.0**
++Current Linux version: **0.7.1**. Current Windows scaffold version: **0.1.0**
+ (`windows/VERSION`).
+ 
+ When `--company` is omitted, the agent uses `domain.primary.name`, then
+diff --git a/VERSION b/VERSION
+index faef31a..39e898a 100644
+--- a/VERSION
++++ b/VERSION
+@@ -1 +1 @@
+-0.7.0
++0.7.1
+diff --git a/collectors/dns/starttls.sh b/collectors/dns/starttls.sh
+index 9237f4c..402c8d0 100755
+--- a/collectors/dns/starttls.sh
++++ b/collectors/dns/starttls.sh
+@@ -1,19 +1,98 @@
+ #!/bin/bash
+ 
+ # Checklist: "Check TLS & StartTLS" - live protocol-level check.
++#
++# Root cause of the intermittent false "STARTTLS failed" (0.6.0 on 2026-10-31
++# false, 0.7.0 on 2026-11-01 true, same server, same collector): the probe ran
++# once, with the shared 5 s TOOL_TIMEOUT, against the public hostname, and kept
++# no evidence. A slow connect (reverse-DNS/DNSBL lookups IceWarp does on every
++# connection, hairpin NAT to its own public IP) killed openssl before the TLS
++# summary and was reported as "STARTTLS unavailable". It also treated any
++# "Verify return code" line as success.
++#
++# Now: dedicated timeout (STARTTLS_TIMEOUT, default 15 s), one retry, loopback
++# fallback to tell "service broken" from "public path broken", strict success
++# criterion (a TLS session with a real cipher) and recorded evidence.
++#   smtp.starttls_live_test  true when STARTTLS works (hostname OR loopback)
++#   smtp.starttls.via        hostname | loopback | none
++#   smtp.starttls.protocol   TLSv1.3 ...        smtp.starttls.attempts  N
++#   smtp.starttls.error      reason of the last failure (empty when via=hostname)
++#   smtp.starttls.target     host:port actually probed first
++
++# _starttls_probe <connect host> <port> <sni> <timeout>
++# sets _ST_OK (0/1), _ST_PROTO, _ST_ERR
++_starttls_probe() {
++    local CONNECT="$1" PORT="$2" SNI="$3" TMO="$4" OUT RC
++    _ST_OK=0; _ST_PROTO=""; _ST_ERR=""
++
++    OUT="$(printf 'QUIT\r\n' | timeout "$TMO" openssl s_client -starttls smtp \
++            -connect "${CONNECT}:${PORT}" -servername "$SNI" 2>&1)"
++    RC=$?
++
++    if printf '%s' "$OUT" | grep -Eq '(^New, (TLSv|SSLv)|Protocol +: +(TLSv|SSLv))' \
++       && ! printf '%s' "$OUT" | grep -q 'Cipher is (NONE)'; then
++        _ST_OK=1
++        _ST_PROTO="$(printf '%s' "$OUT" | grep -Eo 'TLSv[0-9.]+|SSLv[0-9.]+' | head -1)"
++        return 0
++    fi
++
++    if printf '%s' "$OUT" | grep -qiE "didn't find starttls|did not find starttls"; then _ST_ERR="STARTTLS not offered by the server"
++    elif [ "$RC" -eq 124 ]; then _ST_ERR="timeout after ${TMO}s"
++    elif printf '%s' "$OUT" | grep -qiE 'connection refused|errno=111'; then _ST_ERR="connection refused"
++    elif printf '%s' "$OUT" | grep -qiE 'handshake failure|alert|wrong version|unsupported protocol'; then _ST_ERR="TLS handshake failed"
++    elif printf '%s' "$OUT" | grep -qiE 'name or service not known|temporary failure in name|could not resolve|getaddrinfo'; then _ST_ERR="hostname does not resolve"
++    elif printf '%s' "$OUT" | grep -qiE 'no route|unreachable|network is'; then _ST_ERR="network unreachable"
++    elif ! command -v openssl >/dev/null 2>&1; then _ST_ERR="openssl not installed"
++    else _ST_ERR="no TLS session established"
++    fi
++    return 1
++}
++
+ collector_run() {
+ 
+-    local HOST
++    local HOST PORT TMO ATTEMPTS=0 VIA="none" PROTO="" ERR=""
+     HOST="$(resolve_mail_hostname)"
+     [ -z "$HOST" ] && HOST="localhost"
++    PORT="${STARTTLS_PORT:-25}"
++    TMO="${STARTTLS_TIMEOUT:-15}"
++    [[ "$TMO" =~ ^[0-9]+$ ]] || TMO=15
+ 
+-    local RESULT
+-    RESULT="$(echo -e "QUIT\r\n" | timeout "$TOOL_TIMEOUT" openssl s_client -starttls smtp -connect "${HOST}:25" 2>&1)"
+-
+-    if echo "$RESULT" | grep -qi "Verify return code"; then
+-        collector_set "smtp.starttls_live_test" "true"
++    # 1) public hostname, one retry (transient slowness)
++    ATTEMPTS=$((ATTEMPTS+1))
++    if _starttls_probe "$HOST" "$PORT" "$HOST" "$TMO"; then
++        VIA="hostname"; PROTO="$_ST_PROTO"
+     else
++        ERR="$_ST_ERR"
++        # a server that does not offer STARTTLS is deterministic: do not retry
++        if [ "$ERR" != "STARTTLS not offered by the server" ]; then
++            ATTEMPTS=$((ATTEMPTS+1))
++            if _starttls_probe "$HOST" "$PORT" "$HOST" "$TMO"; then
++                VIA="hostname"; PROTO="$_ST_PROTO"; ERR=""
++            else
++                ERR="$_ST_ERR"
++            fi
++        fi
++        if [ "$VIA" = "none" ] && [ "$ERR" != "STARTTLS not offered by the server" ]; then
++            # 2) loopback: service itself vs the public path to it
++            if [ "$HOST" != "localhost" ]; then
++                ATTEMPTS=$((ATTEMPTS+1))
++                if _starttls_probe "127.0.0.1" "$PORT" "$HOST" "$TMO"; then
++                    VIA="loopback"; PROTO="$_ST_PROTO"
++                    ERR="${ERR} via ${HOST}:${PORT}; works on 127.0.0.1"
++                fi
++            fi
++        fi
++    fi
++
++    if [ "$VIA" = "none" ]; then
+         collector_set "smtp.starttls_live_test" "false"
++    else
++        collector_set "smtp.starttls_live_test" "true"
+     fi
++    collector_set "smtp.starttls.via" "$VIA"
++    collector_set "smtp.starttls.protocol" "$PROTO"
++    collector_set "smtp.starttls.attempts" "$ATTEMPTS"
++    collector_set "smtp.starttls.error" "$ERR"
++    collector_set "smtp.starttls.target" "${HOST}:${PORT}"
+ 
+ }
+diff --git a/collectors/system/swap.sh b/collectors/system/swap.sh
+index 02b11c0..7526e48 100644
+--- a/collectors/system/swap.sh
++++ b/collectors/system/swap.sh
+@@ -25,7 +25,10 @@ collector_run() {
+     fi
+ 
+     if [ -z "$SWAP_HISTORY" ] && command -v journalctl &>/dev/null; then
+-        SWAP_MESSAGES=$(journalctl --since "7 days ago" 2>/dev/null | grep -i swap | head -5)
++        # Only real swap events. Plain "grep swap" also matched dracut/initramfs file
++        # listings (swap.target, swapoff, ...) after every kernel update.
++        SWAP_MESSAGES=$(journalctl --since "7 days ago" 2>/dev/null | grep -i swap \
++            | grep -viE 'dracut|swap\.target|swapoff|swapon|\.swap\b|systemd\[1\]: (Activat|Deactivat|Dependency)' | head -5)
+     fi
+ 
+     local USED_PERCENT=0
+diff --git a/config/agent.conf b/config/agent.conf
+index deb3bb9..f538bf0 100644
+--- a/config/agent.conf
++++ b/config/agent.conf
+@@ -4,7 +4,7 @@
+ #
+ ###############################################################################
+ 
+-AGENT_VERSION="0.7.0"
++AGENT_VERSION="0.7.1"
+ 
+ # IceWarp checklist edition referenced by both PDF reports.
+ CHECKLIST_VERSION="1.14"
+@@ -24,6 +24,7 @@ OUTPUT_JSON_V2="${PROJECT_ROOT}/output/health.v2.json"
+ # fallback inside iw_get(). Keeps a hung or locked service from stalling
+ # the whole agent run.
+ TOOL_TIMEOUT=5
++STARTTLS_TIMEOUT=15
+ 
+ # Free text identifier for "Company name" in the checklist's General
+ # Information section. Not derived from IceWarp itself. Set per server.
+diff --git a/docs/update-log.md b/docs/update-log.md
+index 94fb871..14a0ce8 100644
+--- a/docs/update-log.md
++++ b/docs/update-log.md
+@@ -30,6 +30,7 @@ For every change:
+ 
+ | Date (UTC) | Commit | Type | Summary | Documentation updated |
+ |---|---|---|---|---|
++| 2026-11-01 | `pending` | Fix | 0.7.1 after the first live run: STARTTLS probe (timeout/retry/loopback/evidence), DNS rows and customers-stat read health, management report key signals + action order, swap journal false positive, disk/cert display, `hide_server_version` coercion. | `collectors/dns/starttls.sh`, `collectors/system/swap.sh`, `lib/health.sh`, `lib/json.sh`, `lib/pdf.sh`, `lib/management_report.sh`, `config/agent.conf`, `VERSION`, `README.md`, `CHANGELOG.md`, `CLAUDE.md` |
+ | 2026-11-01 | `1d5cf93` | Feature / refactor | Step 3: check registry (`id|pillar|title|flags`) drives pillar roll-ups, v2 `checks[]` and PDF/MR statuses; `expected`/`actual`/`pillar` on every check; intrusion x7, IMAP/POP3, per-service watchdog, Directory Cache, certificate, 2FA, mail DNS, threat inputs now roll up; thresholds removed from `lib/pdf.sh` and `lib/management_report.sh` (`health_row_for_label`); `rbl.dat` first for DNSBL; VERSION 0.7.0. | `lib/health.sh`, `lib/json_v2.sh`, `lib/pdf.sh`, `lib/management_report.sh`, `collectors/security/dnsbl_zones.sh`, `config/checklist.conf.pdf`, `VERSION`, `config/agent.conf`, `README.md`, `CHANGELOG.md`, `CLAUDE.md` |
+ | 2026-10-31 | `pending` | Feature / fix | Phase 1: `build_json_v2` + `docs/schema/health.v2.schema.json`; strict JSON coercion; `_health_set` expected/actual; `backup.db.cache` `info` -> `pass`; DNSBL zones read from config files; Directory Cache schedule read whole. | `lib/json_v2.sh`, `lib/json.sh`, `lib/health.sh`, `agent.sh`, `config/agent.conf`, `.gitignore`, `collectors/security/dnsbl_zones.sh`, `collectors/icewarp/directory_cache.sh`, `docs/schema/health.v2.schema.json`, `CHANGELOG.md`, `CLAUDE.md` |
+ | 2026-10-31 | `pending` | Fix / security | Phase 0 step 1: shared `norm_date`/`_days_ago`/`redact_dsn` in `lib/common.sh`; removed 3 duplicate `_days_ago`; ISO antispam/antivirus dates (+`*_raw`); DSN password redaction in 4 collectors plus a `json.sh` safety net; fixed `database.type` for `host:port` DSNs. | `lib/common.sh`, `lib/health.sh`, `lib/pdf.sh`, `lib/management_report.sh`, `lib/json.sh`, `collectors/icewarp/{antispam,antivirus,database_type,directory_cache,database_backup}.sh`, `collectors/watchdog/watchdog_percentage.sh`, `CHANGELOG.md`, `CLAUDE.md` |
+diff --git a/lib/health.sh b/lib/health.sh
+index 8dbca23..0b018b0 100755
+--- a/lib/health.sh
++++ b/lib/health.sh
+@@ -99,6 +99,7 @@ HEALTH_REGISTRY_LINES=(
+     "digest_md5|access|DIGEST-MD5 disabled|"
+     "admin_email|access|Admin email|"
+     "session_timeout|access|Session timeout|"
++    "access.stats_mailbox|access|Statistics mailbox (customers-stat)|d"
+     "access.2fa|access|Two-factor authentication|"
+     "threat.antispam|threat|Anti-Spam definitions|"
+     "threat.antivirus|threat|Anti-Virus definitions|"
+@@ -159,6 +160,13 @@ declare -Ag HEALTH_LABEL_MAP=(
+     ["Check for Certificates"]="tls.certificate"
+     ["2FA"]="access.2fa"
+     ["Set Admin Email"]="admin_email"
++    ["Set customers-stat@parsavan.com"]="access.stats_mailbox"
++    ["Check PTR"]="mail.ptr"
++    ["Check SPF"]="mail.spf"
++    ["Check DKIM"]="mail.dkim"
++    ["Check DMARC"]="mail.dmarc"
++    ["Check TLS and Start TLS"]="mail.starttls"
++    ["Test DNS Lookup"]="mail.dns_lookup"
+     ["Session Timeout"]="session_timeout"
+     ["Disable DIGEST-MD5"]="digest_md5"
+     ["Disable IMAP"]="service.imap"
+@@ -265,11 +273,11 @@ _health_age() {
+     if [ -z "$DAYS" ]; then
+         _health_set "$ID" "warn" "${LABEL} date could not be parsed: ${DATE}" "<=${PASS_MAX} days" "" "$DATE"
+     elif [ "$DAYS" -le "$PASS_MAX" ]; then
+-        _health_set "$ID" "pass" "${LABEL} is ${DAYS} days old" "<=${PASS_MAX} days" "$DAYS" "${DATE} (${DAYS} days ago)"
++        _health_set "$ID" "pass" "${LABEL}: ${DAYS} days old" "<=${PASS_MAX} days" "$DAYS" "${DATE} (${DAYS} days ago)"
+     elif [ "$DAYS" -le "$WARN_MAX" ]; then
+-        _health_set "$ID" "warn" "${LABEL} is ${DAYS} days old (expected <= ${PASS_MAX})" "<=${PASS_MAX} days" "$DAYS" "${DATE} (${DAYS} days ago)"
++        _health_set "$ID" "warn" "${LABEL}: ${DAYS} days old (expected <= ${PASS_MAX})" "<=${PASS_MAX} days" "$DAYS" "${DATE} (${DAYS} days ago)"
+     else
+-        _health_set "$ID" "$BAD" "${LABEL} is ${DAYS} days old (expected <= ${PASS_MAX})" "<=${PASS_MAX} days" "$DAYS" "${DATE} (${DAYS} days ago)"
++        _health_set "$ID" "$BAD" "${LABEL}: ${DAYS} days old (expected <= ${PASS_MAX})" "<=${PASS_MAX} days" "$DAYS" "${DATE} (${DAYS} days ago)"
+     fi
+ }
+ 
+@@ -315,7 +323,7 @@ evaluate_health() {
+     # Display value format (STRICT): Total(GB)=<total> / Used %=<used>
+     local DISK_FLOOR_MB="${DATA[monitor.disk.alert_below_mb]:-}"
+     local MOUNT_KEY MOUNT_NAME FREE_GB FREE_MB TOTAL_GB TOTAL_MB DEVICE MOUNT DEDUPE_KEY WORST="pass"
+-    local DISK_EXPECT=""
++    local DISK_EXPECT="" MIN_FREE_MB=""
+     _is_num "$DISK_FLOOR_MB" && DISK_EXPECT=">=${DISK_FLOOR_MB} MB free"
+     declare -A _SEEN_DISK=()
+     for MOUNT_KEY in "${!DATA[@]}"; do
+@@ -335,6 +343,7 @@ evaluate_health() {
+         FREE_GB="${DATA[$MOUNT_KEY]}"
+         _is_num "$FREE_GB" || continue
+         FREE_MB="$(awk -v g="$FREE_GB" 'BEGIN{printf "%d", g*1024}')"
++        if [ -z "$MIN_FREE_MB" ] || [ "$FREE_MB" -lt "$MIN_FREE_MB" ]; then MIN_FREE_MB="$FREE_MB"; fi
+         TOTAL_GB="${DATA[storage.${MOUNT_NAME}.total_gb]:-}"
+         USED_PERCENT="${DATA[storage.${MOUNT_NAME}.used_percent]:-}"
+         local DISK_NOTE="Total(GB)=${TOTAL_GB:-0} / Used %=${USED_PERCENT:-0}"
+@@ -363,11 +372,11 @@ evaluate_health() {
+     done
+     local ROOT_NOTE="Total(GB)=${DATA[storage.root_fs.total_gb]:-0} / Used %=${DATA[storage.root_fs.used_percent]:-0}"
+     if [ "$WORST" = "fail" ]; then
+-        _health_set "disk.overall" "fail" "One or more monitored disks are below the configured free-space threshold" "$DISK_EXPECT" "" "$ROOT_NOTE"
++        _health_set "disk.overall" "fail" "One or more monitored disks are below the configured free-space threshold" "$DISK_EXPECT" "$MIN_FREE_MB" "$ROOT_NOTE"
+     elif [ "$WORST" = "warn" ]; then
+-        _health_set "disk.overall" "warn" "Disk alert thresholds need review" "$DISK_EXPECT" "" "$ROOT_NOTE"
++        _health_set "disk.overall" "warn" "Disk alert thresholds need review" "$DISK_EXPECT" "$MIN_FREE_MB" "$ROOT_NOTE"
+     else
+-        _health_set "disk.overall" "pass" "All monitored disks have adequate free space" "$DISK_EXPECT" "" "$ROOT_NOTE"
++        _health_set "disk.overall" "pass" "All monitored disks have adequate free space" "$DISK_EXPECT" "$MIN_FREE_MB" "$ROOT_NOTE"
+     fi
+ 
+     # --- CPU ---
+@@ -436,7 +445,9 @@ evaluate_health() {
+     local CERT_DAYS="${DATA[icewarp.ssl.days_left]:-}"
+     local CERT_EXP="${DATA[icewarp.ssl.expiration]:-}"
+     if _is_num "$CERT_DAYS" && [ -n "$CERT_EXP" ] && [ "$CERT_EXP" != "N/A" ] && [ "$CERT_EXP" != "not returned" ]; then
+-        local CERT_DSP="expires ${CERT_EXP} (${CERT_DAYS} days left)"
++        local CERT_ISO CERT_DSP
++        CERT_ISO="$(date -d "$CERT_EXP" +%F 2>/dev/null)"   # openssl "Mon DD HH:MM:SS YYYY GMT", not an IceWarp date
++        CERT_DSP="${CERT_DAYS} days left (${CERT_ISO:-$CERT_EXP})"
+         if [ "$CERT_DAYS" -lt 0 ]; then
+             _health_set "tls.certificate" "fail" "The TLS certificate has expired" ">=90 days" "$CERT_DAYS" "$CERT_DSP"
+         elif [ "$CERT_DAYS" -lt 30 ]; then
+@@ -585,6 +596,13 @@ evaluate_health() {
+         _health_set "admin_email" "warn" "Admin email is set but invalid format: ${ADMIN_EMAIL}" "valid email address" "$ADMIN_EMAIL" "$ADMIN_EMAIL"
+     fi
+ 
++    # --- Statistics mailbox (Parsavan policy: alerts also go to customers-stat; detail only) ---
++    if [[ "$ADMIN_EMAIL" == *customers-stat* ]]; then
++        _health_set "access.stats_mailbox" "pass" "Statistics mailbox customers-stat is configured" "customers-stat@parsavan.com" "$ADMIN_EMAIL" "$ADMIN_EMAIL"
++    else
++        _health_set "access.stats_mailbox" "critical" "Expected: customers-stat@parsavan.com" "customers-stat@parsavan.com" "$ADMIN_EMAIL" "${ADMIN_EMAIL:-empty}"
++    fi
++
+     # --- Session Timeout (Strict Override: has value=PASS, missing/empty/0=WARN) ---
+     local SESSION_TIMEOUT="${DATA[icewarp.session_timeout_minutes]:-}"
+     if [ -n "$SESSION_TIMEOUT" ] && [ "$SESSION_TIMEOUT" != "null" ] && [ "$SESSION_TIMEOUT" != "N/A" ] && [ "$SESSION_TIMEOUT" != "0" ]; then
+@@ -621,6 +639,16 @@ evaluate_health() {
+     _mail_check "mail.starttls"   "STARTTLS"    "smtp.starttls_live_test" "fail"
+     _mail_check "mail.dns_lookup" "DNS lookup"  "dns.lookup_test.ok"      "fail"
+     unset -f _mail_check
++    # STARTTLS evidence from the collector (hostname / loopback / none + reason)
++    local ST_VIA="${DATA[smtp.starttls.via]:-}" ST_ERR="${DATA[smtp.starttls.error]:-}"
++    local ST_TARGET="${DATA[smtp.starttls.target]:-port 25}" ST_TRIES="${DATA[smtp.starttls.attempts]:-1}"
++    if [ "$ST_VIA" = "loopback" ]; then
++        _health_set "mail.starttls" "warn" "STARTTLS works locally but not through ${ST_TARGET}: ${ST_ERR}" "true" "loopback only" "Loopback only"
++    elif [ "$ST_VIA" = "none" ] && [ -n "$ST_ERR" ]; then
++        _health_set "mail.starttls" "fail" "STARTTLS failed on ${ST_TARGET}: ${ST_ERR} (${ST_TRIES} attempts)" "true" "false" "Failed"
++    elif [ "$ST_VIA" = "hostname" ] && [ "$ST_TRIES" -gt 1 ] 2>/dev/null; then
++        _health_set "mail.starttls" "pass" "STARTTLS is OK (succeeded on attempt ${ST_TRIES}; the server answers slowly)" "true" "true" "OK"
++    fi
+     if [ "${HEALTH[mail.ptr]:-}" = "pass" ] && [ "${DATA[dns.ptr.matches_hostname]:-}" = "false" ]; then
+         _health_set "mail.ptr" "warn" "PTR does not match the mail hostname" "matches hostname" "mismatch" "Mismatch"
+     fi
+diff --git a/lib/json.sh b/lib/json.sh
+index 8e608a8..0096bdc 100755
+--- a/lib/json.sh
++++ b/lib/json.sh
+@@ -40,6 +40,9 @@ _json_is_bool() {
+ 
+ # Keys whose value is an identifier, not a quantity: "9.10" must not become 9.1.
+ _json_force_string() {
++    case "$1" in
++        *hide_server_version) return 1 ;;   # a 0/1 flag, not an identifier
++    esac
+     case "$1" in
+         *version|*version_raw|*.ip|*.checked_ip|*.domain|*.hostname|*.host) return 0 ;;
+     esac
+diff --git a/lib/management_report.sh b/lib/management_report.sh
+index 99f7ae8..301e5d7 100755
+--- a/lib/management_report.sh
++++ b/lib/management_report.sh
+@@ -569,17 +569,6 @@ _mr_render_checklist() {
+             continue
+         fi
+ 
+-        # ---- Special case: customers-stat email ----
+-        if [ "$LABEL" = "Set customers-stat@parsavan.com" ]; then
+-            local RAW="${DATA[monitor.alert_email]:-}"
+-            if [[ "$RAW" == *"customers-stat@parsavan.com"* ]] || [[ "$RAW" == *"customers-stat"* ]]; then
+-                _mr_grid_item "$LABEL" "PASS"
+-            else
+-                _mr_grid_item "$LABEL" "CRITICAL"
+-            fi
+-            continue
+-        fi
+-
+         # ---- Special case: Hide Server Version ----
+         if [ "$LABEL" = "Hide Server Version" ]; then
+             local RAW="${DATA[smtp.hide_server_version]:-}"
+@@ -1251,10 +1240,21 @@ _mr_executive_overview() {
+     fi
+ 
+     local SIGNAL_Y=$((_MR_Y - 62))
+-    local -a SIG_LABELS=("BACKUP & RECOVERY" "TRANSPORT SECURITY" "MAIL FLOW & DNS" "OS & PATCHING")
+-    local -a SIG_KEYS=("backup" "tls" "mail_flow" "os_update")
++    # Key signals: the four worst pillars (fail, then warn, then the rest), in pillar order
++    local -a SIG_KEYS=() SIG_LABELS=()
++    local -A _PIL_LABEL=([backup]="BACKUP & RECOVERY" [mail_flow]="MAIL FLOW & DNS" [tls]="TRANSPORT SECURITY" [access]="ACCESS & AUTHENTICATION" [threat]="THREAT PROTECTION" [resources]="SERVER RESOURCES" [os_update]="OS & PATCHING" [monitoring]="MONITORING & WATCHDOG" [database]="DATABASE PLATFORM")
++    local _PASS _PK _PR
++    for _PASS in fail warn pass skip; do
++        for _PK in "${HEALTH_PILLARS[@]}"; do
++            _PR="${HEALTH[$_PK]:-skip}"; [ "$_PR" = "critical" ] && _PR="fail"
++            [ "$_PR" = "$_PASS" ] || continue
++            [ "${#SIG_KEYS[@]}" -ge 4 ] && continue
++            SIG_KEYS+=("$_PK"); SIG_LABELS+=("${_PIL_LABEL[$_PK]}")
++        done
++    done
+     local K
+     for K in 0 1 2 3; do
++        [ -n "${SIG_KEYS[$K]:-}" ] || continue
+         local SK="${SIG_KEYS[$K]}"
+         local SRES="${HEALTH[$SK]:-skip}"
+         [ "$SRES" = "critical" ] && SRES="fail"
+@@ -1434,7 +1434,7 @@ build_management_pdf() {
+         local ISSUE_LINE
+         while IFS= read -r ISSUE_LINE; do
+             [ -n "$ISSUE_LINE" ] && _MR_SORTED_ISSUES+=("$ISSUE_LINE")
+-        done < <(printf '%s\n' "${_MR_ISSUES[@]}" | sort -t'|' -k1,1n -k2,2n)
++        done < <(printf '%s\n' "${_MR_ISSUES[@]}" | sort -t'|' -k2,2n -k1,1n)   # severity first (Action before Review), then section priority
+     fi
+ 
+     _mr_cover_letter
+diff --git a/lib/pdf.sh b/lib/pdf.sh
+index eec69ef..8b460c9 100755
+--- a/lib/pdf.sh
++++ b/lib/pdf.sh
+@@ -404,17 +404,6 @@ _render_checklist() {
+             continue
+         fi
+ 
+-        # ---- Special case: customers-stat email ----
+-        if [ "$LABEL" = "Set customers-stat@parsavan.com" ]; then
+-            local RAW="${DATA[monitor.alert_email]:-}"
+-            if [[ "$RAW" == *"customers-stat@parsavan.com"* ]] || [[ "$RAW" == *"customers-stat"* ]]; then
+-                _layout_row "$LABEL" "$RAW" "PASS" "PASS" "$NOTE"
+-            else
+-                _layout_row "$LABEL" "$RAW" "CRITICAL" "CRITICAL" "Expected: customers-stat@parsavan.com"
+-            fi
+-            continue
+-        fi
+-
+         # ---- Special case: Hide Server Version ----
+         if [ "$LABEL" = "Hide Server Version" ]; then
+             local RAW="${DATA[smtp.hide_server_version]:-}"
+-- 
+2.43.0
+

@@ -5,6 +5,71 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-11-02
+
+### Added
+
+- `tests/` directory with a Bash test harness (`tests/run_tests.sh`, `tests/lib.sh`)
+  and four cases: `test_norm_date.sh`, `test_json_value.sh`,
+  `test_health_rollup.sh` and a fake-SMTP `test_starttls.sh`. Fixtures live in
+  `tests/fixtures/`; `tests/render_pdfs.sh` renders both PDFs from a sample
+  `DATA[]` and extracts their text for inspection.
+- `## 2. CODE STYLE` and `## 3. TDD & Testing Conventions` sections to
+  `CLAUDE.md` (write the failing test first, then the minimal fix).
+
+### Fixed
+
+- **Health label map (lib/health.sh).** `HEALTH_LABEL_MAP` now maps
+  `Password Policy Min Length` -> `password_policy`, `Use TLS/SSL (Secured
+  Delivery)` and `Enable SSL/TLS` -> `tls_delivery`, and `RBL Valli Check (is
+  our IP blacklisted)` -> `threat.rbl`. Four rolled-up checks had no checklist
+  row, so a pillar could read red with no matching action card: `config/checklist.conf.pdf`
+  now carries a `Health Evaluation` section with rows for `login_blocking`,
+  `threat.antispam`, `threat.antivirus` and `dnsbl_zones`, so every rolled-up
+  check appears in both PDFs.
+- **Management report counters (lib/management_report.sh).** `build_management_pdf`
+  now resets `_MR_TOTAL/_MR_PASS/_MR_WARN/_MR_CRIT/_MR_INFO/_MR_NA/_MR_SECTION_ORDER/
+  _MR_ISSUES/MR_SEC*` at its start, so a second build no longer doubles the
+  counts. The overall posture and the cover score agree with
+  `health.summary.overall` (worst of the health summary and the row-derived
+  result); skipped and INFO-only checks are excluded from the denominator and
+  never inflate the score.
+- **Text fitting (lib/pdf.sh, lib/management_report.sh).** The technical report's
+  Value column is truncated at 46 chars instead of 34, so
+  `Total(KB)=<n> / Available KB=<n>` and `Total(GB)=<n> / Used %=<n>` are never
+  cut. Health-summary notes are no longer clipped at 100 chars: they wrap to
+  two lines, the note baseline is raised and the row height is 28 pt so
+  descenders are not hidden. `_mr_paragraph` appends `...` when `MAXLINES`
+  truncates and never emits an empty first line for an over-long word; cover
+  company/domain text is truncated; the rounding remainder of both status bars
+  is left as the muted track background instead of being painted as the
+  INFO/N-A colour.
+- **STARTTLS (collectors/dns/starttls.sh).** The probe now targets the real mail
+  host: `MAIL_HOSTNAME`, else the primary domain's MX target, never just the
+  first mail domain. The loopback message is cleaned so `lib/health.sh` no
+  longer duplicates `via host:port`; `smtp.starttls.target` carries the host
+  only. `smtp.starttls.trust` is recorded as `not verified` (the probe never
+  validates the chain), and the health message states it. A wall-clock budget
+  (`STARTTLS_BUDGET`, default 45 s) caps the total probe time.
+- **Health semantics (lib/health.sh).** `2FA`, `watchdog.interval` and
+  `monitor.enabled` now report `skip`/`warn` (never an invented `pass` or a
+  default threshold) when their data key is missing. Disk de-duplication is
+  deterministic: mounts are iterated in sorted key order and every comparison
+  is numeric-safe. `health.summary.total_checks` counts evaluated registry
+  checks (not pillars); `health.summary.areas_assessed` is the pillar count, so
+  the cover text "X checks run across Y areas" is truthful.
+- **JSON (lib/json.sh).** `*.name`, `*.company`, `*.technician` and license
+  identifier keys are forced to strings (a numeric company name can no longer
+  become a number). `health.json` is now written atomically via temp file +
+  `mv`, so a monitoring client reading mid-write never sees a truncated
+  document.
+- **Transport (lib/transport.sh).** `MONITOR_URL` and the payload file are
+  validated before posting; curl now takes `--connect-timeout`/`--max-time`,
+  `--retry`/`--retry-delay` and an optional `MONITOR_AUTH_HEADER`; the curl
+  exit status is returned and logged by `agent.sh`. Documented decision: the
+  posted payload is `health.json` (v1, the flat namespace) - `health.v2.json`
+  is a separate artifact and is not posted.
+
 ## [0.7.1] - 2026-11-01
 
 Findings from the first live run of 0.7.0.

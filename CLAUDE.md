@@ -6,7 +6,7 @@
 
 ### Key Characteristics
 - **Platform:** Linux (RHEL/Rocky/AlmaLinux, Debian/Ubuntu)
-- **Version:** 0.7.1
+- **Version:** 0.7.2
 - **Runtime:** Bash 4+, GNU coreutils only — no package manager, database, or web server
 - **Schema:** 411-key flat dotted namespace in `output/health.json`
 - **Outputs:**
@@ -21,7 +21,25 @@
 
 ---
 
-## 2. Architecture Flow
+## 2. CODE STYLE
+
+- Always write failing tests BEFORE implementation.
+- Use Bash/Pester for tests (depending on platform).
+- Test names must describe behavior (e.g., "should_return_warn_when_disk_full").
+- For any new feature or bug fix, write the test first, show it fails, then implement the minimal code to pass it.
+
+---
+
+## 3. TDD & Testing Conventions
+
+- Always write failing tests BEFORE implementation.
+- Use Bash/Pester for tests (depending on platform).
+- Test names must describe behavior (e.g., "should_return_warn_when_disk_full").
+- For any new feature or bug fix, write the test first, show it fails, then implement the minimal code to pass it.
+
+---
+
+## 4. Architecture Flow
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -55,9 +73,9 @@
 
 ---
 
-## 3. Strict Rules (ABSOLUTE — NEVER BREAK)
+## 5. Strict Rules (ABSOLUTE — NEVER BREAK)
 
-### 3.1 Line Endings
+### 5.1 Line Endings
 - **ALL `.sh` files MUST have LF (Unix) line endings.** Never save with CRLF.
 
 ### 3.2 PDF Renderer Sync
@@ -242,7 +260,7 @@ graphify cluster-only . --no-label
 ```
 icewarp-health-agent/
 ├── agent.sh                    # Entry point
-├── VERSION                     # Agent version (0.7.1)
+├── VERSION                     # Agent version (0.7.2)
 ├── CLAUDE.md                   # This file
 ├── README.md                   # User documentation
 ├── CHANGELOG.md                # Version history
@@ -368,7 +386,7 @@ bash -n agent.sh lib/*.sh collectors/**/*.sh        # Syntax check
 
 ### config/agent.conf
 ```
-AGENT_VERSION=0.7.1
+AGENT_VERSION=0.7.2
 CHECKLIST_VERSION=1.14
 MONITOR_URL=<webhook_url>
 SEND_DATA=0|1
