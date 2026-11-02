@@ -750,24 +750,29 @@ evaluate_health() {
     done
 
     # --- Summary (nine executive pillars) ---
-    # total_checks is the number of registry checks that were actually
-    # evaluated (not skipped); areas_assessed is the number of pillars with a
-    # real result. The PDF cover reads both, so "X checks run across Y areas"
-    # is truthful instead of counting pillars as checks.
-    local TOTAL=0 FAIL=0 WARN=0 K RES
+    # total_checks/failed/warnings count every EVALUATED CHECK, not every
+    # pillar. Detail-only checks (flag 'd', e.g. swap, access.stats_mailbox,
+    # smtp.threads) feed their pillar but are excluded from _pillar_rollup, so
+    # a pillar-level count silently drops them: three critical checks under two
+    # pillars reported summary.failed = 1. Counting the registry entries keeps
+    # the executive numbers truthful. areas_assessed stays pillar-based - it is
+    # the number of operational areas, which is what the cover line means.
+    # The pillar ids (backup, mail_flow, ...) are not registry entries, so there
+    # is no double counting between this loop and the roll-ups above.
+    local TOTAL=0 FAIL=0 WARN=0 K RES ID L
     local AREAS=0
     for K in "${HEALTH_PILLARS[@]}"; do
         RES="${HEALTH[$K]:-skip}"
         [ "$RES" = "skip" ] && continue
         AREAS=$((AREAS+1))
-        if [ "$RES" = "fail" ] || [ "$RES" = "critical" ]; then FAIL=$((FAIL+1)); fi
-        [ "$RES" = "warn" ] && WARN=$((WARN+1))
     done
     for L in "${HEALTH_REGISTRY_LINES[@]}"; do
         ID="${L%%|*}"
         RES="${HEALTH[$ID]:-skip}"
         [ "$RES" = "skip" ] && continue
         TOTAL=$((TOTAL+1))
+        if [ "$RES" = "fail" ] || [ "$RES" = "critical" ]; then FAIL=$((FAIL+1)); fi
+        [ "$RES" = "warn" ] && WARN=$((WARN+1))
     done
 
     collector_set "health.summary.total_checks" "$TOTAL"
